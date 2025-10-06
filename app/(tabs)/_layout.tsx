@@ -4,6 +4,7 @@ export default function TabLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }}>
       <Tabs.Screen name="(contacts)" />
+      <Tabs.Screen name="(deck)" />
     </Tabs>
   );
 }

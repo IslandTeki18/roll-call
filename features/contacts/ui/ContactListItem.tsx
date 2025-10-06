@@ -1,6 +1,8 @@
-import { View, Text, Pressable, Image } from "react-native";
+import { View, Text, Image } from "react-native";
 import { Link } from "expo-router";
 import { Contact } from "../types/contact.types";
+
+
 export default function ContactListItem({
   contact,
 }: {
