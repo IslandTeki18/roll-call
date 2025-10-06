@@ -3,16 +3,25 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "features/*": ["features/*"],
-      "entities/*": ["entities/*"],
-      "shared/*": ["shared/*"],
-      "providers/*": ["providers/*"]
+      "features/*": [
+        "features/*"
+      ],
+      "entities/*": [
+        "entities/*"
+      ],
+      "shared/*": [
+        "shared/*"
+      ],
+      "providers/*": [
+        "providers/*"
+      ]
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
   ]
 }

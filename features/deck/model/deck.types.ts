@@ -18,7 +18,7 @@ export interface Contact {
 export interface FreshConnection extends Contact {
   isFresh: true;
   daysSinceFirstSeen: number;
-  freshBoost: number; // +25 decaying to 0 by day 21
+  freshBoost: number;
 }
 
 export interface DeckCard {
@@ -42,7 +42,7 @@ export interface Channel {
     | "linkedin"
     | "telegram";
   label: string;
-  value: string; // phone number, email, etc.
+  value: string;
   isPremium: boolean;
   isAvailable: boolean;
 }
