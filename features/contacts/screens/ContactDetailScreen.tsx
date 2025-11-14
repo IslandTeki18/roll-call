@@ -10,13 +10,40 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MOCK_CONTACTS } from "../mock/contacts";
-import { useState } from "react";
+import { NoteListItem } from "features/notes/ui/NoteListItem";
+import { Note, NoteSource } from "features/notes/types/notes.type";
 
 export default function ContactDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const contact = MOCK_CONTACTS.find((c) => c.id === id);
-  const [note, setNote] = useState("");
+
+  // TODO: Replace with actual notes fetching hook
+  // const { data: notes = [] } = useNotes({ contactId: id, limit: 3 });
+  const mockNotes: Note[] = [
+    {
+      id: "1",
+      content:
+        "Discussed Q4 goals and potential collaboration opportunities. Follow up next week.",
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      isPinned: true,
+      tags: ["work", "follow-up"],
+      contactIds: [id || ""],
+      source: NoteSource.MANUAL,
+      aiSummary: "Meeting about quarterly objectives",
+    },
+    {
+      id: "2",
+      content: "Great coffee chat. Interested in our product roadmap.",
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      isPinned: false,
+      tags: ["coffee"],
+      contactIds: [id || ""],
+      source: NoteSource.AUTO_OUTCOME,
+    },
+  ];
 
   if (!contact) {
     return (
@@ -97,14 +124,29 @@ export default function ContactDetailScreen() {
     );
   };
 
-  const handleSaveNote = () => {
-    if (!note.trim()) {
-      Alert.alert("Empty Note", "Please enter a note before saving.");
-      return;
-    }
-    // TODO: Hook up to actual note saving logic
-    Alert.alert("Note Saved", "Your note has been saved successfully.");
-    setNote("");
+  const handleAddNote = () => {
+    router.push({
+      pathname: "/notes/edit",
+      params: {
+        mode: "create",
+        contactId: id,
+        contactName: `${contact.givenName} ${contact.familyName}`,
+      },
+    });
+  };
+
+  const handleViewAllNotes = () => {
+    router.push({
+      pathname: "/notes",
+      params: {
+        contactId: id,
+        contactName: `${contact.givenName} ${contact.familyName}`,
+      },
+    });
+  };
+
+  const handleNotePress = (noteId: string) => {
+    router.push(`/notes/${noteId}`);
   };
 
   return (
@@ -296,24 +338,52 @@ export default function ContactDetailScreen() {
 
         {/* Notes Section */}
         <View className="mt-6 px-4">
-          <Text className="mb-3 text-xs font-semibold uppercase tracking-wide text-neutral-500">
-            Add Note
-          </Text>
-          <View className="rounded-2xl border border-neutral-200 bg-white p-4">
-            <View className="min-h-[100px] rounded-xl bg-neutral-50 p-3">
-              <Text className="text-sm text-neutral-500">
-                {note || "Add a quick note about this contact..."}
+          <View className="mb-3 flex-row items-center justify-between">
+            <Text className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+              Recent Notes ({mockNotes.length})
+            </Text>
+            {mockNotes.length > 0 && (
+              <Pressable
+                onPress={handleViewAllNotes}
+                className="active:opacity-70"
+              >
+                <Text className="text-xs font-semibold text-indigo-600">
+                  View All
+                </Text>
+              </Pressable>
+            )}
+          </View>
+
+          {/* Notes List */}
+          {mockNotes.length > 0 ? (
+            <View className="gap-3">
+              {mockNotes.slice(0, 3).map((note) => (
+                <NoteListItem
+                  key={note.id}
+                  note={note}
+                  onPress={handleNotePress}
+                  showContacts={false}
+                />
+              ))}
+            </View>
+          ) : (
+            <View className="items-center rounded-2xl border border-neutral-200 bg-white p-8">
+              <Text className="mb-1 text-4xl">📝</Text>
+              <Text className="text-center text-sm text-neutral-500">
+                No notes yet for this contact
               </Text>
             </View>
-            <Pressable
-              onPress={handleSaveNote}
-              className="mt-3 rounded-xl bg-neutral-900 py-3 active:opacity-80"
-            >
-              <Text className="text-center text-sm font-semibold text-white">
-                Save Note
-              </Text>
-            </Pressable>
-          </View>
+          )}
+
+          {/* Add Note Button */}
+          <Pressable
+            onPress={handleAddNote}
+            className="mt-3 rounded-xl bg-indigo-600 py-3 active:opacity-80"
+          >
+            <Text className="text-center text-sm font-semibold text-white">
+              ✏️ Add New Note
+            </Text>
+          </Pressable>
         </View>
 
         {/* Additional Actions */}

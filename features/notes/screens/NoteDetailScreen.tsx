@@ -29,7 +29,6 @@ export const NoteDetailScreen: React.FC<NoteDetailScreenProps> = ({
   onRegenerateAI,
 }) => {
   const [showMenu, setShowMenu] = useState(false);
-
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("en-US", {
       month: "short",
