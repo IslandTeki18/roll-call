@@ -1,12 +1,13 @@
 import { Client, Account, Databases } from "react-native-appwrite";
 
-export const client = new Client()
+export const client = new Client();
+client
   .setEndpoint(process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT!)
-  .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!);
+  .setProject(process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID!)
+  .setPlatform("com.landonroney.rollcall");
+
 
 export const account = new Account(client);
 export const databases = new Databases(client);
 
-export const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
-export const PROFILE_CONTACTS_COLLECTION_ID =
-  process.env.EXPO_PUBLIC_APPWRITE_PROFILE_CONTACTS_COLLECTION_ID!;
+

@@ -4,10 +4,12 @@ import * as Contacts from "expo-contacts";
 import { useUser } from "@clerk/clerk-expo";
 import {
   databases,
-  DATABASE_ID,
-  PROFILE_CONTACTS_COLLECTION_ID,
 } from "../../lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
+
+export const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
+export const PROFILE_CONTACTS_COLLECTION_ID =
+  process.env.EXPO_PUBLIC_APPWRITE_PROFILE_CONTACTS_COLLECTION_ID!;
 
 interface ProfileContact {
   id: string;
@@ -16,9 +18,10 @@ interface ProfileContact {
   firstName: string;
   lastName: string;
   displayName: string;
-  phoneNumbers: string[];
-  emails: string[];
+  phoneNumbers: string;
+  emails: string;
   organization: string;
+  jobTitle: string;
   notes: string;
   dedupeSignature: string;
   firstImportedAt: string;
@@ -26,7 +29,7 @@ interface ProfileContact {
   firstSeenAt: string;
 }
 
-export default function ContactList() {
+export default function ContactsScreen() {
   const { user } = useUser();
   const [contacts, setContacts] = useState<ProfileContact[]>([]);
   const [importing, setImporting] = useState(false);
@@ -37,7 +40,12 @@ export default function ContactList() {
       const { status } = await Contacts.requestPermissionsAsync();
       if (status === "granted") {
         const { data } = await Contacts.getContactsAsync({
-          fields: [Contacts.Fields.Emails],
+          fields: [
+            Contacts.Fields.FirstName,
+            Contacts.Fields.LastName,
+            Contacts.Fields.PhoneNumbers,
+            Contacts.Fields.Emails,
+          ],
         });
 
         if (data.length > 0) {
@@ -55,13 +63,15 @@ export default function ContactList() {
   const loadContacts = async () => {
     if (!user) return;
 
+    console.log("Database ID", DATABASE_ID);
+
     try {
       setLoading(true);
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        PROFILE_CONTACTS_COLLECTION_ID,
-        [Query.equal("userId", user.id), Query.limit(100)]
-      );
+      const response = await databases.listDocuments({
+        databaseId: DATABASE_ID,
+        collectionId: PROFILE_CONTACTS_COLLECTION_ID,
+        queries: [Query.equal("userId", user.id), Query.limit(1000)],
+      });
       setContacts(response.documents as unknown as ProfileContact[]);
     } catch (error) {
       console.error("Failed to load contacts:", error);
@@ -97,8 +107,6 @@ export default function ContactList() {
           Contacts.Fields.LastName,
           Contacts.Fields.PhoneNumbers,
           Contacts.Fields.Emails,
-          Contacts.Fields.Company,
-          Contacts.Fields.Note,
         ],
       });
 
@@ -124,8 +132,6 @@ export default function ContactList() {
           (p) => p.number || ""
         );
         const emails = (contact.emails || []).map((e) => e.email || "");
-        const organization = contact.company || "";
-        const notes = contact.note || "";
 
         const primaryPhone = phoneNumbers[0] || "";
         const primaryEmail = emails[0] || "";
@@ -147,10 +153,11 @@ export default function ContactList() {
           firstName,
           lastName,
           displayName,
-          phoneNumbers,
-          emails,
-          organization,
-          notes,
+          phoneNumbers: phoneNumbers.join(","),
+          emails: emails.join(","),
+          organization: contact.company || "",
+          jobTitle: contact.jobTitle || "",
+          notes: contact.note || "",
           dedupeSignature,
           firstImportedAt: timestamp,
           lastImportedAt: timestamp,
@@ -212,13 +219,15 @@ export default function ContactList() {
                 {contact.organization && (
                   <Text className="text-gray-600">{contact.organization}</Text>
                 )}
-                {contact.phoneNumbers.length > 0 && (
+                {contact.phoneNumbers && (
                   <Text className="text-gray-600">
-                    {contact.phoneNumbers[0]}
+                    {contact.phoneNumbers.split(",")[0]}
                   </Text>
                 )}
-                {contact.emails.length > 0 && (
-                  <Text className="text-gray-600">{contact.emails[0]}</Text>
+                {contact.emails && (
+                  <Text className="text-gray-600">
+                    {contact.emails.split(",")[0]}
+                  </Text>
                 )}
               </View>
             ))}

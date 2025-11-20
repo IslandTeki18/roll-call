@@ -1,9 +1,10 @@
 import "../global.css";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Slot } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { tokenCache } from "@clerk/clerk-expo/token-cache";
+import { ClerkProvider } from "@clerk/clerk-expo";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -23,8 +24,8 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-    </Stack>
-  )
+    <ClerkProvider tokenCache={tokenCache}>
+      <Slot />
+    </ClerkProvider>
+  );
 }
