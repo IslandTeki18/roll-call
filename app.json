@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.landonroney.rollcall",
+      "bundleIdentifier": "v",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
