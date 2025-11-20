@@ -6,7 +6,6 @@
     "lib": ["ES2020"],
     "jsx": "react-native",
     "module": "commonjs",
-    "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true,

@@ -17,7 +17,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="contacts"
+        name="contact-list"
         options={{
           title: "Contacts",
           tabBarIcon: ({ color }) => <UsersIcon size={28} color={color} />,

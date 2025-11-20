@@ -6,8 +6,8 @@ import {
   databases,
   DATABASE_ID,
   PROFILE_CONTACTS_COLLECTION_ID,
-} from "@/lib/appwrite";
-import { ID, Query } from "appwrite";
+} from "../../lib/appwrite";
+import { ID, Query } from "react-native-appwrite";
 
 interface ProfileContact {
   id: string;
@@ -26,11 +26,27 @@ interface ProfileContact {
   firstSeenAt: string;
 }
 
-export default function ContactsScreen() {
+export default function ContactList() {
   const { user } = useUser();
   const [contacts, setContacts] = useState<ProfileContact[]>([]);
   const [importing, setImporting] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Contacts.requestPermissionsAsync();
+      if (status === "granted") {
+        const { data } = await Contacts.getContactsAsync({
+          fields: [Contacts.Fields.Emails],
+        });
+
+        if (data.length > 0) {
+          const contact = data[0];
+          console.log(contact);
+        }
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     loadContacts();
@@ -69,23 +85,8 @@ export default function ContactsScreen() {
     return parts.join("|");
   };
 
-  const requestPermission = async (): Promise<boolean> => {
-    const { status } = await Contacts.requestPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission Required",
-        "RollCall needs access to your contacts to import them."
-      );
-      return false;
-    }
-    return true;
-  };
-
   const importContacts = async () => {
     if (!user) return;
-
-    const hasPermission = await requestPermission();
-    if (!hasPermission) return;
 
     setImporting(true);
 
