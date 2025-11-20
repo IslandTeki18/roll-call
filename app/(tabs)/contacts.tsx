@@ -2,10 +2,10 @@ import { Text, View, ScrollView, TouchableOpacity, Alert } from "react-native";
 import React, { useState, useEffect } from "react";
 import * as Contacts from "expo-contacts";
 import { useUser } from "@clerk/clerk-expo";
-import {
-  databases,
-} from "../../lib/appwrite";
+import { databases } from "../../lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
+import ContactCard from "../../components/contacts/ContactCard";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 export const PROFILE_CONTACTS_COLLECTION_ID =
@@ -34,6 +34,7 @@ export default function ContactsScreen() {
   const [contacts, setContacts] = useState<ProfileContact[]>([]);
   const [importing, setImporting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [deviceContactCount, setDeviceContactCount] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -48,9 +49,11 @@ export default function ContactsScreen() {
           ],
         });
 
+        setDeviceContactCount(data.length);
+
         if (data.length > 0) {
           const contact = data[0];
-          console.log(contact);
+          console.log("First Contact", contact);
         }
       }
     })();
@@ -62,8 +65,6 @@ export default function ContactsScreen() {
 
   const loadContacts = async () => {
     if (!user) return;
-
-    console.log("Database ID", DATABASE_ID);
 
     try {
       setLoading(true);
@@ -188,52 +189,51 @@ export default function ContactsScreen() {
     }
   };
 
+  const allContactsImported =
+    contacts.length >= deviceContactCount && deviceContactCount > 0;
+
   return (
-    <ScrollView className="flex-1 bg-white">
-      <View className="p-4">
-        <Text className="text-2xl font-bold mb-4">Contacts</Text>
+    <SafeAreaView className="flex-1">
+      <ScrollView className="h-screen">
+        <View className="px-4 py-6">
+          <Text className="text-2xl font-bold mb-4">Contacts</Text>
 
-        <TouchableOpacity
-          onPress={importContacts}
-          disabled={importing}
-          className={`p-4 rounded-lg mb-4 ${
-            importing ? "bg-gray-400" : "bg-blue-600"
-          }`}
-        >
-          <Text className="text-white text-center font-semibold">
-            {importing ? "Importing..." : "Import Contacts"}
-          </Text>
-        </TouchableOpacity>
+          {!allContactsImported && (
+            <TouchableOpacity
+              onPress={importContacts}
+              disabled={importing}
+              className={`p-4 rounded-lg mb-4 ${
+                importing ? "bg-gray-400" : "bg-blue-600"
+              }`}
+            >
+              <Text className="text-white text-center font-semibold">
+                {importing ? "Importing..." : "Import Contacts"}
+              </Text>
+            </TouchableOpacity>
+          )}
 
-        {loading ? (
-          <Text className="text-gray-600">Loading...</Text>
-        ) : contacts.length === 0 ? (
-          <Text className="text-gray-600">No contacts yet</Text>
-        ) : (
-          <View className="gap-2">
-            {contacts.map((contact) => (
-              <View key={contact.id} className="p-4 bg-gray-50 rounded-lg">
-                <Text className="font-semibold text-lg">
-                  {contact.displayName}
-                </Text>
-                {contact.organization && (
-                  <Text className="text-gray-600">{contact.organization}</Text>
-                )}
-                {contact.phoneNumbers && (
-                  <Text className="text-gray-600">
-                    {contact.phoneNumbers.split(",")[0]}
-                  </Text>
-                )}
-                {contact.emails && (
-                  <Text className="text-gray-600">
-                    {contact.emails.split(",")[0]}
-                  </Text>
-                )}
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-    </ScrollView>
+          {loading ? (
+            <Text className="text-gray-600">Loading...</Text>
+          ) : contacts.length === 0 ? (
+            <Text className="text-gray-600">No contacts yet</Text>
+          ) : (
+            <View className="gap-3">
+              {contacts.map((contact, idx) => (
+                <ContactCard
+                  key={"contact-" + idx}
+                  displayName={contact.displayName}
+                  organization={contact.organization}
+                  phoneNumbers={contact.phoneNumbers}
+                  emails={contact.emails}
+                  onPress={() => {
+                    Alert.alert("Contact Selected", contact.displayName);
+                  }}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }

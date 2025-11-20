@@ -1,0 +1,51 @@
+import { Text, View, TouchableOpacity } from "react-native";
+import { Phone, Mail, Building } from "lucide-react-native";
+
+interface ContactCardProps {
+  displayName: string;
+  organization?: string;
+  phoneNumbers?: string;
+  emails?: string;
+  onPress?: () => void;
+}
+
+export default function ContactCard({
+  displayName,
+  organization,
+  phoneNumbers,
+  emails,
+  onPress,
+}: ContactCardProps) {
+  const primaryPhone = phoneNumbers?.split(",")[0];
+  const primaryEmail = emails?.split(",")[0];
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm active:bg-gray-50"
+    >
+      <Text className="font-semibold text-lg mb-2">{displayName}</Text>
+
+      {organization && (
+        <View className="flex-row items-center gap-2 mb-1">
+          <Building size={16} color="#6B7280" />
+          <Text className="text-gray-600 text-sm">{organization}</Text>
+        </View>
+      )}
+
+      {primaryPhone && (
+        <View className="flex-row items-center gap-2 mb-1">
+          <Phone size={16} color="#6B7280" />
+          <Text className="text-gray-600 text-sm">{primaryPhone}</Text>
+        </View>
+      )}
+
+      {primaryEmail && (
+        <View className="flex-row items-center gap-2">
+          <Mail size={16} color="#6B7280" />
+          <Text className="text-gray-600 text-sm">{primaryEmail}</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}

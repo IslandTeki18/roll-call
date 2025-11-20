@@ -8,7 +8,7 @@ import {
 
 export default function TabLayout() {
   return (
-    <Tabs>
+    <Tabs screenOptions={{ headerShown: false }}>
       <Tabs.Screen
         name="index"
         options={{
@@ -17,7 +17,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="contact-list"
+        name="contacts"
         options={{
           title: "Contacts",
           tabBarIcon: ({ color }) => <UsersIcon size={28} color={color} />,
