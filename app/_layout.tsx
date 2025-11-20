@@ -1,22 +1,25 @@
 import "../global.css";
+import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
+
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen
-        name="(communications)/compose"
-        options={{ title: "Compose Message", headerShown: true }}
-      />
-      <Stack.Screen
-        name="(communications)/channel-picker"
-        options={{ title: "Select Channel", headerShown: true }}
-      />
-      <Stack.Screen
-        name="(communications)/outcome"
-        options={{ title: "Message Sent" }}
-      />
-    </Stack>
-  );
+  const [loaded] = useFonts({
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+  });
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hide();
+    }
+  }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
+
+  return <Stack />;
 }
