@@ -6,6 +6,7 @@ import { databases } from "../../lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
 import ContactCard from "../../components/contacts/ContactCard";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 
 export const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 export const PROFILE_CONTACTS_COLLECTION_ID =
@@ -31,6 +32,7 @@ interface ProfileContact {
 
 export default function ContactsScreen() {
   const { user } = useUser();
+  const router = useRouter();
   const [contacts, setContacts] = useState<ProfileContact[]>([]);
   const [importing, setImporting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -220,14 +222,14 @@ export default function ContactsScreen() {
             <View className="gap-3">
               {contacts.map((contact, idx) => (
                 <ContactCard
-                  key={"contact-" + idx}
+                  key={`contact-${idx}`}
                   displayName={contact.displayName}
                   organization={contact.organization}
                   phoneNumbers={contact.phoneNumbers}
                   emails={contact.emails}
-                  onPress={() => {
-                    Alert.alert("Contact Selected", contact.displayName);
-                  }}
+                  onPress={() =>
+                    router.push(`/contact-details`, { id: contact.id })
+                  }
                 />
               ))}
             </View>

@@ -7,8 +7,10 @@ export default function index() {
   return (
     <SafeAreaView className="flex-1">
       <ScrollView>
-        <View className="flex-1 justify-center items-center p-6">
-          <Text className="text-2xl font-bold mb-4">Home Screen</Text>
+        <View className="p-4">
+          <Text className="text-2xl font-bold mb-4">Notes</Text>
+          <Text className="text-gray-600">No notes yet</Text>
+
           <SignOutButton />
         </View>
       </ScrollView>
