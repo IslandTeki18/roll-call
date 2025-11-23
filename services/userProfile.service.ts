@@ -1,9 +1,9 @@
-import { databases } from "../lib/appwrite";
-import { ID } from "react-native-appwrite";
+import { tablesDB } from "../lib/appwrite";
+import { ID, Query } from "react-native-appwrite";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
-const USER_PROFILES_COLLECTION_ID =
-  process.env.EXPO_PUBLIC_APPWRITE_USER_PROFILES_COLLECTION_ID!;
+const USER_PROFILES_TABLE_ID =
+  process.env.EXPO_PUBLIC_APPWRITE_USER_PROFILES_TABLE_ID!;
 
 export interface UserProfile {
   id: string;
@@ -25,36 +25,38 @@ export async function getOrCreateUserProfile(
   lastName?: string
 ): Promise<UserProfile> {
   try {
-    const response = await databases.listDocuments(
-      DATABASE_ID,
-      USER_PROFILES_COLLECTION_ID,
-      [`clerkUserId=${clerkUserId}`]
-    );
 
-    if (response.documents.length > 0) {
-      return response.documents[0] as unknown as UserProfile;
+    let displayName;
+    const response = await tablesDB.listRows({
+      databaseId: DATABASE_ID,
+      tableId: USER_PROFILES_TABLE_ID,
+      queries: [Query.equal("clerkUserId", clerkUserId)],
+    });
+
+    if (response.rows.length > 0) {
+      return response.rows[0] as unknown as UserProfile;
     }
 
-    const timestamp = new Date().toISOString();
-    const displayName =
-      [firstName, lastName].filter(Boolean).join(" ").trim() ||
-      email.split("@")[0];
+    if (!firstName && !lastName) {
+      displayName =
+        [firstName, lastName].filter(Boolean).join(" ").trim() ||
+        email.split("@")[0];
+    }
 
-    const newProfile = await databases.createDocument(
-      DATABASE_ID,
-      USER_PROFILES_COLLECTION_ID,
-      ID.unique(),
-      {
+
+    const newProfile = await tablesDB.createRow({
+      databaseId: DATABASE_ID,
+      tableId: USER_PROFILES_TABLE_ID,
+      rowId: ID.unique(),
+      data: {
         clerkUserId,
         email,
         phone: phone || "",
         firstName: firstName || "",
         lastName: lastName || "",
         displayName,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      }
-    );
+      },
+    });
 
     return newProfile as unknown as UserProfile;
   } catch (error) {

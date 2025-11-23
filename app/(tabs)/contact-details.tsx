@@ -24,7 +24,7 @@ import { databases } from "../../lib/appwrite";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const PROFILE_CONTACTS_COLLECTION_ID =
-  process.env.EXPO_PUBLIC_APPWRITE_PROFILE_CONTACTS_COLLECTION_ID!;
+  process.env.EXPO_PUBLIC_APPWRITE_PROFILE_CONTACTS_TABLE_ID!;
 
 interface ProfileContact {
   id: string;
