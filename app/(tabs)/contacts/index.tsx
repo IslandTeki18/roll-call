@@ -93,9 +93,9 @@ export default function ContactsScreen() {
             <Text className="text-gray-600">No contacts yet</Text>
           ) : (
             <View className="gap-3">
-              {contacts.map((contact, idx) => (
+              {contacts.map((contact) => (
                 <ContactCard
-                  key={`contact-${idx}`}
+                  key={contact.$id}
                   displayName={contact.displayName}
                   organization={contact.organization}
                   phoneNumbers={contact.phoneNumbers}

@@ -21,7 +21,7 @@ import {
   Edit3,
   Trash2,
 } from "lucide-react-native";
-import { databases } from "../../../lib/appwrite";
+import { tablesDB } from "../../../lib/appwrite";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const PROFILE_CONTACTS_COLLECTION_ID =
@@ -60,11 +60,11 @@ export default function ContactDetailsScreen() {
 
     try {
       setLoading(true);
-      const response = await databases.getDocument(
-        DATABASE_ID,
-        PROFILE_CONTACTS_COLLECTION_ID,
-        params.id as string
-      );
+      const response = await tablesDB.getRow({
+        databaseId: DATABASE_ID,
+        tableId: PROFILE_CONTACTS_COLLECTION_ID,
+        rowId: params.id as string,
+      });
       setContact(response as unknown as ProfileContact);
     } catch (error) {
       console.error("Failed to load contact:", error);
@@ -103,14 +103,14 @@ export default function ContactDetailsScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await databases.deleteDocument(
-                DATABASE_ID,
-                PROFILE_CONTACTS_COLLECTION_ID,
-                contact!.id
-              );
+              await tablesDB.deleteRow({
+                databaseId: DATABASE_ID,
+                tableId: PROFILE_CONTACTS_COLLECTION_ID,
+                rowId: contact!.id,
+              });
               router.back();
             } catch (error) {
-              Alert.alert("Error", "Could not delete contact");
+              Alert.alert("Error", `Could not delete contact. Error: ${error}`);
             }
           },
         },

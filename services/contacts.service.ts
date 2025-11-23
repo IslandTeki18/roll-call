@@ -1,4 +1,4 @@
-import { databases, tablesDB } from "../lib/appwrite";
+import { tablesDB } from "../lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
 import * as Contacts from "expo-contacts";
 import { Platform } from "react-native";
@@ -43,12 +43,12 @@ export const generateDedupeSignature = (
 export const loadContacts = async (
   userId: string
 ): Promise<ProfileContact[]> => {
-  const response = await databases.listDocuments({
+  const response = await tablesDB.listRows({
     databaseId: DATABASE_ID,
-    collectionId: PROFILE_CONTACTS_COLLECTION_ID,
+    tableId: PROFILE_CONTACTS_COLLECTION_ID,
     queries: [Query.equal("userId", userId), Query.limit(1000)],
   });
-  return response.documents as unknown as ProfileContact[];
+  return response.rows as unknown as ProfileContact[];
 };
 
 export const getDeviceContactCount = async (): Promise<number> => {
@@ -56,14 +56,10 @@ export const getDeviceContactCount = async (): Promise<number> => {
   if (status !== "granted") return 0;
 
   const { data } = await Contacts.getContactsAsync({
-    fields: [
-      Contacts.Fields.FirstName,
-      Contacts.Fields.LastName,
-      Contacts.Fields.PhoneNumbers,
-      Contacts.Fields.Emails,
-    ],
+    fields: [Contacts.Fields.ID],
   });
 
+  if (!data) return 0;
   return data.length;
 };
 
@@ -76,25 +72,19 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
   ];
 
   if (Platform.OS === "ios") {
-    fields.push(
-      Contacts.Fields.Company,
-      Contacts.Fields.JobTitle,
-      Contacts.Fields.Note
-    );
-  } else if (Platform.OS === "android") {
-    fields.push(Contacts.Fields.Company, Contacts.Fields.JobTitle);
+    fields.push(Contacts.Fields.JobTitle);
   }
 
   const { data } = await Contacts.getContactsAsync({ fields });
 
-  const existingResponse = await databases.listDocuments(
-    DATABASE_ID,
-    PROFILE_CONTACTS_COLLECTION_ID,
-    [Query.equal("userId", userId), Query.limit(5000)]
-  );
+  const existingResponse = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: PROFILE_CONTACTS_COLLECTION_ID,
+    queries: [Query.equal("userId", userId), Query.limit(1000)],
+  });
 
   const existingSignatures = new Set(
-    existingResponse.documents.map((doc: any) => doc.dedupeSignature)
+    existingResponse.rows.map((doc: any) => doc.dedupeSignature)
   );
 
   const timestamp = new Date().toISOString();

@@ -13,6 +13,7 @@ export interface UserProfile {
   firstName?: string;
   lastName?: string;
   displayName: string;
+  isPremiumUser: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -25,7 +26,6 @@ export async function getOrCreateUserProfile(
   lastName?: string
 ): Promise<UserProfile> {
   try {
-
     let displayName;
     const response = await tablesDB.listRows({
       databaseId: DATABASE_ID,
@@ -43,7 +43,6 @@ export async function getOrCreateUserProfile(
         email.split("@")[0];
     }
 
-
     const newProfile = await tablesDB.createRow({
       databaseId: DATABASE_ID,
       tableId: USER_PROFILES_TABLE_ID,
@@ -55,6 +54,7 @@ export async function getOrCreateUserProfile(
         firstName: firstName || "",
         lastName: lastName || "",
         displayName,
+        isPremiumUser: false,
       },
     });
 
