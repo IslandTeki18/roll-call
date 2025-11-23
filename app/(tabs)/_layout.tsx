@@ -1,4 +1,5 @@
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
+import { useAuth } from "@clerk/clerk-expo";
 import {
   HomeIcon,
   UsersIcon,
@@ -6,7 +7,13 @@ import {
   BarChart3Icon,
 } from "lucide-react-native";
 
-export default function TabLayout() {
+export default function TabsLayout() {
+  const { isSignedIn } = useAuth();
+
+  if (!isSignedIn) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
+
   return (
     <Tabs screenOptions={{ headerShown: false }}>
       <Tabs.Screen

@@ -8,8 +8,8 @@ export default function index() {
     <SafeAreaView className="flex-1">
       <ScrollView>
         <View className="p-4">
-          <Text className="text-2xl font-bold mb-4">Notes</Text>
-          <Text className="text-gray-600">No notes yet</Text>
+          <Text className="text-2xl font-bold mb-4">Deck</Text>
+          <Text className="text-gray-600">Not available yet</Text>
 
           <SignOutButton />
         </View>

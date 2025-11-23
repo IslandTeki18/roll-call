@@ -39,9 +39,7 @@ export default function SignUp() {
 
       if (signUpAttempt.status === "complete") {
         await setActive({ session: signUpAttempt.createdSessionId });
-        router.replace("/");
-      } else {
-        console.error(JSON.stringify(signUpAttempt, null, 2));
+        router.replace("/(tabs)");
       }
     } catch (err) {
       console.error(JSON.stringify(err, null, 2));
@@ -129,7 +127,7 @@ export default function SignUp() {
 
       <View className="flex-row justify-center items-center gap-1">
         <Text className="text-gray-600">Already have an account?</Text>
-        <Link href="/sign-in" asChild>
+        <Link href="/(auth)/sign-in" asChild>
           <TouchableOpacity>
             <Text className="text-blue-600 font-semibold">Sign in</Text>
           </TouchableOpacity>

@@ -21,9 +21,7 @@ export default function SignIn() {
 
       if (signInAttempt.status === "complete") {
         await setActive({ session: signInAttempt.createdSessionId });
-        router.replace("/");
-      } else {
-        console.error(JSON.stringify(signInAttempt, null, 2));
+        router.replace("/(tabs)");
       }
     } catch (err) {
       console.error(JSON.stringify(err, null, 2));
@@ -66,8 +64,7 @@ export default function SignIn() {
 
       <TouchableOpacity
         onPress={onSignInPress}
-        className="bg-blue-600 py-4 rounded-xl mb-6 active:opacity-80 disabled:opacity-50"
-        disabled={!emailAddress || !password}
+        className="bg-blue-600 py-4 rounded-xl mb-6 active:opacity-80"
       >
         <Text className="text-white text-center font-semibold text-base">
           Continue
@@ -76,7 +73,7 @@ export default function SignIn() {
 
       <View className="flex-row justify-center items-center gap-1">
         <Text className="text-gray-600">Don&apos;t have an account?</Text>
-        <Link href="/sign-up" asChild>
+        <Link href="/(auth)/sign-up" asChild>
           <TouchableOpacity>
             <Text className="text-blue-600 font-semibold">Sign up</Text>
           </TouchableOpacity>
