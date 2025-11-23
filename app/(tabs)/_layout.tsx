@@ -63,12 +63,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => <BarChart3Icon size={28} color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="contact-details"
-        options={{
-          href: null,
-        }}
-      />
     </Tabs>
   );
 }

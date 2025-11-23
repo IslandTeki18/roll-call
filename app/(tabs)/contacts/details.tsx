@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Linking,
   Alert,
+  Platform,
 } from "react-native";
 import React from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -20,7 +21,7 @@ import {
   Edit3,
   Trash2,
 } from "lucide-react-native";
-import { databases } from "../../lib/appwrite";
+import { databases } from "../../../lib/appwrite";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const PROFILE_CONTACTS_COLLECTION_ID =
@@ -86,7 +87,9 @@ export default function ContactDetailsScreen() {
   };
 
   const handleFaceTime = (phone: string) => {
-    Linking.openURL(`facetime:${phone}`);
+    if (Platform.OS === "ios") {
+      Linking.openURL(`facetime:${phone}`);
+    }
   };
 
   const handleDelete = () => {
@@ -218,7 +221,7 @@ export default function ContactDetailsScreen() {
                 <Text className="text-xs text-gray-600">Email</Text>
               </TouchableOpacity>
             )}
-            {phoneNumbers[0] && (
+            {phoneNumbers[0] && Platform.OS === "ios" && (
               <TouchableOpacity
                 onPress={() => handleFaceTime(phoneNumbers[0])}
                 className="items-center"

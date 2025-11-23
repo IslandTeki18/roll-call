@@ -1,13 +1,14 @@
-import { tablesDB } from "../lib/appwrite";
+import { databases, tablesDB } from "../lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
 import * as Contacts from "expo-contacts";
+import { Platform } from "react-native";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
-const PROFILE_CONTACTS_TABLE_ID =
+const PROFILE_CONTACTS_COLLECTION_ID =
   process.env.EXPO_PUBLIC_APPWRITE_PROFILE_CONTACTS_TABLE_ID!;
 
 export interface ProfileContact {
-  id: string;
+  $id: string;
   userId: string;
   sourceType: "device" | "google" | "outlook" | "slack";
   firstName: string;
@@ -42,12 +43,12 @@ export const generateDedupeSignature = (
 export const loadContacts = async (
   userId: string
 ): Promise<ProfileContact[]> => {
-  const response = await tablesDB.listRows({
+  const response = await databases.listDocuments({
     databaseId: DATABASE_ID,
-    tableId: PROFILE_CONTACTS_TABLE_ID,
+    collectionId: PROFILE_CONTACTS_COLLECTION_ID,
     queries: [Query.equal("userId", userId), Query.limit(1000)],
   });
-  return response.rows as unknown as ProfileContact[];
+  return response.documents as unknown as ProfileContact[];
 };
 
 export const getDeviceContactCount = async (): Promise<number> => {
@@ -67,26 +68,33 @@ export const getDeviceContactCount = async (): Promise<number> => {
 };
 
 export const importDeviceContacts = async (userId: string): Promise<number> => {
-  const { data } = await Contacts.getContactsAsync({
-    fields: [
-      Contacts.Fields.FirstName,
-      Contacts.Fields.LastName,
-      Contacts.Fields.PhoneNumbers,
-      Contacts.Fields.Emails,
+  const fields = [
+    Contacts.Fields.FirstName,
+    Contacts.Fields.LastName,
+    Contacts.Fields.PhoneNumbers,
+    Contacts.Fields.Emails,
+  ];
+
+  if (Platform.OS === "ios") {
+    fields.push(
       Contacts.Fields.Company,
       Contacts.Fields.JobTitle,
-      Contacts.Fields.Note,
-    ],
-  });
+      Contacts.Fields.Note
+    );
+  } else if (Platform.OS === "android") {
+    fields.push(Contacts.Fields.Company, Contacts.Fields.JobTitle);
+  }
 
-  const existingResponse = await tablesDB.listRows({
-    databaseId: DATABASE_ID,
-    tableId: PROFILE_CONTACTS_TABLE_ID,
-    queries: [Query.equal("userId", userId), Query.limit(5000)],
-  });
+  const { data } = await Contacts.getContactsAsync({ fields });
+
+  const existingResponse = await databases.listDocuments(
+    DATABASE_ID,
+    PROFILE_CONTACTS_COLLECTION_ID,
+    [Query.equal("userId", userId), Query.limit(5000)]
+  );
 
   const existingSignatures = new Set(
-    existingResponse.rows.map((doc: any) => doc.dedupeSignature)
+    existingResponse.documents.map((doc: any) => doc.dedupeSignature)
   );
 
   const timestamp = new Date().toISOString();
@@ -118,7 +126,7 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
       continue;
     }
 
-    const profileContact: Omit<ProfileContact, "id"> = {
+    const profileContact: Omit<ProfileContact, "$id"> = {
       userId,
       sourceType: "device",
       firstName,
@@ -128,7 +136,7 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
       emails: emails.join(","),
       organization: contact.company?.trim() || "",
       jobTitle: contact.jobTitle?.trim() || "",
-      notes: contact.note?.trim() || "",
+      notes: Platform.OS === "ios" ? contact.note?.trim() || "" : "",
       dedupeSignature,
       firstImportedAt: timestamp,
       lastImportedAt: timestamp,
@@ -137,7 +145,7 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
 
     await tablesDB.createRow({
       databaseId: DATABASE_ID,
-      tableId: PROFILE_CONTACTS_TABLE_ID,
+      tableId: PROFILE_CONTACTS_COLLECTION_ID,
       rowId: ID.unique(),
       data: profileContact,
     });

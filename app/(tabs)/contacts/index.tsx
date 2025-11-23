@@ -1,7 +1,7 @@
 import { Text, View, ScrollView, TouchableOpacity, Alert } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-expo";
-import ContactCard from "../../components/contacts/ContactCard";
+import ContactCard from "../../../components/contacts/ContactCard";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
@@ -9,7 +9,7 @@ import {
   loadContacts,
   getDeviceContactCount,
   importDeviceContacts,
-} from "../../services/contacts.service";
+} from "../../../services/contacts.service";
 
 export default function ContactsScreen() {
   const { user } = useUser();
@@ -100,12 +100,12 @@ export default function ContactsScreen() {
                   organization={contact.organization}
                   phoneNumbers={contact.phoneNumbers}
                   emails={contact.emails}
-                  onPress={() =>
+                  onPress={() => {
                     router.push({
-                      pathname: "/(tabs)/contact-details",
-                      params: { id: contact.id },
-                    })
-                  }
+                      pathname: "/(tabs)/contacts/details",
+                      params: { id: contact.$id },
+                    });
+                  }}
                 />
               ))}
             </View>
