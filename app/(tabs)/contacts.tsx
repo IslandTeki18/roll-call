@@ -228,7 +228,7 @@ export default function ContactsScreen() {
                   phoneNumbers={contact.phoneNumbers}
                   emails={contact.emails}
                   onPress={() =>
-                    router.push(`/contact-details`, { id: contact.id })
+                    console.log("Pressed contact:", contact.displayName)
                   }
                 />
               ))}
