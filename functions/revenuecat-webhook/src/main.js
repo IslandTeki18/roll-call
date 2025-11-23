@@ -1,21 +1,12 @@
-import { Client, Databases } from "node-appwrite";
+import { Client, Databases, Query } from "node-appwrite";
 
 export default async ({ req, res, log, error }) => {
-  // Verify RevenueCat webhook
-  const authHeader = req.headers["authorization"];
-  const expectedToken = process.env.REVENUECAT_WEBHOOK_SECRET;
-
-  if (authHeader !== `Bearer ${expectedToken}`) {
-    error("Unauthorized");
-    return res.json({ error: "Unauthorized" }, 401);
-  }
 
   const payload = JSON.parse(req.body);
   const event = payload.event;
 
   log(`Received event: ${event.type}`);
 
-  // Handle subscription events
   if (event.type === "INITIAL_PURCHASE" || event.type === "RENEWAL") {
     const appUserId = event.app_user_id;
 
@@ -27,7 +18,6 @@ export default async ({ req, res, log, error }) => {
 
       const databases = new Databases(client);
 
-      // Find user by clerkUserId
       const users = await databases.listDocuments(
         process.env.DATABASE_ID,
         process.env.USER_PROFILES_TABLE_ID,
@@ -39,7 +29,6 @@ export default async ({ req, res, log, error }) => {
         return res.json({ error: "User not found" }, 404);
       }
 
-      // Update premium status
       await databases.updateDocument(
         process.env.DATABASE_ID,
         process.env.USER_PROFILES_TABLE_ID,
@@ -55,7 +44,6 @@ export default async ({ req, res, log, error }) => {
     }
   }
 
-  // Handle cancellation/expiration
   if (event.type === "CANCELLATION" || event.type === "EXPIRATION") {
     const appUserId = event.app_user_id;
 
