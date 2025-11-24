@@ -4,6 +4,7 @@ import {
   getOrCreateUserProfile,
   UserProfile,
 } from "../services/userProfile.service";
+import { cachePremiumStatus, getCachedPremiumStatus } from "@/services/premiumCache.service";
 
 export function useUserProfile() {
   const { user, isLoaded } = useUser();
@@ -20,6 +21,13 @@ export function useUserProfile() {
     (async () => {
       try {
         setLoading(true);
+        const cached = await getCachedPremiumStatus();
+        if (cached !== null) {
+          setProfile((prev) =>
+            prev ? { ...prev, isPremiumUser: cached } : null
+          );
+        }
+
         const userProfile = await getOrCreateUserProfile(
           user.id,
           user.primaryEmailAddress?.emailAddress || "",
@@ -27,6 +35,8 @@ export function useUserProfile() {
           user.firstName || undefined,
           user.lastName || undefined
         );
+
+        await cachePremiumStatus(userProfile?.isPremiumUser);
         setProfile(userProfile);
       } catch (err) {
         setError(err as Error);

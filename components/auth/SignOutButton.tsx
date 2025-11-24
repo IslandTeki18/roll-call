@@ -2,6 +2,7 @@ import { useClerk } from "@clerk/clerk-expo";
 import * as SecureStore from "expo-secure-store";
 import { useRouter } from "expo-router";
 import { Text, TouchableOpacity } from "react-native";
+import { clearPremiumCache } from "@/services/premiumCache.service";
 
 export const SignOutButton = () => {
   const { signOut } = useClerk();
@@ -13,7 +14,8 @@ export const SignOutButton = () => {
 
       await SecureStore.deleteItemAsync("clerk-session");
       await SecureStore.deleteItemAsync("clerk-token");
-
+      await clearPremiumCache();
+      
       router.replace("/sign-in");
     } catch (err) {
       console.error(JSON.stringify(err, null, 2));
