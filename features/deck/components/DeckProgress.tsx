@@ -1,7 +1,7 @@
 import { Check } from "lucide-react-native";
 import React from "react";
 import { Text, View } from "react-native";
-import { DeckCard } from "../../types/deck/deck.types";
+import { DeckCard } from "../types/deck.types";
 
 interface DeckProgressProps {
   cards: DeckCard[];

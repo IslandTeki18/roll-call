@@ -12,11 +12,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { processOutcomeWithProgress } from "../../services/aiProcessing.service";
+import { processOutcomeWithProgress } from "../../../services/aiProcessing.service";
 import {
   createOutcomeNote,
   OutcomeSentiment,
-} from "../../services/outcomeNotes.service";
+} from "../../../services/outcomeNotes.service";
 
 interface OutcomeSheetProps {
   visible: boolean;

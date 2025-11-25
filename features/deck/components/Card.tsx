@@ -16,7 +16,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { ChannelType, DeckCard } from "../../types/deck/deck.types";
+import { ChannelType, DeckCard } from "../types/deck.types";
 
 interface CardProps {
   card: DeckCard;

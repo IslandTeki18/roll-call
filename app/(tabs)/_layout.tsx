@@ -7,6 +7,7 @@ import {
   UsersIcon,
   FileTextIcon,
   BarChart3Icon,
+  Contact,
 } from "lucide-react-native";
 
 export default function TabsLayout() {
@@ -36,10 +37,16 @@ export default function TabsLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }}>
       <Tabs.Screen
+        name="index"
+        options={{
+          tabBarIcon: ({ color }) => <HomeIcon size={28} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="deck"
         options={{
           title: "Deck",
-          tabBarIcon: ({ color }) => <HomeIcon size={28} color={color} />,
+          tabBarIcon: ({ color }) => <Contact size={28} color={color} />,
         }}
       />
       <Tabs.Screen

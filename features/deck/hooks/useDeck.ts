@@ -3,9 +3,9 @@ import { useCallback, useEffect, useState } from "react";
 import {
   loadContacts,
   ProfileContact,
-} from "../services/contacts.service";
-import { DeckCard, DeckState, Draft } from "../types/deck/deck.types";
-import { useUserProfile } from "./useUserProfile";
+} from "../../../services/contacts.service";
+import { DeckCard, DeckState, Draft } from "../types/deck.types";
+import { useUserProfile } from "../../../hooks/useUserProfile";
 
 export function useDeck() {
   const { user } = useUser();

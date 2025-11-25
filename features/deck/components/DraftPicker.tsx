@@ -18,7 +18,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { ChannelType, DeckCard, Draft } from "../../types/deck/deck.types";
+import { ChannelType, DeckCard, Draft } from "../types/deck.types";
 
 interface DraftPickerProps {
   visible: boolean;

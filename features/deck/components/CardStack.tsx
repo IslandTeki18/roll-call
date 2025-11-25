@@ -1,7 +1,7 @@
 import React from "react";
 import { Dimensions, View } from "react-native";
 import Animated, { FadeIn, FadeOut, Layout } from "react-native-reanimated";
-import { DeckCard } from "../../types/deck/deck.types";
+import { DeckCard } from "../types/deck.types";
 import Card from "./Card";
 
 interface CardStackProps {

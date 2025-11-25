@@ -1,6 +1,6 @@
 import { Text, View, ScrollView } from "react-native";
 import React from "react";
-import { SignOutButton } from "../../components/auth/SignOutButton";
+import { SignOutButton } from "../../features/auth/components/SignOutButton";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function index() {

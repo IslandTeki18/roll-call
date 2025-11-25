@@ -4,7 +4,10 @@ import {
   getOrCreateUserProfile,
   UserProfile,
 } from "../services/userProfile.service";
-import { cachePremiumStatus, getCachedPremiumStatus } from "@/services/premiumCache.service";
+import {
+  cachePremiumStatus,
+  getCachedPremiumStatus,
+} from "@/features/auth/api/premiumCache.service";
 
 export function useUserProfile() {
   const { user, isLoaded } = useUser();
