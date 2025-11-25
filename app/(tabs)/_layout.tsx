@@ -36,7 +36,7 @@ export default function TabsLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }}>
       <Tabs.Screen
-        name="index"
+        name="deck"
         options={{
           title: "Deck",
           tabBarIcon: ({ color }) => <HomeIcon size={28} color={color} />,
