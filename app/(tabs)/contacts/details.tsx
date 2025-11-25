@@ -22,6 +22,8 @@ import {
   Trash2,
 } from "lucide-react-native";
 import { tablesDB } from "../../../lib/appwrite";
+import { generateDraft } from "../../../services/drafts.service";
+import { useUser } from "@clerk/clerk-expo";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const PROFILE_CONTACTS_COLLECTION_ID =
@@ -46,10 +48,13 @@ interface ProfileContact {
 }
 
 export default function ContactDetailsScreen() {
+  const { user } = useUser();
   const params = useLocalSearchParams();
   const router = useRouter();
   const [contact, setContact] = React.useState<ProfileContact | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [draft, setDraft] = React.useState<string>("");
+  const [generatingDraft, setGeneratingDraft] = React.useState(false);
 
   React.useEffect(() => {
     loadContact();
@@ -71,6 +76,21 @@ export default function ContactDetailsScreen() {
       Alert.alert("Error", "Could not load contact details");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGenerateDraft = async () => {
+    if (!user || !contact) return;
+
+    setGeneratingDraft(true);
+    try {
+      const generated = await generateDraft(user.id, contact.id);
+      setDraft(generated);
+      Alert.alert("Draft Generated", generated);
+    } catch (error) {
+      Alert.alert("Error", "Could not generate draft");
+    } finally {
+      setGeneratingDraft(false);
     }
   };
 
@@ -232,6 +252,18 @@ export default function ContactDetailsScreen() {
                 <Text className="text-xs text-gray-600">FaceTime</Text>
               </TouchableOpacity>
             )}
+            <TouchableOpacity
+              onPress={handleGenerateDraft}
+              disabled={generatingDraft}
+              className="items-center"
+            >
+              <View className="w-14 h-14 rounded-full bg-orange-100 items-center justify-center mb-2">
+                <Edit3 size={24} color="#F97316" />
+              </View>
+              <Text className="text-xs text-gray-600">
+                {generatingDraft ? "..." : "Draft"}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
