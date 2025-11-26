@@ -1,4 +1,4 @@
-import { tablesDB } from "../lib/appwrite";
+import { tablesDB } from "@/features/shared/lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;

@@ -1,13 +1,13 @@
-import { useState, useCallback } from "react";
 import { useUser } from "@clerk/clerk-expo";
+import { useCallback, useState } from "react";
+import { processOutcomeWithProgress } from "../api/aiProcessing.service";
 import {
   createOutcomeNote,
   getOutcomeNotesByContact,
   getOutcomeNotesByUser,
-  OutcomeSentiment,
   OutcomeNote,
-} from "../services/outcomeNotes.service";
-import { processOutcomeWithProgress } from "../services/aiProcessing.service";
+  OutcomeSentiment,
+} from "../api/outcomeNotes.service";
 
 /**
  * Hook for managing outcome notes and outcome sheet interaction

@@ -1,20 +1,21 @@
 import { useUser } from "@clerk/clerk-expo";
-import { Linking, Platform, Text, View } from "react-native";
-import React, { useCallback, useState } from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
+import { Linking, Platform, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import OutcomeSheet from "../../outcomes/components/OutcomeSheet";
+
 import {
   createEngagementEvent,
   EngagementEventType,
-} from "../../../services/engagement.service";
+} from "@/features/messaging/api/engagement.service";
 import CardStack from "../components/CardStack";
 import DeckCompleteModal from "../components/DeckCompleteModal";
 import DeckProgress from "../components/DeckProgress";
 import DraftPicker from "../components/DraftPicker";
 import EmptyDeck from "../components/EmptyDeck";
-import { ChannelType, DeckCard } from "../types/deck.types";
 import { useDeck } from "../hooks/useDeck";
+import { ChannelType, DeckCard } from "../types/deck.types";
 
 export default function DeckScreen() {
   const { user } = useUser();
@@ -37,10 +38,10 @@ export default function DeckScreen() {
   >();
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
 
-  const pendingCards = deck?.cards.filter((c) => c.status === "pending") || [];
+  const pendingCards = deck?.cards.filter((c: any) => c.status === "pending") || [];
   const completedCards =
     deck?.cards.filter(
-      (c) => c.status === "completed" || c.status === "skipped"
+      (c: DeckCard) => c.status === "completed" || c.status === "skipped"
     ) || [];
   const allCompleted =
     deck && pendingCards.length === 0 && completedCards.length > 0;
@@ -56,7 +57,7 @@ export default function DeckScreen() {
 
   const handleSwipeRight = useCallback(
     (cardId: string) => {
-      const card = deck?.cards.find((c) => c.id === cardId);
+      const card = deck?.cards.find((c: DeckCard) => c.id === cardId);
       if (card) {
         setSelectedCard(card);
         generateDraftsForCard(card);
@@ -159,7 +160,7 @@ export default function DeckScreen() {
 
   const checkDeckComplete = useCallback(() => {
     if (deck) {
-      const remaining = deck.cards.filter((c) => c.status === "pending").length;
+      const remaining = deck.cards.filter((c: DeckCard) => c.status === "pending").length;
       if (remaining === 0) {
         setTimeout(() => setCompleteModalVisible(true), 500);
       }

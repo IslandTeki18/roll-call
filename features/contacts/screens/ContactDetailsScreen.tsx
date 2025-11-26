@@ -22,7 +22,7 @@ import {
   Trash2,
 } from "lucide-react-native";
 import { tablesDB } from "../../shared/lib/appwrite";
-import { generateDraft } from "../../../services/drafts.service";
+import { generateDraft } from "@/features/messaging/api/drafts.service";
 import { useUser } from "@clerk/clerk-expo";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;

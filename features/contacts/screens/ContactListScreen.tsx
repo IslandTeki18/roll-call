@@ -1,15 +1,16 @@
-import { Text, View, ScrollView, TouchableOpacity, Alert } from "react-native";
-import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/clerk-expo";
-import ContactCard from "../../../features/contacts/components/ContactCard";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import ContactCard from "../../../features/contacts/components/ContactCard";
+
 import {
   ProfileContact,
-  loadContacts,
   getDeviceContactCount,
   importDeviceContacts,
-} from "../../../services/contacts.service";
+  loadContacts,
+} from "../api/contacts.service";
 
 export default function ContactListScreen() {
   const { user } = useUser();

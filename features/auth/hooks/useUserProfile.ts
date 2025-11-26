@@ -3,7 +3,7 @@ import { useUser } from "@clerk/clerk-expo";
 import {
   getOrCreateUserProfile,
   UserProfile,
-} from "../services/userProfile.service";
+} from "../api/userProfile.service";
 import {
   cachePremiumStatus,
   getCachedPremiumStatus,

@@ -1,7 +1,7 @@
 import { Redirect, Tabs } from "expo-router";
-import { useAuth } from "@clerk/clerk-expo";
-import { useUserProfile } from "../../hooks/useUserProfile";
+import { useUserProfile } from "../../features/auth/hooks/useUserProfile";
 import { View, Text } from "react-native";
+import { useAuth } from "@clerk/clerk-expo"
 import {
   HomeIcon,
   UsersIcon,

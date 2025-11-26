@@ -1,4 +1,4 @@
-import { tablesDB } from "../lib/appwrite";
+import { tablesDB } from "@/features/shared/lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
 import * as Contacts from "expo-contacts";
 import { Platform } from "react-native";
