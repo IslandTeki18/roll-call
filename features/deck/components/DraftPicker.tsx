@@ -5,6 +5,7 @@ import {
   Send,
   Video,
   X,
+  Lock
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -19,6 +20,7 @@ import {
   View,
 } from "react-native";
 import { ChannelType, DeckCard, Draft } from "../types/deck.types";
+import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
 
 interface DraftPickerProps {
   visible: boolean;
@@ -53,6 +55,11 @@ export default function DraftPicker({
   const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null);
   const [customMessage, setCustomMessage] = useState("");
   const [selectedChannel, setSelectedChannel] = useState<ChannelType>("sms");
+  const { isPremium, requirePremium } = usePremiumGate();
+
+  const availableChannels: ChannelType[] = isPremium
+    ? ["sms", "call", "email", "slack"]
+    : ["sms", "call"];
 
   React.useEffect(() => {
     if (!visible) {
@@ -129,35 +136,44 @@ export default function DraftPicker({
                     Send via
                   </Text>
                   <View className="flex-row gap-2">
-                    {(["sms", "call", "email"] as ChannelType[]).map(
-                      (channel) => {
-                        const config = channelConfig[channel];
-                        const Icon = config.icon;
-                        const isSelected = selectedChannel === channel;
-                        return (
-                          <TouchableOpacity
-                            key={channel}
-                            onPress={() => setSelectedChannel(channel)}
-                            className={`flex-1 items-center py-3 rounded-xl border-2 ${
-                              isSelected
-                                ? "border-blue-500 bg-blue-50"
-                                : "border-gray-200"
+                    {availableChannels.map((channel) => {
+                      const config = channelConfig[channel];
+                      const Icon = config.icon;
+                      const isSelected = selectedChannel === channel;
+                      return (
+                        <TouchableOpacity
+                          key={channel}
+                          onPress={() => setSelectedChannel(channel)}
+                          className={`flex-1 items-center py-3 rounded-xl border-2 ${
+                            isSelected
+                              ? "border-blue-500 bg-blue-50"
+                              : "border-gray-200"
+                          }`}
+                        >
+                          <Icon
+                            size={24}
+                            color={isSelected ? config.color : "#9CA3AF"}
+                          />
+                          <Text
+                            className={`text-xs font-medium mt-1 ${
+                              isSelected ? "text-gray-900" : "text-gray-500"
                             }`}
                           >
-                            <Icon
-                              size={24}
-                              color={isSelected ? config.color : "#9CA3AF"}
-                            />
-                            <Text
-                              className={`text-xs font-medium mt-1 ${
-                                isSelected ? "text-gray-900" : "text-gray-500"
-                              }`}
-                            >
-                              {config.label}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      }
+                            {config.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                    {!isPremium && (
+                      <TouchableOpacity
+                        onPress={() => requirePremium("Email & Slack sends")}
+                        className="flex-1 items-center py-3 rounded-xl border-2 border-dashed border-gray-300 opacity-50"
+                      >
+                        <Lock size={20} color="#9CA3AF" />
+                        <Text className="text-xs text-gray-400 mt-1">
+                          Premium
+                        </Text>
+                      </TouchableOpacity>
                     )}
                   </View>
                 </View>

@@ -1,11 +1,10 @@
 import { useUser } from "@clerk/clerk-expo";
 import { useCallback, useEffect, useState } from "react";
-import {
-  loadContacts,
-  ProfileContact,
-} from "../../../services/contacts.service";
-import { DeckCard, DeckState, Draft } from "../types/deck.types";
-import { useUserProfile } from "../../../hooks/useUserProfile";
+// import { buildDeck } from "../services/deckBuilder.service";
+// import { generateDraft } from "../services/drafts.service";
+// import { DeckCard, DeckState, Draft } from "../types/deck/deck.types";
+// import { useUserProfile } from "./useUserProfile";
+
 
 export function useDeck() {
   const { user } = useUser();
@@ -14,6 +13,7 @@ export function useDeck() {
   const [loading, setLoading] = useState(true);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [draftsLoading, setDraftsLoading] = useState(false);
+  const [draftsError, setDraftsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -26,27 +26,14 @@ export function useDeck() {
 
     setLoading(true);
     try {
-      const contacts = await loadContacts(user.id);
       const maxCards = profile?.isPremiumUser ? 10 : 5;
+      const cards = await buildDeck(user.id, maxCards);
       const todayDate = new Date().toISOString().split("T")[0];
 
-      if (contacts.length === 0) {
+      if (cards.length === 0) {
         setDeck(null);
         return;
       }
-
-      // Build deck cards from contacts (TODO: implement RHS scoring/ordering)
-      const cards: DeckCard[] = contacts
-        .slice(0, maxCards)
-        .map((contact, index) => ({
-          id: `${todayDate}-${contact.$id}`,
-          contact,
-          status: "pending",
-          isFresh: isFreshContact(contact),
-          rhsScore: 50, // TODO: calculate real RHS
-          suggestedChannel: getSuggestedChannel(contact),
-          reason: getContactReason(contact),
-        }));
 
       setDeck({
         id: `deck-${user.id}-${todayDate}`,
@@ -64,33 +51,61 @@ export function useDeck() {
     }
   };
 
-  const generateDraftsForCard = useCallback(async (card: DeckCard) => {
-    setDraftsLoading(true);
-    setDrafts([]);
+  const generateDraftsForCard = useCallback(
+    async (card: DeckCard) => {
+      if (!user) return;
 
-    // TODO: Call AI draft generation service
-    setTimeout(() => {
-      setDrafts([
-        {
-          id: "1",
-          text: `Hey ${
-            card.contact.firstName || "there"
-          }! It's been a while - would love to catch up soon. How have you been?`,
-          tone: "casual",
-          channel: card.suggestedChannel,
-        },
-        {
-          id: "2",
-          text: `Hi ${
-            card.contact.firstName || "there"
-          }, hope you're doing well. I was thinking of you and wanted to reconnect. Let me know if you have time for a quick call.`,
-          tone: "professional",
-          channel: card.suggestedChannel,
-        },
-      ]);
-      setDraftsLoading(false);
-    }, 1500);
-  }, []);
+      setDraftsLoading(true);
+      setDraftsError(null);
+      setDrafts([]);
+
+      try {
+        const [casualDraft, professionalDraft] = await Promise.all([
+          generateDraft(user.id, card.contact.$id, "casual friendly message"),
+          generateDraft(user.id, card.contact.$id, "professional follow-up"),
+        ]);
+
+        setDrafts([
+          {
+            id: "1",
+            text: casualDraft,
+            tone: "casual",
+            channel: card.suggestedChannel,
+          },
+          {
+            id: "2",
+            text: professionalDraft,
+            tone: "professional",
+            channel: card.suggestedChannel,
+          },
+        ]);
+      } catch (error) {
+        console.error("Failed to generate drafts:", error);
+        setDraftsError("Failed to generate drafts");
+        setDrafts([
+          {
+            id: "1",
+            text: `Hey ${
+              card.contact.firstName || "there"
+            }! It's been a while - would love to catch up soon. How have you been?`,
+            tone: "casual",
+            channel: card.suggestedChannel,
+          },
+          {
+            id: "2",
+            text: `Hi ${
+              card.contact.firstName || "there"
+            }, hope you're doing well. I was thinking of you and wanted to reconnect. Let me know if you have time for a quick call.`,
+            tone: "professional",
+            channel: card.suggestedChannel,
+          },
+        ]);
+      } finally {
+        setDraftsLoading(false);
+      }
+    },
+    [user]
+  );
 
   const markCardCompleted = useCallback(
     async (cardId: string) => {
@@ -131,45 +146,10 @@ export function useDeck() {
     loading,
     drafts,
     draftsLoading,
+    draftsError,
     generateDraftsForCard,
     markCardCompleted,
     markCardSkipped,
     refreshDeck: loadDeck,
   };
-}
-
-// Helper: Check if contact is "fresh" (< 14 days since first seen)
-function isFreshContact(contact: ProfileContact): boolean {
-  if (!contact.firstSeenAt) return false;
-  const firstSeen = new Date(contact.firstSeenAt);
-  const daysSinceFirstSeen =
-    (Date.now() - firstSeen.getTime()) / (1000 * 60 * 60 * 24);
-  return daysSinceFirstSeen < 14;
-}
-
-// Helper: Determine suggested channel based on contact data
-function getSuggestedChannel(
-  contact: ProfileContact
-): "sms" | "call" | "email" {
-  const hasPhone = contact.phoneNumbers && contact.phoneNumbers.length > 0;
-  const hasEmail = contact.emails && contact.emails.length > 0;
-  if (hasPhone) return "sms";
-  if (hasEmail) return "email";
-  return "call";
-}
-
-// Helper: Generate reason string for card
-function getContactReason(contact: ProfileContact): string {
-  const firstSeen = new Date(contact.firstSeenAt);
-  const daysSinceFirstSeen = Math.floor(
-    (Date.now() - firstSeen.getTime()) / (1000 * 60 * 60 * 24)
-  );
-
-  if (daysSinceFirstSeen < 14) {
-    return "New connection - reach out while it's fresh!";
-  }
-  if (daysSinceFirstSeen < 30) {
-    return "Added recently - time to follow up";
-  }
-  return "Haven't connected in a while";
 }

@@ -1,4 +1,4 @@
-import { tablesDB } from "../lib/appwrite";
+import { tablesDB } from "../../shared/lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
@@ -26,12 +26,14 @@ export interface EngagementEvent {
   createdAt: string;
 }
 
+// === Mutations ===
+
 export const createEngagementEvent = async (
   userId: string,
   type: EngagementEventType,
   contactIds: string[],
   linkedCardId?: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): Promise<EngagementEvent> => {
   const timestamp = new Date().toISOString();
 
@@ -53,9 +55,12 @@ export const createEngagementEvent = async (
   return event as unknown as EngagementEvent;
 };
 
-export const getEngagementEventsForContact = async (
+// === Queries ===
+
+export const getEventsByContact = async (
   userId: string,
-  contactId: string
+  contactId: string,
+  limit: number = 100
 ): Promise<EngagementEvent[]> => {
   const response = await tablesDB.listRows({
     databaseId: DATABASE_ID,
@@ -63,13 +68,119 @@ export const getEngagementEventsForContact = async (
     queries: [
       Query.equal("userId", userId),
       Query.contains("contactIds", contactId),
+      Query.orderDesc("timestamp"),
+      Query.limit(limit),
     ],
   });
 
   return response.rows as unknown as EngagementEvent[];
 };
 
-export const getRecentEngagementEvents = async (
+export const getEventsByDateRange = async (
+  userId: string,
+  startDate: string,
+  endDate: string,
+  limit: number = 500
+): Promise<EngagementEvent[]> => {
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    queries: [
+      Query.equal("userId", userId),
+      Query.greaterThanEqual("timestamp", startDate),
+      Query.lessThanEqual("timestamp", endDate),
+      Query.orderDesc("timestamp"),
+      Query.limit(limit),
+    ],
+  });
+
+  return response.rows as unknown as EngagementEvent[];
+};
+
+export const getEventsByType = async (
+  userId: string,
+  eventType: EngagementEventType,
+  limit: number = 100
+): Promise<EngagementEvent[]> => {
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    queries: [
+      Query.equal("userId", userId),
+      Query.equal("type", eventType),
+      Query.orderDesc("timestamp"),
+      Query.limit(limit),
+    ],
+  });
+
+  return response.rows as unknown as EngagementEvent[];
+};
+
+export const getEventsByContactAndType = async (
+  userId: string,
+  contactId: string,
+  eventType: EngagementEventType,
+  limit: number = 100
+): Promise<EngagementEvent[]> => {
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    queries: [
+      Query.equal("userId", userId),
+      Query.contains("contactIds", contactId),
+      Query.equal("type", eventType),
+      Query.orderDesc("timestamp"),
+      Query.limit(limit),
+    ],
+  });
+
+  return response.rows as unknown as EngagementEvent[];
+};
+
+export const getEventsByContactAndDateRange = async (
+  userId: string,
+  contactId: string,
+  startDate: string,
+  endDate: string,
+  limit: number = 100
+): Promise<EngagementEvent[]> => {
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    queries: [
+      Query.equal("userId", userId),
+      Query.contains("contactIds", contactId),
+      Query.greaterThanEqual("timestamp", startDate),
+      Query.lessThanEqual("timestamp", endDate),
+      Query.orderDesc("timestamp"),
+      Query.limit(limit),
+    ],
+  });
+
+  return response.rows as unknown as EngagementEvent[];
+};
+
+export const getLastEventForContact = async (
+  userId: string,
+  contactId: string
+): Promise<EngagementEvent | null> => {
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    queries: [
+      Query.equal("userId", userId),
+      Query.contains("contactIds", contactId),
+      Query.orderDesc("timestamp"),
+      Query.limit(1),
+    ],
+  });
+
+  return response.rows.length > 0
+    ? (response.rows[0] as unknown as EngagementEvent)
+    : null;
+};
+
+export const getRecentEvents = async (
   userId: string,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
