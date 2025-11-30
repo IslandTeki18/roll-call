@@ -35,19 +35,19 @@ export const createEngagementEvent = async (
 ): Promise<EngagementEvent> => {
   const timestamp = new Date().toISOString();
 
-  const event = await databases.createDocument({
-    databaseId: DATABASE_ID,
-    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
-    documentId: ID.unique(),
-    data: {
+  const event = await databases.createDocument(
+    DATABASE_ID,
+    ENGAGEMENT_EVENTS_TABLE_ID,
+    ID.unique(),
+    {
       userId,
       type,
-      contactIds,
+      contactIds: contactIds.join(","),
       linkedCardId: linkedCardId || "",
       timestamp,
       metadata: metadata ? JSON.stringify(metadata) : "",
-    },
-  });
+    }
+  );
 
   return event as unknown as EngagementEvent;
 };
@@ -77,17 +77,17 @@ export const getEventsByDateRange = async (
   endDate: string,
   limit: number = 500
 ): Promise<EngagementEvent[]> => {
-  const response = await databases.listDocuments({
-    databaseId: DATABASE_ID,
-    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
-    queries: [
+  const response = await databases.listDocuments(
+    DATABASE_ID,
+    ENGAGEMENT_EVENTS_TABLE_ID,
+    [
       Query.equal("userId", userId),
       Query.greaterThanEqual("timestamp", startDate),
       Query.lessThanEqual("timestamp", endDate),
       Query.orderDesc("timestamp"),
       Query.limit(limit),
-    ],
-  });
+    ]
+  );
 
   return response.documents as unknown as EngagementEvent[];
 };
@@ -97,16 +97,16 @@ export const getEventsByType = async (
   eventType: EngagementEventType,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await databases.listDocuments({
-    databaseId: DATABASE_ID,
-    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
-    queries: [
+  const response = await databases.listDocuments(
+    DATABASE_ID,
+    ENGAGEMENT_EVENTS_TABLE_ID,
+    [
       Query.equal("userId", userId),
       Query.equal("type", eventType),
       Query.orderDesc("timestamp"),
       Query.limit(limit),
-    ],
-  });
+    ]
+  );
 
   return response.documents as unknown as EngagementEvent[];
 };
@@ -117,17 +117,17 @@ export const getEventsByContactAndType = async (
   eventType: EngagementEventType,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await databases.listDocuments({
-    databaseId: DATABASE_ID,
-    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
-    queries: [
+  const response = await databases.listDocuments(
+    DATABASE_ID,
+    ENGAGEMENT_EVENTS_TABLE_ID,
+    [
       Query.equal("userId", userId),
       Query.contains("contactIds", contactId),
       Query.equal("type", eventType),
       Query.orderDesc("timestamp"),
       Query.limit(limit),
-    ],
-  });
+    ]
+  );
 
   return response.documents as unknown as EngagementEvent[];
 };
@@ -139,18 +139,18 @@ export const getEventsByContactAndDateRange = async (
   endDate: string,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await databases.listDocuments({
-    databaseId: DATABASE_ID,
-    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
-    queries: [
+  const response = await databases.listDocuments(
+    DATABASE_ID,
+    ENGAGEMENT_EVENTS_TABLE_ID,
+    [
       Query.equal("userId", userId),
       Query.contains("contactIds", contactId),
       Query.greaterThanEqual("timestamp", startDate),
       Query.lessThanEqual("timestamp", endDate),
       Query.orderDesc("timestamp"),
       Query.limit(limit),
-    ],
-  });
+    ]
+  );
 
   return response.documents as unknown as EngagementEvent[];
 };
@@ -159,16 +159,16 @@ export const getLastEventForContact = async (
   userId: string,
   contactId: string
 ): Promise<EngagementEvent | null> => {
-  const response = await databases.listDocuments({
-    databaseId: DATABASE_ID,
-    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
-    queries: [
+  const response = await databases.listDocuments(
+    DATABASE_ID,
+    ENGAGEMENT_EVENTS_TABLE_ID,
+    [
       Query.equal("userId", userId),
       Query.contains("contactIds", contactId),
       Query.orderDesc("timestamp"),
       Query.limit(1),
-    ],
-  });
+    ]
+  );
 
   return response.documents.length > 0
     ? (response.documents[0] as unknown as EngagementEvent)
@@ -179,15 +179,15 @@ export const getRecentEvents = async (
   userId: string,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await databases.listDocuments({
-    databaseId: DATABASE_ID,
-    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
-    queries: [
+  const response = await databases.listDocuments(
+    DATABASE_ID,
+    ENGAGEMENT_EVENTS_TABLE_ID,
+    [
       Query.equal("userId", userId),
       Query.orderDesc("timestamp"),
       Query.limit(limit),
-    ],
-  });
+    ]
+  );
 
   return response.documents as unknown as EngagementEvent[];
 };
