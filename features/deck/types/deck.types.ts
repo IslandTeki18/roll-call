@@ -1,4 +1,4 @@
-import { ProfileContact } from "../../../services/contacts.service";
+import { ProfileContact } from "@/features/contacts/api/contacts.service";
 
 export type CardStatus =
   | "pending"

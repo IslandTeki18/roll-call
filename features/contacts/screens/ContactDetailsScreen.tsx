@@ -1,3 +1,5 @@
+import CadenceSelector from "../components/CadenceSelector";
+import { updateContactCadence } from "../api/contacts.service";
 import {
   Text,
   View,
@@ -7,7 +9,7 @@ import {
   Alert,
   Platform,
 } from "react-native";
-import React from "react";
+import {useState, useEffect} from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -30,7 +32,7 @@ const PROFILE_CONTACTS_COLLECTION_ID =
   process.env.EXPO_PUBLIC_APPWRITE_PROFILE_CONTACTS_TABLE_ID!;
 
 interface ProfileContact {
-  id: string;
+  $id: string;
   userId: string;
   sourceType: "device" | "google" | "outlook" | "slack";
   firstName: string;
@@ -51,12 +53,14 @@ export default function ContactDetailsScreen() {
   const { user } = useUser();
   const params = useLocalSearchParams();
   const router = useRouter();
-  const [contact, setContact] = React.useState<ProfileContact | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [draft, setDraft] = React.useState<string>("");
-  const [generatingDraft, setGeneratingDraft] = React.useState(false);
+  const [contact, setContact] = useState<ProfileContact | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [draft, setDraft] = useState<string>("");
+  const [generatingDraft, setGeneratingDraft] = useState(false);
+  const [cadenceDays, setCadenceDays] = useState<number | null>(null);
+  const [savingCadence, setSavingCadence] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     loadContact();
   }, [params.id]);
 
@@ -71,11 +75,26 @@ export default function ContactDetailsScreen() {
         rowId: params.id as string,
       });
       setContact(response as unknown as ProfileContact);
+      setCadenceDays((response as any).cadenceDays ?? null);
     } catch (error) {
       console.error("Failed to load contact:", error);
       Alert.alert("Error", "Could not load contact details");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCadenceChange = async (newCadence: number | null) => {
+    if (!contact) return;
+
+    setSavingCadence(true);
+    try {
+      await updateContactCadence(contact.$id, newCadence);
+      setCadenceDays(newCadence);
+    } catch (error) {
+      Alert.alert("Error", "Could not update cadence");
+    } finally {
+      setSavingCadence(false);
     }
   };
 
@@ -352,6 +371,15 @@ export default function ContactDetailsScreen() {
               </Text>
             </View>
           </View>
+        </View>
+
+        {/* Cadence Settings */}
+        <View className="bg-white mt-2 px-6 py-4">
+          <CadenceSelector
+            value={cadenceDays}
+            onChange={handleCadenceChange}
+            disabled={savingCadence}
+          />
         </View>
 
         <View className="h-8" />

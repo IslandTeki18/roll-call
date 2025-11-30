@@ -23,6 +23,7 @@ export interface ProfileContact {
   firstImportedAt: string;
   lastImportedAt: string;
   firstSeenAt: string;
+  cadenceDays: number | null; // Target interaction interval in days, null = no cadence set
 }
 
 export const generateDedupeSignature = (
@@ -131,6 +132,7 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
       firstImportedAt: timestamp,
       lastImportedAt: timestamp,
       firstSeenAt: timestamp,
+      cadenceDays: null,
     };
 
     await databases.createDocument({
@@ -145,4 +147,20 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
   }
 
   return imported;
+};
+
+export const updateContactCadence = async (
+  contactId: string,
+  cadenceDays: number | null
+): Promise<void> => {
+  try {
+    await databases.updateDocument({
+      databaseId: DATABASE_ID,
+      collectionId: PROFILE_CONTACTS_COLLECTION_ID,
+      documentId: contactId,
+      data: { cadenceDays },
+    });
+  } catch (error) {
+    console.error("Failed to update contact cadence:", error);
+  }
 };
