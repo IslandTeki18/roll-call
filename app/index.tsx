@@ -1,8 +1,8 @@
 import { Redirect } from "expo-router";
-import { useUser } from "@clerk/clerk-expo";
+import { useAuth } from "@clerk/clerk-expo";
 
 export default function LaunchScreen() {
-  const { isSignedIn, isLoaded } = useUser();
+  const { isSignedIn, isLoaded } = useAuth();
 
   if (!isLoaded) {
     return null;

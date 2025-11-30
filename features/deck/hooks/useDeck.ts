@@ -4,6 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 // import { generateDraft } from "../services/drafts.service";
 // import { DeckCard, DeckState, Draft } from "../types/deck/deck.types";
 // import { useUserProfile } from "./useUserProfile";
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
+import { DeckState, Draft, DeckCard } from "../types/deck.types";
+import { buildDeck } from "../api/deckBuilder.service";
+import { generateDraft } from "@/features/messaging/api/drafts.service";
 
 
 export function useDeck() {

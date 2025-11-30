@@ -1,7 +1,7 @@
 import { Redirect, Tabs } from "expo-router";
 import { useUserProfile } from "../../features/auth/hooks/useUserProfile";
 import { View, Text } from "react-native";
-import { useUser } from "@clerk/clerk-expo"
+import { useAuth } from "@clerk/clerk-expo"
 import {
   HomeIcon,
   UsersIcon,
@@ -11,7 +11,7 @@ import {
 } from "lucide-react-native";
 
 export default function TabsLayout() {
-  const { isSignedIn } = useUser();
+  const { isSignedIn } = useAuth();
   const { profile, loading, error } = useUserProfile();
 
   if (!isSignedIn) {

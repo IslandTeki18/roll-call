@@ -1,16 +1,16 @@
+import { useState } from "react";
 import { useSignIn } from "@clerk/clerk-expo";
 import { Link, useRouter } from "expo-router";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
-import React from "react";
 
 export default function SignIn() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
 
-  const [emailAddress, setEmailAddress] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const [error, setError] = React.useState<string | null>(null);
-  const [loading, setLoading] = React.useState(false);
+  const [emailAddress, setEmailAddress] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const onSignInPress = async () => {
     if (!isLoaded) return;
@@ -19,12 +19,16 @@ export default function SignIn() {
     setLoading(true);
 
     try {
+      console.log("Attempting sign in for:", emailAddress);
       const signInAttempt = await signIn.create({
         identifier: emailAddress,
         password,
       });
 
+      console.log("Sign in attempt response:", signInAttempt);
+
       if (signInAttempt.status === "complete") {
+        console.log("Sign in successful, setting active session.");
         await setActive({ session: signInAttempt.createdSessionId });
         router.replace("/(tabs)");
       }
@@ -42,7 +46,6 @@ export default function SignIn() {
       } else {
         setError("An unexpected error occurred. Please try again.");
       }
-      console.error(JSON.stringify(err, null, 2));
     } finally {
       setLoading(false);
     }
