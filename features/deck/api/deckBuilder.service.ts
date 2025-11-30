@@ -1,4 +1,7 @@
-import { ProfileContact, loadContacts } from "@/features/contacts/api/contacts.service";
+import {
+  ProfileContact,
+  loadContacts,
+} from "@/features/contacts/api/contacts.service";
 import { calculateRHS, isFreshContact, RHSFactors } from "./rhs.service";
 import { DeckCard } from "../types/deck.types";
 
@@ -15,7 +18,17 @@ export const buildDeck = async (
   userId: string,
   maxCards: number
 ): Promise<DeckCard[]> => {
+  // Debug logging
+  console.log("buildDeck called with userId:", userId);
+  console.log("DATABASE_ID:", process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID);
+  console.log(
+    "COLLECTION_ID:",
+    process.env.EXPO_PUBLIC_APPWRITE_PROFILE_CONTACTS_TABLE_ID
+  );
+
   const contacts = await loadContacts(userId);
+  console.log("Contacts loaded:", contacts.length);
+
   if (contacts.length === 0) return [];
 
   // Score all contacts

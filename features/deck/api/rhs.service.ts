@@ -1,5 +1,5 @@
 import { ProfileContact } from "@/features/contacts/api/contacts.service";
-import { EngagementEvent, getLastEventForContact } from "@/features/messaging/api/engagement.service";
+import { getLastEventForContact } from "@/features/messaging/api/engagement.service";
 
 export interface RHSFactors {
   recencyScore: number;
@@ -43,21 +43,26 @@ const calculateRecencyScore = async (
   userId: string,
   contactId: string
 ): Promise<number> => {
-  const lastEvent = await getLastEventForContact(userId, contactId);
+  try {
+    const lastEvent = await getLastEventForContact(userId, contactId);
 
-  if (!lastEvent) {
-    return 100; // Never contacted, highest priority
+    if (!lastEvent) {
+      return 100;
+    }
+
+    const daysSinceContact =
+      (Date.now() - new Date(lastEvent.timestamp).getTime()) /
+      (1000 * 60 * 60 * 24);
+
+    if (daysSinceContact <= 7) return 20;
+    if (daysSinceContact <= 14) return 40;
+    if (daysSinceContact <= 21) return 60;
+    if (daysSinceContact <= RECENCY_DECAY_DAYS) return 80;
+    return 100;
+  } catch (error) {
+    console.warn("Failed to get last event for contact:", contactId, error);
+    return 100;
   }
-
-  const daysSinceContact =
-    (Date.now() - new Date(lastEvent.timestamp).getTime()) /
-    (1000 * 60 * 60 * 24);
-
-  if (daysSinceContact <= 7) return 20;
-  if (daysSinceContact <= 14) return 40;
-  if (daysSinceContact <= 21) return 60;
-  if (daysSinceContact <= RECENCY_DECAY_DAYS) return 80;
-  return 100;
 };
 
 const calculateFreshnessBoost = (contact: ProfileContact): number => {
@@ -69,7 +74,6 @@ const calculateFreshnessBoost = (contact: ProfileContact): number => {
 
   if (daysSinceFirstSeen >= FRESH_DECAY_DAYS) return 0;
   if (daysSinceFirstSeen >= FRESH_WINDOW_DAYS) {
-    // Decay from day 14 to day 21
     const decayProgress =
       (daysSinceFirstSeen - FRESH_WINDOW_DAYS) /
       (FRESH_DECAY_DAYS - FRESH_WINDOW_DAYS);
@@ -82,18 +86,23 @@ const calculateFatiguePenalty = async (
   userId: string,
   contactId: string
 ): Promise<number> => {
-  const lastEvent = await getLastEventForContact(userId, contactId);
+  try {
+    const lastEvent = await getLastEventForContact(userId, contactId);
 
-  if (!lastEvent) return 0;
+    if (!lastEvent) return 0;
 
-  const daysSinceContact =
-    (Date.now() - new Date(lastEvent.timestamp).getTime()) /
-    (1000 * 60 * 60 * 24);
+    const daysSinceContact =
+      (Date.now() - new Date(lastEvent.timestamp).getTime()) /
+      (1000 * 60 * 60 * 24);
 
-  if (daysSinceContact < FATIGUE_WINDOW_DAYS) {
-    return FATIGUE_PENALTY;
+    if (daysSinceContact < FATIGUE_WINDOW_DAYS) {
+      return FATIGUE_PENALTY;
+    }
+    return 0;
+  } catch (error) {
+    console.warn("Failed to calculate fatigue penalty:", contactId, error);
+    return 0;
   }
-  return 0;
 };
 
 export const isFreshContact = (contact: ProfileContact): boolean => {

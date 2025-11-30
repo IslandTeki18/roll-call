@@ -1,5 +1,5 @@
-import { tablesDB } from "../../shared/lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
+import { databases } from "../../shared/lib/appwrite";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const ENGAGEMENT_EVENTS_TABLE_ID =
@@ -26,8 +26,6 @@ export interface EngagementEvent {
   createdAt: string;
 }
 
-// === Mutations ===
-
 export const createEngagementEvent = async (
   userId: string,
   type: EngagementEventType,
@@ -37,43 +35,40 @@ export const createEngagementEvent = async (
 ): Promise<EngagementEvent> => {
   const timestamp = new Date().toISOString();
 
-  const event = await tablesDB.createRow({
+  const event = await databases.createDocument({
     databaseId: DATABASE_ID,
-    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
-    rowId: ID.unique(),
+    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
+    documentId: ID.unique(),
     data: {
       userId,
       type,
-      contactIds: contactIds.join(","),
+      contactIds,
+      linkedCardId: linkedCardId || "",
       timestamp,
       metadata: metadata ? JSON.stringify(metadata) : "",
-      linkedCardId: linkedCardId || "",
-      createdAt: timestamp,
     },
   });
 
   return event as unknown as EngagementEvent;
 };
 
-// === Queries ===
-
 export const getEventsByContact = async (
   userId: string,
   contactId: string,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await tablesDB.listRows({
-    databaseId: DATABASE_ID,
-    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
-    queries: [
+  const response = await databases.listDocuments(
+    DATABASE_ID,
+    ENGAGEMENT_EVENTS_TABLE_ID,
+    [
       Query.equal("userId", userId),
       Query.contains("contactIds", contactId),
       Query.orderDesc("timestamp"),
       Query.limit(limit),
-    ],
-  });
+    ]
+  );
 
-  return response.rows as unknown as EngagementEvent[];
+  return response.documents as unknown as EngagementEvent[];
 };
 
 export const getEventsByDateRange = async (
@@ -82,9 +77,9 @@ export const getEventsByDateRange = async (
   endDate: string,
   limit: number = 500
 ): Promise<EngagementEvent[]> => {
-  const response = await tablesDB.listRows({
+  const response = await databases.listDocuments({
     databaseId: DATABASE_ID,
-    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
     queries: [
       Query.equal("userId", userId),
       Query.greaterThanEqual("timestamp", startDate),
@@ -94,7 +89,7 @@ export const getEventsByDateRange = async (
     ],
   });
 
-  return response.rows as unknown as EngagementEvent[];
+  return response.documents as unknown as EngagementEvent[];
 };
 
 export const getEventsByType = async (
@@ -102,9 +97,9 @@ export const getEventsByType = async (
   eventType: EngagementEventType,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await tablesDB.listRows({
+  const response = await databases.listDocuments({
     databaseId: DATABASE_ID,
-    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
     queries: [
       Query.equal("userId", userId),
       Query.equal("type", eventType),
@@ -113,7 +108,7 @@ export const getEventsByType = async (
     ],
   });
 
-  return response.rows as unknown as EngagementEvent[];
+  return response.documents as unknown as EngagementEvent[];
 };
 
 export const getEventsByContactAndType = async (
@@ -122,9 +117,9 @@ export const getEventsByContactAndType = async (
   eventType: EngagementEventType,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await tablesDB.listRows({
+  const response = await databases.listDocuments({
     databaseId: DATABASE_ID,
-    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
     queries: [
       Query.equal("userId", userId),
       Query.contains("contactIds", contactId),
@@ -134,7 +129,7 @@ export const getEventsByContactAndType = async (
     ],
   });
 
-  return response.rows as unknown as EngagementEvent[];
+  return response.documents as unknown as EngagementEvent[];
 };
 
 export const getEventsByContactAndDateRange = async (
@@ -144,9 +139,9 @@ export const getEventsByContactAndDateRange = async (
   endDate: string,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await tablesDB.listRows({
+  const response = await databases.listDocuments({
     databaseId: DATABASE_ID,
-    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
     queries: [
       Query.equal("userId", userId),
       Query.contains("contactIds", contactId),
@@ -157,16 +152,16 @@ export const getEventsByContactAndDateRange = async (
     ],
   });
 
-  return response.rows as unknown as EngagementEvent[];
+  return response.documents as unknown as EngagementEvent[];
 };
 
 export const getLastEventForContact = async (
   userId: string,
   contactId: string
 ): Promise<EngagementEvent | null> => {
-  const response = await tablesDB.listRows({
+  const response = await databases.listDocuments({
     databaseId: DATABASE_ID,
-    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
     queries: [
       Query.equal("userId", userId),
       Query.contains("contactIds", contactId),
@@ -175,8 +170,8 @@ export const getLastEventForContact = async (
     ],
   });
 
-  return response.rows.length > 0
-    ? (response.rows[0] as unknown as EngagementEvent)
+  return response.documents.length > 0
+    ? (response.documents[0] as unknown as EngagementEvent)
     : null;
 };
 
@@ -184,9 +179,9 @@ export const getRecentEvents = async (
   userId: string,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await tablesDB.listRows({
+  const response = await databases.listDocuments({
     databaseId: DATABASE_ID,
-    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    collectionId: ENGAGEMENT_EVENTS_TABLE_ID,
     queries: [
       Query.equal("userId", userId),
       Query.orderDesc("timestamp"),
@@ -194,5 +189,5 @@ export const getRecentEvents = async (
     ],
   });
 
-  return response.rows as unknown as EngagementEvent[];
+  return response.documents as unknown as EngagementEvent[];
 };

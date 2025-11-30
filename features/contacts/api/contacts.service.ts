@@ -1,7 +1,7 @@
-import { tablesDB } from "@/features/shared/lib/appwrite";
-import { ID, Query } from "react-native-appwrite";
+import { databases } from "@/features/shared/lib/appwrite";
 import * as Contacts from "expo-contacts";
 import { Platform } from "react-native";
+import { ID, Query } from "react-native-appwrite";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const PROFILE_CONTACTS_COLLECTION_ID =
@@ -43,12 +43,12 @@ export const generateDedupeSignature = (
 export const loadContacts = async (
   userId: string
 ): Promise<ProfileContact[]> => {
-  const response = await tablesDB.listRows({
+  const response = await databases.listDocuments({
     databaseId: DATABASE_ID,
-    tableId: PROFILE_CONTACTS_COLLECTION_ID,
+    collectionId: PROFILE_CONTACTS_COLLECTION_ID,
     queries: [Query.equal("userId", userId), Query.limit(1000)],
   });
-  return response.rows as unknown as ProfileContact[];
+  return response.documents as unknown as ProfileContact[];
 };
 
 export const getDeviceContactCount = async (): Promise<number> => {
@@ -77,14 +77,14 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
 
   const { data } = await Contacts.getContactsAsync({ fields });
 
-  const existingResponse = await tablesDB.listRows({
+  const existingResponse = await databases.listDocuments({
     databaseId: DATABASE_ID,
-    tableId: PROFILE_CONTACTS_COLLECTION_ID,
+    collectionId: PROFILE_CONTACTS_COLLECTION_ID,
     queries: [Query.equal("userId", userId), Query.limit(1000)],
   });
 
   const existingSignatures = new Set(
-    existingResponse.rows.map((doc: any) => doc.dedupeSignature)
+    existingResponse.documents.map((doc: any) => doc.dedupeSignature)
   );
 
   const timestamp = new Date().toISOString();
@@ -116,7 +116,7 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
       continue;
     }
 
-    const profileContact: Omit<ProfileContact, "$id"> = {
+    const profileContact = {
       userId,
       sourceType: "device",
       firstName,
@@ -133,10 +133,10 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
       firstSeenAt: timestamp,
     };
 
-    await tablesDB.createRow({
+    await databases.createDocument({
       databaseId: DATABASE_ID,
-      tableId: PROFILE_CONTACTS_COLLECTION_ID,
-      rowId: ID.unique(),
+      collectionId: PROFILE_CONTACTS_COLLECTION_ID,
+      documentId: ID.unique(),
       data: profileContact,
     });
 

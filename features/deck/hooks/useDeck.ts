@@ -1,9 +1,5 @@
 import { useUser } from "@clerk/clerk-expo";
 import { useCallback, useEffect, useState } from "react";
-// import { buildDeck } from "../services/deckBuilder.service";
-// import { generateDraft } from "../services/drafts.service";
-// import { DeckCard, DeckState, Draft } from "../types/deck/deck.types";
-// import { useUserProfile } from "./useUserProfile";
 import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 import { DeckState, Draft, DeckCard } from "../types/deck.types";
 import { buildDeck } from "../api/deckBuilder.service";
