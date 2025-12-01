@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/clerk-expo";
 import { useCallback, useState } from "react";
 import { processOutcomeWithProgress } from "../api/aiProcessing.service";
 import {
@@ -8,27 +7,7 @@ import {
   OutcomeNote,
   OutcomeSentiment,
 } from "../api/outcomeNotes.service";
-
-/**
- * Hook for managing outcome notes and outcome sheet interaction
- *
- * Usage:
- * ```tsx
- * const {
- *   showOutcomeSheet,
- *   hideOutcomeSheet,
- *   outcomeSheetVisible,
- *   createOutcome
- * } = useOutcome();
- *
- * // After sending a message
- * showOutcomeSheet({
- *   contactIds: ['123'],
- *   contactNames: ['John Doe'],
- *   engagementEventId: engagementEvent.$id
- * });
- * ```
- */
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 
 interface OutcomeSheetConfig {
   contactIds: string[];
@@ -39,7 +18,7 @@ interface OutcomeSheetConfig {
 }
 
 export function useOutcome() {
-  const { user } = useUser();
+  const { profile } = useUserProfile(); // Changed from useUser
   const [outcomeSheetVisible, setOutcomeSheetVisible] = useState(false);
   const [outcomeConfig, setOutcomeConfig] = useState<OutcomeSheetConfig | null>(
     null
@@ -47,26 +26,16 @@ export function useOutcome() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * Show outcome sheet with configuration
-   */
   const showOutcomeSheet = useCallback((config: OutcomeSheetConfig) => {
     setOutcomeConfig(config);
     setOutcomeSheetVisible(true);
   }, []);
 
-  /**
-   * Hide outcome sheet and reset config
-   */
   const hideOutcomeSheet = useCallback(() => {
     setOutcomeSheetVisible(false);
     setOutcomeConfig(null);
   }, []);
 
-  /**
-   * Create outcome note and process with AI
-   * Lower-level API for custom implementations
-   */
   const createOutcome = useCallback(
     async (
       rawText: string,
@@ -76,7 +45,8 @@ export function useOutcome() {
       linkedEngagementEventId?: string,
       processWithAI: boolean = true
     ): Promise<OutcomeNote | null> => {
-      if (!user) {
+      if (!profile) {
+        // Changed from user
         setError("User not authenticated");
         return null;
       }
@@ -86,7 +56,7 @@ export function useOutcome() {
         setError(null);
 
         const outcome = await createOutcomeNote({
-          userId: user.id,
+          userId: profile.clerkUserId, // Changed from user.id
           rawText: rawText.trim(),
           userSentiment: sentiment,
           contactIds,
@@ -95,7 +65,6 @@ export function useOutcome() {
         });
 
         if (processWithAI) {
-          // Process in background without blocking
           processOutcomeWithProgress(outcome.$id).catch((err) => {
             console.error("AI processing failed:", err);
             setError("AI processing failed, but outcome was saved");
@@ -112,15 +81,13 @@ export function useOutcome() {
         setLoading(false);
       }
     },
-    [user]
+    [profile] // Changed dependency
   );
 
-  /**
-   * Load outcomes for a specific contact
-   */
   const loadContactOutcomes = useCallback(
     async (contactId: string, limit: number = 50): Promise<OutcomeNote[]> => {
-      if (!user) {
+      if (!profile) {
+        // Changed from user
         setError("User not authenticated");
         return [];
       }
@@ -129,7 +96,7 @@ export function useOutcome() {
         setLoading(true);
         setError(null);
         const outcomes = await getOutcomeNotesByContact(
-          user.id,
+          profile.clerkUserId, // Changed from user.id
           contactId,
           limit
         );
@@ -143,15 +110,13 @@ export function useOutcome() {
         setLoading(false);
       }
     },
-    [user]
+    [profile] // Changed dependency
   );
 
-  /**
-   * Load all outcomes for current user
-   */
   const loadUserOutcomes = useCallback(
     async (limit: number = 100): Promise<OutcomeNote[]> => {
-      if (!user) {
+      if (!profile) {
+        // Changed from user
         setError("User not authenticated");
         return [];
       }
@@ -159,7 +124,10 @@ export function useOutcome() {
       try {
         setLoading(true);
         setError(null);
-        const outcomes = await getOutcomeNotesByUser(user.id, limit);
+        const outcomes = await getOutcomeNotesByUser(
+          profile.clerkUserId,
+          limit
+        ); // Changed from user.id
         return outcomes;
       } catch (err) {
         const errorMessage =
@@ -170,24 +138,17 @@ export function useOutcome() {
         setLoading(false);
       }
     },
-    [user]
+    [profile] // Changed dependency
   );
 
   return {
-    // Outcome sheet state
     outcomeSheetVisible,
     outcomeConfig,
     showOutcomeSheet,
     hideOutcomeSheet,
-
-    // Direct outcome creation
     createOutcome,
-
-    // Data loading
     loadContactOutcomes,
     loadUserOutcomes,
-
-    // State
     loading,
     error,
   };

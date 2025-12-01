@@ -1,14 +1,12 @@
-import { useUser } from "@clerk/clerk-expo";
 import { useCallback, useEffect, useState } from "react";
-import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Changed import
 import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
 import { DeckState, Draft, DeckCard } from "../types/deck.types";
 import { buildDeck } from "../api/deckBuilder.service";
 import { generateDraft } from "@/features/messaging/api/drafts.service";
 
 export function useDeck() {
-  const { user } = useUser();
-  const { profile } = useUserProfile();
+  const { profile } = useUserProfile(); // Changed from useUser
   const { isPremium } = usePremiumGate();
   const [deck, setDeck] = useState<DeckState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -17,18 +15,19 @@ export function useDeck() {
   const [draftsError, setDraftsError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
+    if (profile) {
+      // Changed from user
       loadDeck();
     }
-  }, [user]);
+  }, [profile]); // Changed dependency
 
   const loadDeck = async () => {
-    if (!user) return;
+    if (!profile) return; // Changed from user
 
     setLoading(true);
     try {
       const maxCards = isPremium ? 10 : 5;
-      const cards = await buildDeck(user.id, maxCards);
+      const cards = await buildDeck(profile.clerkUserId, maxCards); // Changed from user.id
       const todayDate = new Date().toISOString().split("T")[0];
 
       if (cards.length === 0) {
@@ -37,8 +36,8 @@ export function useDeck() {
       }
 
       setDeck({
-        id: `deck-${user.id}-${todayDate}`,
-        userId: user.id,
+        id: `deck-${profile.clerkUserId}-${todayDate}`, // Changed from user.id
+        userId: profile.clerkUserId, // Changed from user.id
         date: todayDate,
         cards,
         maxCards,
@@ -54,7 +53,7 @@ export function useDeck() {
 
   const generateDraftsForCard = useCallback(
     async (card: DeckCard) => {
-      if (!user) return;
+      if (!profile) return; // Changed from user
 
       setDraftsLoading(true);
       setDraftsError(null);
@@ -86,8 +85,16 @@ export function useDeck() {
 
       try {
         const [casualDraft, professionalDraft] = await Promise.all([
-          generateDraft(user.id, card.contact.$id, "casual friendly message"),
-          generateDraft(user.id, card.contact.$id, "professional follow-up"),
+          generateDraft(
+            profile.clerkUserId,
+            card.contact.$id,
+            "casual friendly message"
+          ), // Changed from user.id
+          generateDraft(
+            profile.clerkUserId,
+            card.contact.$id,
+            "professional follow-up"
+          ), // Changed from user.id
         ]);
 
         setDrafts([
@@ -129,7 +136,7 @@ export function useDeck() {
         setDraftsLoading(false);
       }
     },
-    [user, isPremium]
+    [profile, isPremium] // Changed dependency
   );
 
   const markCardCompleted = useCallback(

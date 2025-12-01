@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -6,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import ContactCard from "../../../features/contacts/components/ContactCard";
 import { Lock, Smartphone, Mail, MessageSquare } from "lucide-react-native";
 import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Changed import
 
 import {
   ProfileContact,
@@ -15,7 +15,7 @@ import {
 } from "../api/contacts.service";
 
 export default function ContactListScreen() {
-  const { user } = useUser();
+  const { profile } = useUserProfile(); // Changed from useUser
   const router = useRouter();
   const { isPremium, requirePremium } = usePremiumGate();
   const [contacts, setContacts] = useState<ProfileContact[]>([]);
@@ -32,14 +32,14 @@ export default function ContactListScreen() {
 
   useEffect(() => {
     fetchContacts();
-  }, [user]);
+  }, [profile]); // Changed dependency from user
 
   const fetchContacts = async () => {
-    if (!user) return;
+    if (!profile) return; // Changed from user
 
     try {
       setLoading(true);
-      const data = await loadContacts(user.id);
+      const data = await loadContacts(profile.clerkUserId); // Changed from user.id
       setContacts(data);
     } catch (error) {
       console.error("Failed to load contacts:", error);
@@ -49,12 +49,12 @@ export default function ContactListScreen() {
   };
 
   const handleImportContacts = async () => {
-    if (!user) return;
+    if (!profile) return; // Changed from user
 
     setImporting(true);
 
     try {
-      const imported = await importDeviceContacts(user.id);
+      const imported = await importDeviceContacts(profile.clerkUserId); // Changed from user.id
       Alert.alert("Import Complete", `Imported ${imported} new contacts`);
       await fetchContacts();
     } catch (error) {

@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/clerk-expo";
 import { Frown, Meh, Smile, Sparkles, X, Lock } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -14,6 +13,7 @@ import {
 } from "react-native";
 import { processOutcomeWithProgress } from "../api/aiProcessing.service";
 import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
+import { useUserProfile } from "../../auth/hooks/useUserProfile"; // Changed import
 
 import {
   createOutcomeNote,
@@ -41,7 +41,7 @@ export default function OutcomeSheet({
   engagementType,
   onComplete,
 }: OutcomeSheetProps) {
-  const { user } = useUser();
+  const { profile } = useUserProfile(); // Changed from useUser
   const { isPremium, requirePremium } = usePremiumGate();
   const [sentiment, setSentiment] = useState<OutcomeSentiment | null>(null);
   const [noteText, setNoteText] = useState("");
@@ -63,7 +63,8 @@ export default function OutcomeSheet({
   }, [visible]);
 
   const handleSave = async () => {
-    if (!user || !sentiment) {
+    if (!profile || !sentiment) {
+      // Changed from user
       setError("Please select a sentiment");
       return;
     }
@@ -78,7 +79,7 @@ export default function OutcomeSheet({
       setError(null);
 
       const outcome = await createOutcomeNote({
-        userId: user.id,
+        userId: profile.clerkUserId, // Changed from user.id
         rawText: noteText.trim(),
         userSentiment: sentiment,
         contactIds,

@@ -1,9 +1,9 @@
-import { useUser } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { Alert, Linking, Platform, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
+import { useUserProfile } from "../../auth/hooks/useUserProfile"; // Changed import
 import OutcomeSheet from "../../outcomes/components/OutcomeSheet";
 
 import {
@@ -19,7 +19,7 @@ import { useDeck } from "../hooks/useDeck";
 import { ChannelType, DeckCard } from "../types/deck.types";
 
 export default function DeckScreen() {
-  const { user } = useUser();
+  const { profile } = useUserProfile(); // Changed from useUser
   const router = useRouter();
   const { isPremium, requirePremium } = usePremiumGate();
   const {
@@ -73,12 +73,12 @@ export default function DeckScreen() {
 
   const handleSwipeLeft = useCallback(
     async (cardId: string) => {
-      if (!user) return;
+      if (!profile) return; // Changed from user
       const card = deck?.cards.find((c: DeckCard) => c.id === cardId);
       if (card) {
         // Log card_dismissed engagement event
         await createEngagementEvent(
-          user.id,
+          profile.clerkUserId, // Changed from user.id
           "card_dismissed",
           [card.contact.$id],
           cardId
@@ -87,17 +87,17 @@ export default function DeckScreen() {
       await markCardSkipped(cardId);
       checkDeckComplete();
     },
-    [user, deck, markCardSkipped]
+    [profile, deck, markCardSkipped] // Changed dependency
   );
 
   const handleSnooze = useCallback(
     async (cardId: string) => {
-      if (!user) return;
+      if (!profile) return; // Changed from user
       const card = deck?.cards.find((c: DeckCard) => c.id === cardId);
       if (card) {
         // Log card_snoozed engagement event
         await createEngagementEvent(
-          user.id,
+          profile.clerkUserId, // Changed from user.id
           "card_snoozed",
           [card.contact.$id],
           cardId
@@ -105,12 +105,12 @@ export default function DeckScreen() {
         await markCardSnoozed(cardId);
       }
     },
-    [user, deck, markCardSnoozed]
+    [profile, deck, markCardSnoozed] // Changed dependency
   );
 
   const handleSend = useCallback(
     async (channel: ChannelType, message: string) => {
-      if (!selectedCard || !user) return;
+      if (!selectedCard || !profile) return; // Changed from user
 
       // Gate premium channels
       const premiumChannels: ChannelType[] = ["email", "slack"];
@@ -169,7 +169,7 @@ export default function DeckScreen() {
 
       // Log engagement event
       const event = await createEngagementEvent(
-        user.id,
+        profile.clerkUserId, // Changed from user.id
         eventType,
         [contact.$id],
         selectedCard.id,
@@ -180,7 +180,7 @@ export default function DeckScreen() {
       setDraftPickerVisible(false);
       setOutcomeSheetVisible(true);
     },
-    [selectedCard, user, isPremium, requirePremium]
+    [selectedCard, profile, isPremium, requirePremium] // Changed dependency
   );
 
   const handleOutcomeComplete = useCallback(async () => {

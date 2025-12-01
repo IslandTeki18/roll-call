@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/clerk-expo";
 import { Check, Search, X } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -13,6 +12,7 @@ import {
   loadContacts,
   ProfileContact,
 } from "@/features/contacts/api/contacts.service";
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Changed import
 
 interface ContactPickerProps {
   visible: boolean;
@@ -27,7 +27,7 @@ export default function ContactPicker({
   selectedIds,
   onSelectionChange,
 }: ContactPickerProps) {
-  const { user } = useUser();
+  const { profile } = useUserProfile(); // Changed from useUser
   const [contacts, setContacts] = useState<ProfileContact[]>([]);
   const [filteredContacts, setFilteredContacts] = useState<ProfileContact[]>(
     []
@@ -36,14 +36,16 @@ export default function ContactPicker({
   const [localSelection, setLocalSelection] = useState<string[]>(selectedIds);
 
   useEffect(() => {
-    if (visible && user) {
-      loadContacts(user.id).then((data) => {
+    if (visible && profile) {
+      // Changed from user
+      loadContacts(profile.clerkUserId).then((data) => {
+        // Changed from user.id
         setContacts(data);
         setFilteredContacts(data);
       });
       setLocalSelection(selectedIds);
     }
-  }, [visible, user, selectedIds]);
+  }, [visible, profile, selectedIds]); // Changed dependency
 
   useEffect(() => {
     if (!searchQuery.trim()) {

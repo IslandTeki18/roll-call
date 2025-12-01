@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/clerk-expo";
 import {
   ChevronLeft,
   Link2,
@@ -27,6 +26,7 @@ import {
   ProfileContact,
 } from "@/features/contacts/api/contacts.service";
 import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Already using useUserProfile
 import { useNoteEditor } from "../hooks/useNotes";
 import ContactPicker from "./ContactPicker";
 import TagInput from "./TagInput";
@@ -44,7 +44,7 @@ export default function NoteEditor({
   onDelete,
   existingTags = [],
 }: NoteEditorProps) {
-  const { user } = useUser();
+  const { profile } = useUserProfile(); // Already correct
   const { isPremium } = usePremiumGate();
   const {
     note,
@@ -68,15 +68,17 @@ export default function NoteEditor({
 
   // Load linked contact names
   useEffect(() => {
-    if (user && contactIds.length > 0) {
-      loadContacts(user.id).then((allContacts) => {
+    if (profile && contactIds.length > 0) {
+      // Changed from user
+      loadContacts(profile.clerkUserId).then((allContacts) => {
+        // Changed from user.id
         const linked = allContacts.filter((c) => contactIds.includes(c.$id));
         setLinkedContacts(linked);
       });
     } else {
       setLinkedContacts([]);
     }
-  }, [user, contactIds]);
+  }, [profile, contactIds]); // Changed dependency
 
   const handleSave = async () => {
     const saved = await save();

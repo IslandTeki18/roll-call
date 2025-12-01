@@ -27,7 +27,7 @@ import {
 } from "lucide-react-native";
 import { tablesDB } from "../../shared/lib/appwrite";
 import { generateDraft } from "@/features/messaging/api/drafts.service";
-import { useUser } from "@clerk/clerk-expo";
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Changed import
 import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
@@ -53,7 +53,7 @@ interface ProfileContact {
 }
 
 export default function ContactDetailsScreen() {
-  const { user } = useUser();
+  const { profile } = useUserProfile(); // Changed from useUser
   const { isPremium, requirePremium } = usePremiumGate();
   const params = useLocalSearchParams();
   const router = useRouter();
@@ -103,7 +103,7 @@ export default function ContactDetailsScreen() {
   };
 
   const handleGenerateDraft = async () => {
-    if (!user || !contact) return;
+    if (!profile || !contact) return; // Changed from user
 
     if (!isPremium) {
       requirePremium("AI Draft Generation");
@@ -112,7 +112,7 @@ export default function ContactDetailsScreen() {
 
     setGeneratingDraft(true);
     try {
-      const generated = await generateDraft(user.id, contact.$id);
+      const generated = await generateDraft(profile.clerkUserId, contact.$id); // Changed from user.id
       setDraft(generated);
       Alert.alert("Draft Generated", generated);
     } catch (error) {
