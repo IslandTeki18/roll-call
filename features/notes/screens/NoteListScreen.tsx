@@ -1,4 +1,3 @@
-import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 import { Plus, Search, X } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -27,9 +26,6 @@ export default function NotesListScreen() {
     search,
     remove,
   } = useNotes();
-  const { profile } = useUserProfile();
-  console.log("User in NoteListScreen:", JSON.stringify(profile, null, 2));
-
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Note[] | null>(null);
   const [editorVisible, setEditorVisible] = useState(false);

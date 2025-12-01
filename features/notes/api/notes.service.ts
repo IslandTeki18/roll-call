@@ -18,7 +18,7 @@ export const createNote = async (input: CreateNoteInput): Promise<Note> => {
     isPinned: input.isPinned ?? false,
     contactIds: input.contactIds?.join(",") || "",
     tags: input.tags?.join(",") || "",
-    aiAnalysisId: "",
+    aiAnalysis: "",
     processingStatus: "pending" as NoteProcessingStatus,
     processingError: "",
     aiSummary: "",
@@ -31,7 +31,12 @@ export const createNote = async (input: CreateNoteInput): Promise<Note> => {
     DATABASE_ID,
     NOTES_TABLE_ID,
     ID.unique(),
-    data
+    data,
+    [
+      Permission.read(Role.any()),
+      Permission.update(Role.any()),
+      Permission.delete(Role.any()),
+    ]
   );
 
   return response as unknown as Note;
@@ -50,7 +55,7 @@ export const updateNote = async (
     data.aiSummary = "";
     data.aiNextSteps = "";
     data.aiEntities = "";
-    data.aiAnalysisId = "";
+    data.aiAnalysis = "";
     data.processedAt = "";
   }
 
@@ -83,7 +88,7 @@ export const updateNoteWithAI = async (
   const timestamp = new Date().toISOString();
 
   const data = {
-    aiAnalysisId: aiResults.aiAnalysisId,
+    aiAnalysis: aiResults.aiAnalysisId,
     processingStatus: "completed" as NoteProcessingStatus,
     aiSummary: aiResults.aiSummary,
     aiNextSteps: aiResults.aiNextSteps.join("|"),

@@ -19,7 +19,7 @@ export interface Note {
   tags: string; // comma-separated
 
   // AI processing
-  aiAnalysisId: string;
+  aiAnalysis: string;
   processingStatus: NoteProcessingStatus;
   processingError: string;
 
