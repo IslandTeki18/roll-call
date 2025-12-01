@@ -103,7 +103,7 @@ export default function ContactDetailsScreen() {
 
     setGeneratingDraft(true);
     try {
-      const generated = await generateDraft(user.id, contact.id);
+      const generated = await generateDraft(user.id, contact.$id);
       setDraft(generated);
       Alert.alert("Draft Generated", generated);
     } catch (error) {
@@ -145,7 +145,7 @@ export default function ContactDetailsScreen() {
               await tablesDB.deleteRow({
                 databaseId: DATABASE_ID,
                 tableId: PROFILE_CONTACTS_COLLECTION_ID,
-                rowId: contact!.id,
+                rowId: contact!.$id,
               });
               router.back();
             } catch (error) {

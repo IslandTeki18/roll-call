@@ -26,6 +26,16 @@ export interface EngagementEvent {
   createdAt: string;
 }
 
+export interface CadenceAlignment {
+  isOverdue: boolean;
+  daysOverdue: number;
+  isEarly: boolean;
+  daysEarly: number;
+  isOnTrack: boolean;
+  cadenceDays: number | null;
+  daysSinceLastContact: number | null;
+}
+
 export const createEngagementEvent = async (
   userId: string,
   type: EngagementEventType,
@@ -190,4 +200,83 @@ export const getRecentEvents = async (
   );
 
   return response.documents as unknown as EngagementEvent[];
+};
+
+export const getCadenceAlignment = async (
+  userId: string,
+  contactId: string,
+  cadenceDays: number | null
+): Promise<CadenceAlignment> => {
+  const lastEvent = await getLastEventForContact(userId, contactId);
+
+  if (!cadenceDays || cadenceDays <= 0) {
+    return {
+      isOverdue: false,
+      daysOverdue: 0,
+      isEarly: false,
+      daysEarly: 0,
+      isOnTrack: true,
+      cadenceDays: null,
+      daysSinceLastContact: lastEvent
+        ? Math.floor(
+            (Date.now() - new Date(lastEvent.timestamp).getTime()) /
+              (1000 * 60 * 60 * 24)
+          )
+        : null,
+    };
+  }
+
+  if (!lastEvent) {
+    return {
+      isOverdue: true,
+      daysOverdue: cadenceDays,
+      isEarly: false,
+      daysEarly: 0,
+      isOnTrack: false,
+      cadenceDays,
+      daysSinceLastContact: null,
+    };
+  }
+
+  const daysSinceLastContact = Math.floor(
+    (Date.now() - new Date(lastEvent.timestamp).getTime()) /
+      (1000 * 60 * 60 * 24)
+  );
+
+  const overdueThreshold = cadenceDays;
+  const earlyThreshold = cadenceDays * 0.5;
+
+  const isOverdue = daysSinceLastContact > overdueThreshold;
+  const isEarly = daysSinceLastContact < earlyThreshold;
+  const isOnTrack = !isOverdue && !isEarly;
+
+  return {
+    isOverdue,
+    daysOverdue: isOverdue ? daysSinceLastContact - overdueThreshold : 0,
+    isEarly,
+    daysEarly: isEarly ? Math.floor(earlyThreshold - daysSinceLastContact) : 0,
+    isOnTrack,
+    cadenceDays,
+    daysSinceLastContact,
+  };
+};
+
+export const getContactsOverdueByCadence = async (
+  userId: string,
+  contacts: Array<{ $id: string; cadenceDays: number | null }>
+): Promise<Array<{ contactId: string; alignment: CadenceAlignment }>> => {
+  const results = await Promise.all(
+    contacts
+      .filter((c) => c.cadenceDays && c.cadenceDays > 0)
+      .map(async (contact) => ({
+        contactId: contact.$id,
+        alignment: await getCadenceAlignment(
+          userId,
+          contact.$id,
+          contact.cadenceDays
+        ),
+      }))
+  );
+
+  return results.filter((r) => r.alignment.isOverdue);
 };
