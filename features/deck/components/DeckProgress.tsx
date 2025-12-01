@@ -1,7 +1,8 @@
-import { Check } from "lucide-react-native";
+import { Check, Lock } from "lucide-react-native";
 import React from "react";
-import { Text, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { DeckCard } from "../types/deck.types";
+import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
 
 interface DeckProgressProps {
   cards: DeckCard[];
@@ -9,9 +10,13 @@ interface DeckProgressProps {
 }
 
 export default function DeckProgress({ cards, maxCards }: DeckProgressProps) {
+  const { isPremium, requirePremium } = usePremiumGate();
   const completedCount = cards.filter(
     (c) => c.status === "completed" || c.status === "skipped"
   ).length;
+
+  const freeMax = 5;
+  const premiumMax = 10;
 
   return (
     <View className="px-6 py-4">
@@ -22,12 +27,25 @@ export default function DeckProgress({ cards, maxCards }: DeckProgressProps) {
         </Text>
       </View>
       <View className="flex-row gap-2">
-        {Array.from({ length: maxCards }).map((_, index) => {
+        {Array.from({ length: premiumMax }).map((_, index) => {
           const card = cards[index];
           const isCompleted =
             card && (card.status === "completed" || card.status === "skipped");
           const isActive = card && card.status === "active";
           const isPending = card && card.status === "pending";
+          const isLockedSlot = !isPremium && index >= freeMax;
+
+          if (isLockedSlot) {
+            return (
+              <TouchableOpacity
+                key={index}
+                onPress={() => requirePremium("10-card deck")}
+                className="flex-1 h-10 rounded-lg items-center justify-center bg-gray-100 border border-dashed border-gray-300"
+              >
+                <Lock size={14} color="#9CA3AF" />
+              </TouchableOpacity>
+            );
+          }
 
           return (
             <View
@@ -47,6 +65,16 @@ export default function DeckProgress({ cards, maxCards }: DeckProgressProps) {
           );
         })}
       </View>
+      {!isPremium && (
+        <TouchableOpacity
+          onPress={() => requirePremium("10-card deck")}
+          className="mt-2"
+        >
+          <Text className="text-xs text-center text-purple-600">
+            Upgrade to unlock 5 more daily cards
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }

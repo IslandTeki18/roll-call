@@ -1,8 +1,9 @@
 import { useUser } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
-import { Linking, Platform, Text, View } from "react-native";
+import { Alert, Linking, Platform, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
 import OutcomeSheet from "../../outcomes/components/OutcomeSheet";
 
 import {
@@ -20,6 +21,7 @@ import { ChannelType, DeckCard } from "../types/deck.types";
 export default function DeckScreen() {
   const { user } = useUser();
   const router = useRouter();
+  const { isPremium, requirePremium } = usePremiumGate();
   const {
     deck,
     loading,
@@ -38,7 +40,8 @@ export default function DeckScreen() {
   >();
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
 
-  const pendingCards = deck?.cards.filter((c: any) => c.status === "pending") || [];
+  const pendingCards =
+    deck?.cards.filter((c: any) => c.status === "pending") || [];
   const completedCards =
     deck?.cards.filter(
       (c: DeckCard) => c.status === "completed" || c.status === "skipped"
@@ -79,6 +82,13 @@ export default function DeckScreen() {
     async (channel: ChannelType, message: string) => {
       if (!selectedCard || !user) return;
 
+      // Gate premium channels
+      const premiumChannels: ChannelType[] = ["email", "slack"];
+      if (premiumChannels.includes(channel) && !isPremium) {
+        requirePremium(`${channel === "email" ? "Email" : "Slack"} sends`);
+        return;
+      }
+
       const contact = selectedCard.contact;
       const phoneNumbers =
         contact.phoneNumbers?.split(",").filter(Boolean) || [];
@@ -86,7 +96,7 @@ export default function DeckScreen() {
       const primaryPhone = phoneNumbers[0];
       const primaryEmail = emails[0];
 
-      // Open native app
+      // Open native app or handle server-side send
       switch (channel) {
         case "sms":
           if (primaryPhone) {
@@ -108,12 +118,18 @@ export default function DeckScreen() {
           }
           break;
         case "email":
+          // Premium: server-side email send would go here
+          // For now, fallback to mailto
           if (primaryEmail) {
             await Linking.openURL(
               `mailto:${primaryEmail}?body=${encodeURIComponent(message)}`
             );
           }
           break;
+        case "slack":
+          // Premium: server-side Slack send would go here
+          Alert.alert("Coming Soon", "Slack direct messaging coming soon");
+          return;
       }
 
       // Log engagement event
@@ -135,7 +151,7 @@ export default function DeckScreen() {
       setDraftPickerVisible(false);
       setOutcomeSheetVisible(true);
     },
-    [selectedCard, user]
+    [selectedCard, user, isPremium, requirePremium]
   );
 
   const handleOutcomeComplete = useCallback(async () => {
@@ -160,7 +176,9 @@ export default function DeckScreen() {
 
   const checkDeckComplete = useCallback(() => {
     if (deck) {
-      const remaining = deck.cards.filter((c: DeckCard) => c.status === "pending").length;
+      const remaining = deck.cards.filter(
+        (c: DeckCard) => c.status === "pending"
+      ).length;
       if (remaining === 0) {
         setTimeout(() => setCompleteModalVisible(true), 500);
       }

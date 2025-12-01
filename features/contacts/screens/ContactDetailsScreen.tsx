@@ -9,7 +9,7 @@ import {
   Alert,
   Platform,
 } from "react-native";
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -22,10 +22,13 @@ import {
   ChevronLeft,
   Edit3,
   Trash2,
+  Lock,
+  Sparkles,
 } from "lucide-react-native";
 import { tablesDB } from "../../shared/lib/appwrite";
 import { generateDraft } from "@/features/messaging/api/drafts.service";
 import { useUser } from "@clerk/clerk-expo";
+import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const PROFILE_CONTACTS_COLLECTION_ID =
@@ -51,6 +54,7 @@ interface ProfileContact {
 
 export default function ContactDetailsScreen() {
   const { user } = useUser();
+  const { isPremium, requirePremium } = usePremiumGate();
   const params = useLocalSearchParams();
   const router = useRouter();
   const [contact, setContact] = useState<ProfileContact | null>(null);
@@ -100,6 +104,11 @@ export default function ContactDetailsScreen() {
 
   const handleGenerateDraft = async () => {
     if (!user || !contact) return;
+
+    if (!isPremium) {
+      requirePremium("AI Draft Generation");
+      return;
+    }
 
     setGeneratingDraft(true);
     try {
@@ -276,11 +285,20 @@ export default function ContactDetailsScreen() {
               disabled={generatingDraft}
               className="items-center"
             >
-              <View className="w-14 h-14 rounded-full bg-orange-100 items-center justify-center mb-2">
-                <Edit3 size={24} color="#F97316" />
+              <View className="w-14 h-14 rounded-full bg-orange-100 items-center justify-center mb-2 relative">
+                {isPremium ? (
+                  <Sparkles size={24} color="#F97316" />
+                ) : (
+                  <>
+                    <Edit3 size={24} color="#F97316" />
+                    <View className="absolute -bottom-1 -right-1 bg-gray-200 rounded-full p-1">
+                      <Lock size={10} color="#6B7280" />
+                    </View>
+                  </>
+                )}
               </View>
               <Text className="text-xs text-gray-600">
-                {generatingDraft ? "..." : "Draft"}
+                {generatingDraft ? "..." : "AI Draft"}
               </Text>
             </TouchableOpacity>
           </View>

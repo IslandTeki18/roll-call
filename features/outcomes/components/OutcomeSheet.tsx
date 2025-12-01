@@ -1,5 +1,5 @@
 import { useUser } from "@clerk/clerk-expo";
-import { Frown, Meh, Smile, Sparkles, X } from "lucide-react-native";
+import { Frown, Meh, Smile, Sparkles, X, Lock } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -13,17 +13,21 @@ import {
   View,
 } from "react-native";
 import { processOutcomeWithProgress } from "../api/aiProcessing.service";
+import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
 
-import { createOutcomeNote, OutcomeSentiment } from "../api/outcomeNotes.service";
+import {
+  createOutcomeNote,
+  OutcomeSentiment,
+} from "../api/outcomeNotes.service";
 
 interface OutcomeSheetProps {
   visible: boolean;
   onClose: () => void;
   contactIds: string[];
-  contactNames: string[]; // Display names for context
+  contactNames: string[];
   linkedCardId?: string;
   linkedEngagementEventId?: string;
-  engagementType?: string; // "sms_sent", "call_made", etc.
+  engagementType?: string;
   onComplete?: () => void;
 }
 
@@ -38,6 +42,7 @@ export default function OutcomeSheet({
   onComplete,
 }: OutcomeSheetProps) {
   const { user } = useUser();
+  const { isPremium, requirePremium } = usePremiumGate();
   const [sentiment, setSentiment] = useState<OutcomeSentiment | null>(null);
   const [noteText, setNoteText] = useState("");
   const [saving, setSaving] = useState(false);
@@ -47,7 +52,6 @@ export default function OutcomeSheet({
   const maxChars = 140;
   const remainingChars = maxChars - noteText.length;
 
-  // Reset state when modal opens/closes
   React.useEffect(() => {
     if (!visible) {
       setSentiment(null);
@@ -73,7 +77,6 @@ export default function OutcomeSheet({
       setSaving(true);
       setError(null);
 
-      // Create outcome note
       const outcome = await createOutcomeNote({
         userId: user.id,
         rawText: noteText.trim(),
@@ -83,15 +86,15 @@ export default function OutcomeSheet({
         linkedEngagementEventId,
       });
 
-      // Process with AI in background with progress tracking
-      setProcessing(true);
-      await processOutcomeWithProgress(outcome.$id, (status) => {
-        if (status === "completed" || status === "failed") {
-          setProcessing(false);
-        }
-      });
+      if (isPremium) {
+        setProcessing(true);
+        await processOutcomeWithProgress(outcome.$id, (status) => {
+          if (status === "completed" || status === "failed") {
+            setProcessing(false);
+          }
+        });
+      }
 
-      // Success
       onComplete?.();
       onClose();
     } catch (err) {
@@ -150,14 +153,12 @@ export default function OutcomeSheet({
         className="flex-1"
       >
         <View className="flex-1 justify-end">
-          {/* Backdrop */}
           <TouchableOpacity
             className="flex-1 bg-black/50"
             activeOpacity={1}
             onPress={onClose}
           />
 
-          {/* Drawer */}
           <View className="bg-white rounded-t-3xl shadow-2xl">
             <ScrollView
               className="max-h-[85vh]"
@@ -183,7 +184,6 @@ export default function OutcomeSheet({
                 </TouchableOpacity>
               </View>
 
-              {/* Content */}
               <View className="px-6 py-6">
                 {/* Sentiment Selection */}
                 <View className="mb-6">
@@ -263,8 +263,8 @@ export default function OutcomeSheet({
                   />
                 </View>
 
-                {/* AI Processing Info */}
-                {processing && (
+                {/* AI Processing Info - Premium only */}
+                {isPremium && processing && (
                   <View className="flex-row items-center gap-2 p-3 bg-blue-50 rounded-lg mb-4">
                     <Sparkles size={16} color="#3B82F6" />
                     <Text className="text-sm text-blue-700 flex-1">
@@ -313,19 +313,34 @@ export default function OutcomeSheet({
                       <ActivityIndicator size="small" color="white" />
                     ) : (
                       <Text className="text-center font-semibold text-white">
-                        Save & Analyze
+                        {isPremium ? "Save & Analyze" : "Save"}
                       </Text>
                     )}
                   </TouchableOpacity>
                 </View>
 
-                {/* AI Context */}
+                {/* AI Context - Premium indicator */}
                 <View className="mt-4 flex-row items-start gap-2">
-                  <Sparkles size={14} color="#9CA3AF" className="mt-0.5" />
-                  <Text className="text-xs text-gray-500 flex-1">
-                    Your note will be analyzed by AI to extract summaries, next
-                    steps, and key entities automatically.
-                  </Text>
+                  {isPremium ? (
+                    <>
+                      <Sparkles size={14} color="#7C3AED" className="mt-0.5" />
+                      <Text className="text-xs text-purple-600 flex-1">
+                        Your note will be analyzed by AI to extract summaries,
+                        next steps, and key entities automatically.
+                      </Text>
+                    </>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={() => requirePremium("AI note analysis")}
+                      className="flex-1 flex-row items-center gap-2 p-3 bg-gray-50 rounded-lg"
+                    >
+                      <Lock size={14} color="#9CA3AF" />
+                      <Text className="text-xs text-gray-500 flex-1">
+                        Upgrade to Premium for AI-powered note analysis
+                      </Text>
+                      <Sparkles size={14} color="#9CA3AF" />
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
             </ScrollView>

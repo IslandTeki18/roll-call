@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useUser } from "@clerk/clerk-expo";
 import {
   getOrCreateUserProfile,
@@ -9,27 +9,20 @@ import {
   getCachedPremiumStatus,
 } from "@/features/auth/api/premiumCache.service";
 
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
 export function useUserProfile() {
   const { user, isLoaded } = useUser();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    if (!isLoaded || !user) {
-      setLoading(false);
-      return;
-    }
+  const fetchProfile = useCallback(
+    async (showLoading = true) => {
+      if (!user) return;
 
-    (async () => {
       try {
-        setLoading(true);
-        const cached = await getCachedPremiumStatus();
-        if (cached !== null) {
-          setProfile((prev) =>
-            prev ? { ...prev, isPremiumUser: cached } : null
-          );
-        }
+        if (showLoading) setLoading(true);
 
         const userProfile = await getOrCreateUserProfile(
           user.id,
@@ -41,13 +34,47 @@ export function useUserProfile() {
 
         await cachePremiumStatus(userProfile?.isPremiumUser);
         setProfile(userProfile);
+        setError(null);
       } catch (err) {
         setError(err as Error);
       } finally {
-        setLoading(false);
+        if (showLoading) setLoading(false);
       }
-    })();
-  }, [user, isLoaded]);
+    },
+    [user]
+  );
 
-  return { profile, loading, error };
+  const refreshPremiumStatus = useCallback(async () => {
+    await fetchProfile(false);
+  }, [fetchProfile]);
+
+  useEffect(() => {
+    if (!isLoaded || !user) {
+      setLoading(false);
+      return;
+    }
+
+    (async () => {
+      const cached = await getCachedPremiumStatus();
+      if (cached !== null) {
+        setProfile((prev) =>
+          prev ? { ...prev, isPremiumUser: cached } : null
+        );
+      }
+      await fetchProfile();
+    })();
+  }, [user, isLoaded, fetchProfile]);
+
+  // Periodic refresh
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(() => {
+      refreshPremiumStatus();
+    }, REFRESH_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [user, refreshPremiumStatus]);
+
+  return { profile, loading, error, refreshPremiumStatus };
 }

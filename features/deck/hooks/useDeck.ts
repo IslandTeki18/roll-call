@@ -1,14 +1,15 @@
 import { useUser } from "@clerk/clerk-expo";
 import { useCallback, useEffect, useState } from "react";
 import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
+import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
 import { DeckState, Draft, DeckCard } from "../types/deck.types";
 import { buildDeck } from "../api/deckBuilder.service";
 import { generateDraft } from "@/features/messaging/api/drafts.service";
 
-
 export function useDeck() {
   const { user } = useUser();
   const { profile } = useUserProfile();
+  const { isPremium } = usePremiumGate();
   const [deck, setDeck] = useState<DeckState | null>(null);
   const [loading, setLoading] = useState(true);
   const [drafts, setDrafts] = useState<Draft[]>([]);
@@ -26,7 +27,7 @@ export function useDeck() {
 
     setLoading(true);
     try {
-      const maxCards = profile?.isPremiumUser ? 10 : 5;
+      const maxCards = isPremium ? 10 : 5;
       const cards = await buildDeck(user.id, maxCards);
       const todayDate = new Date().toISOString().split("T")[0];
 
@@ -58,6 +59,30 @@ export function useDeck() {
       setDraftsLoading(true);
       setDraftsError(null);
       setDrafts([]);
+
+      // AI draft generation is premium only - free users get static drafts
+      if (!isPremium) {
+        setDrafts([
+          {
+            id: "1",
+            text: `Hey ${
+              card.contact.firstName || "there"
+            }! It's been a while - would love to catch up soon. How have you been?`,
+            tone: "casual",
+            channel: card.suggestedChannel,
+          },
+          {
+            id: "2",
+            text: `Hi ${
+              card.contact.firstName || "there"
+            }, hope you're doing well. I was thinking of you and wanted to reconnect. Let me know if you have time for a quick call.`,
+            tone: "professional",
+            channel: card.suggestedChannel,
+          },
+        ]);
+        setDraftsLoading(false);
+        return;
+      }
 
       try {
         const [casualDraft, professionalDraft] = await Promise.all([
@@ -104,7 +129,7 @@ export function useDeck() {
         setDraftsLoading(false);
       }
     },
-    [user]
+    [user, isPremium]
   );
 
   const markCardCompleted = useCallback(

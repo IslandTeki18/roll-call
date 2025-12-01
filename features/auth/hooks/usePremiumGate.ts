@@ -3,7 +3,7 @@ import { Alert } from "react-native";
 import { useUserProfile } from "./useUserProfile";
 
 export function usePremiumGate() {
-  const { profile } = useUserProfile();
+  const { profile, refreshPremiumStatus } = useUserProfile();
   const isPremium = profile?.isPremiumUser ?? false;
 
   const requirePremium = useCallback(
@@ -29,5 +29,6 @@ export function usePremiumGate() {
   return {
     isPremium,
     requirePremium,
+    refreshPremiumStatus,
   };
 }

@@ -5,7 +5,8 @@ import {
   Send,
   Video,
   X,
-  Lock
+  Lock,
+  Sparkles
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -57,9 +58,8 @@ export default function DraftPicker({
   const [selectedChannel, setSelectedChannel] = useState<ChannelType>("sms");
   const { isPremium, requirePremium } = usePremiumGate();
 
-  const availableChannels: ChannelType[] = isPremium
-    ? ["sms", "call", "email", "slack"]
-    : ["sms", "call"];
+  const freeChannels: ChannelType[] = ["sms", "call"];
+  const premiumChannels: ChannelType[] = ["email", "slack"];
 
   React.useEffect(() => {
     if (!visible) {
@@ -136,7 +136,7 @@ export default function DraftPicker({
                     Send via
                   </Text>
                   <View className="flex-row gap-2">
-                    {availableChannels.map((channel) => {
+                    {freeChannels.map((channel) => {
                       const config = channelConfig[channel];
                       const Icon = config.icon;
                       const isSelected = selectedChannel === channel;
@@ -164,30 +164,78 @@ export default function DraftPicker({
                         </TouchableOpacity>
                       );
                     })}
-                    {!isPremium && (
-                      <TouchableOpacity
-                        onPress={() => requirePremium("Email & Slack sends")}
-                        className="flex-1 items-center py-3 rounded-xl border-2 border-dashed border-gray-300 opacity-50"
-                      >
-                        <Lock size={20} color="#9CA3AF" />
-                        <Text className="text-xs text-gray-400 mt-1">
-                          Premium
-                        </Text>
-                      </TouchableOpacity>
-                    )}
+                    {premiumChannels.map((channel) => {
+                      const config = channelConfig[channel];
+                      const Icon = config.icon;
+                      const isSelected = selectedChannel === channel;
+                      
+                      if (isPremium) {
+                        return (
+                          <TouchableOpacity
+                            key={channel}
+                            onPress={() => setSelectedChannel(channel)}
+                            className={`flex-1 items-center py-3 rounded-xl border-2 ${
+                              isSelected
+                                ? "border-blue-500 bg-blue-50"
+                                : "border-gray-200"
+                            }`}
+                          >
+                            <Icon
+                              size={24}
+                              color={isSelected ? config.color : "#9CA3AF"}
+                            />
+                            <Text
+                              className={`text-xs font-medium mt-1 ${
+                                isSelected ? "text-gray-900" : "text-gray-500"
+                              }`}
+                            >
+                              {config.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      }
+                      
+                      return (
+                        <TouchableOpacity
+                          key={channel}
+                          onPress={() => requirePremium(`${config.label} sends`)}
+                          className="flex-1 items-center py-3 rounded-xl border-2 border-dashed border-gray-300"
+                        >
+                          <View className="relative">
+                            <Icon size={24} color="#D1D5DB" />
+                            <View className="absolute -bottom-1 -right-1 bg-gray-200 rounded-full p-0.5">
+                              <Lock size={10} color="#9CA3AF" />
+                            </View>
+                          </View>
+                          <Text className="text-xs text-gray-400 mt-1">
+                            {config.label}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 </View>
 
                 {/* Draft options */}
                 <View className="mb-6">
-                  <Text className="text-sm font-semibold text-gray-700 mb-3">
-                    Pick a draft
-                  </Text>
+                  <View className="flex-row items-center justify-between mb-3">
+                    <Text className="text-sm font-semibold text-gray-700">
+                      Pick a draft
+                    </Text>
+                    {isPremium ? (
+                      <View className="flex-row items-center gap-1 bg-purple-100 px-2 py-1 rounded-full">
+                        <Sparkles size={12} color="#7C3AED" />
+                        <Text className="text-xs text-purple-700 font-medium">AI Generated</Text>
+                      </View>
+                    ) : (
+                      <Text className="text-xs text-gray-400">Templates</Text>
+                    )}
+                  </View>
                   {loading ? (
                     <View className="py-8 items-center">
                       <ActivityIndicator size="large" color="#3B82F6" />
                       <Text className="text-gray-500 mt-2">
-                        Generating drafts...
+                        {isPremium ? "Generating drafts..." : "Loading drafts..."}
                       </Text>
                     </View>
                   ) : (
@@ -218,6 +266,18 @@ export default function DraftPicker({
                           </Text>
                         </TouchableOpacity>
                       ))}
+                      {!isPremium && (
+                        <TouchableOpacity
+                          onPress={() => requirePremium("AI-powered drafts")}
+                          className="p-4 rounded-xl border-2 border-dashed border-purple-200 bg-purple-50/50 flex-row items-center justify-center gap-2"
+                        >
+                          <Sparkles size={16} color="#7C3AED" />
+                          <Text className="text-sm text-purple-700 font-medium">
+                            Unlock AI-powered drafts
+                          </Text>
+                          <Lock size={14} color="#7C3AED" />
+                        </TouchableOpacity>
+                      )}
                     </View>
                   )}
                 </View>
