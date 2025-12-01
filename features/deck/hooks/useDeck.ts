@@ -166,6 +166,21 @@ export function useDeck() {
     [deck]
   );
 
+  const markCardSnoozed = useCallback(
+    async (cardId: string) => {
+      if (!deck) return;
+      setDeck({
+        ...deck,
+        cards: deck.cards.map((c) =>
+          c.id === cardId
+            ? { ...c, status: "snoozed", completedAt: new Date().toISOString() }
+            : c
+        ),
+      });
+    },
+    [deck]
+  );
+
   return {
     deck,
     loading,
@@ -175,6 +190,7 @@ export function useDeck() {
     generateDraftsForCard,
     markCardCompleted,
     markCardSkipped,
+    markCardSnoozed,
     refreshDeck: loadDeck,
   };
 }

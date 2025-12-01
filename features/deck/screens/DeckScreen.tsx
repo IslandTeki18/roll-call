@@ -30,6 +30,7 @@ export default function DeckScreen() {
     generateDraftsForCard,
     markCardCompleted,
     markCardSkipped,
+    markCardSnoozed,
   } = useDeck();
 
   const [selectedCard, setSelectedCard] = useState<DeckCard | null>(null);
@@ -72,10 +73,39 @@ export default function DeckScreen() {
 
   const handleSwipeLeft = useCallback(
     async (cardId: string) => {
+      if (!user) return;
+      const card = deck?.cards.find((c: DeckCard) => c.id === cardId);
+      if (card) {
+        // Log card_dismissed engagement event
+        await createEngagementEvent(
+          user.id,
+          "card_dismissed",
+          [card.contact.$id],
+          cardId
+        );
+      }
       await markCardSkipped(cardId);
       checkDeckComplete();
     },
-    [markCardSkipped]
+    [user, deck, markCardSkipped]
+  );
+
+  const handleSnooze = useCallback(
+    async (cardId: string) => {
+      if (!user) return;
+      const card = deck?.cards.find((c: DeckCard) => c.id === cardId);
+      if (card) {
+        // Log card_snoozed engagement event
+        await createEngagementEvent(
+          user.id,
+          "card_snoozed",
+          [card.contact.$id],
+          cardId
+        );
+        await markCardSnoozed(cardId);
+      }
+    },
+    [user, deck, markCardSnoozed]
   );
 
   const handleSend = useCallback(
@@ -96,9 +126,11 @@ export default function DeckScreen() {
       const primaryPhone = phoneNumbers[0];
       const primaryEmail = emails[0];
 
-      // Open native app or handle server-side send
+      // Determine event type based on channel
+      let eventType: EngagementEventType;
       switch (channel) {
         case "sms":
+          eventType = "sms_sent";
           if (primaryPhone) {
             const smsUrl =
               Platform.OS === "ios"
@@ -108,18 +140,19 @@ export default function DeckScreen() {
           }
           break;
         case "call":
+          eventType = "call_made";
           if (primaryPhone) {
             await Linking.openURL(`tel:${primaryPhone}`);
           }
           break;
         case "facetime":
+          eventType = "facetime_made";
           if (primaryPhone && Platform.OS === "ios") {
             await Linking.openURL(`facetime:${primaryPhone}`);
           }
           break;
         case "email":
-          // Premium: server-side email send would go here
-          // For now, fallback to mailto
+          eventType = "email_sent";
           if (primaryEmail) {
             await Linking.openURL(
               `mailto:${primaryEmail}?body=${encodeURIComponent(message)}`
@@ -127,24 +160,20 @@ export default function DeckScreen() {
           }
           break;
         case "slack":
-          // Premium: server-side Slack send would go here
+          eventType = "slack_sent";
           Alert.alert("Coming Soon", "Slack direct messaging coming soon");
           return;
+        default:
+          eventType = "sms_sent";
       }
 
       // Log engagement event
-      const eventType: EngagementEventType =
-        channel === "sms"
-          ? "sms_sent"
-          : channel === "call"
-          ? "call_made"
-          : "email_sent";
       const event = await createEngagementEvent(
         user.id,
         eventType,
         [contact.$id],
         selectedCard.id,
-        { message }
+        { message, channel }
       );
 
       setCompletedEngagementId(event.$id);
