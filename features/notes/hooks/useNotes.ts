@@ -1,4 +1,3 @@
-import { useUser } from "@clerk/clerk-expo";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { processNoteWithProgress } from "../api/notesProcessing.service";
 import {
@@ -13,11 +12,12 @@ import {
   updateNote,
 } from "../api/notes.service";
 import { Note, CreateNoteInput, UpdateNoteInput } from "../types/notes.types";
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 
 const AUTOSAVE_DELAY_MS = 1500;
 
 export function useNotes() {
-  const { user } = useUser();
+  const { profile} = useUserProfile();
   const [notes, setNotes] = useState<Note[]>([]);
   const [pinnedNotes, setPinnedNotes] = useState<Note[]>([]);
   const [userTags, setUserTags] = useState<string[]>([]);
@@ -25,15 +25,15 @@ export function useNotes() {
   const [error, setError] = useState<string | null>(null);
 
   const loadNotes = useCallback(async () => {
-    if (!user) return;
+    if (!profile) return;
 
     try {
       setLoading(true);
       setError(null);
       const [allNotes, pinned, tags] = await Promise.all([
-        getNotesByUser(user.id),
-        getPinnedNotes(user.id),
-        getUserTags(user.id),
+        getNotesByUser(profile.$id),
+        getPinnedNotes(profile.$id),
+        getUserTags(profile.$id),
       ]);
       setNotes(allNotes);
       setPinnedNotes(pinned);
@@ -43,7 +43,7 @@ export function useNotes() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [profile]);
 
   useEffect(() => {
     loadNotes();
@@ -51,19 +51,19 @@ export function useNotes() {
 
   const search = useCallback(
     async (query: string): Promise<Note[]> => {
-      if (!user) return [];
+      if (!profile) return [];
       if (!query.trim()) {
         await loadNotes();
         return notes;
       }
       try {
-        const results = await searchNotes(user.id, query);
+        const results = await searchNotes(profile.$id, query);
         return results;
       } catch {
         return [];
       }
     },
-    [user, notes, loadNotes]
+    [profile, notes, loadNotes]
   );
 
   const create = useCallback(
@@ -73,11 +73,11 @@ export function useNotes() {
       tags?: string[],
       processWithAI: boolean = true
     ): Promise<Note | null> => {
-      if (!user) return null;
+      if (!profile) return null;
 
       try {
         const note = await createNote({
-          userId: user.id,
+          userId: profile.$id,
           rawText,
           contactIds,
           tags,
@@ -96,12 +96,12 @@ export function useNotes() {
         return null;
       }
     },
-    [user, loadNotes]
+    [profile, loadNotes]
   );
 
   const update = useCallback(
     async (noteId: string, input: UpdateNoteInput): Promise<Note | null> => {
-      if (!user) return null;
+      if (!profile) return null;
 
       try {
         const updated = await updateNote(noteId, input);
@@ -117,7 +117,7 @@ export function useNotes() {
         return null;
       }
     },
-    [user]
+    [profile]
   );
 
   const remove = useCallback(async (noteId: string): Promise<boolean> => {
@@ -167,7 +167,7 @@ export function useNotes() {
 }
 
 export function useNoteEditor(noteId?: string) {
-  const { user } = useUser();
+  const { profile } = useUserProfile();
   const [note, setNote] = useState<Note | null>(null);
   const [rawText, setRawText] = useState("");
   const [contactIds, setContactIds] = useState<string[]>([]);
@@ -245,7 +245,7 @@ export function useNoteEditor(noteId?: string) {
   }, []);
 
   const save = useCallback(async (): Promise<Note | null> => {
-    if (!user) return null;
+    if (!profile) return null;
 
     setSaving(true);
     setError(null);
@@ -262,7 +262,7 @@ export function useNoteEditor(noteId?: string) {
         });
       } else {
         savedNote = await createNote({
-          userId: user.id,
+          userId: profile.$id,
           rawText,
           contactIds,
           tags,
@@ -286,7 +286,7 @@ export function useNoteEditor(noteId?: string) {
     } finally {
       setSaving(false);
     }
-  }, [user, note, rawText, contactIds, tags, isPinned]);
+  }, [profile, note, rawText, contactIds, tags, isPinned]);
 
   const reset = useCallback(() => {
     setNote(null);

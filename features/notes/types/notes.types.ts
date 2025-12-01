@@ -28,7 +28,7 @@ export interface Note {
   aiNextSteps: string; // pipe-separated
   aiEntities: string; // comma-separated
 
-  // Timestamps
+  // Timestamps (Appwrite system fields)
   $createdAt: string;
   $updatedAt: string;
   processedAt: string;

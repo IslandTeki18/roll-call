@@ -1,5 +1,5 @@
 import { databases } from "@/features/shared/lib/appwrite";
-import { ID, Query } from "react-native-appwrite";
+import { ID, Query, Permission, Role } from "react-native-appwrite";
 import {
   Note,
   NoteProcessingStatus,
@@ -12,8 +12,6 @@ const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const NOTES_TABLE_ID = process.env.EXPO_PUBLIC_APPWRITE_NOTES_TABLE_ID!;
 
 export const createNote = async (input: CreateNoteInput): Promise<Note> => {
-  const timestamp = new Date().toISOString();
-
   const data = {
     userId: input.userId,
     rawText: input.rawText.trim(),
@@ -26,8 +24,6 @@ export const createNote = async (input: CreateNoteInput): Promise<Note> => {
     aiSummary: "",
     aiNextSteps: "",
     aiEntities: "",
-    $createdAt: timestamp,
-    $updatedAt: timestamp,
     processedAt: "",
   };
 
@@ -45,11 +41,7 @@ export const updateNote = async (
   noteId: string,
   input: UpdateNoteInput
 ): Promise<Note> => {
-  const timestamp = new Date().toISOString();
-
-  const data: Record<string, unknown> = {
-    $updatedAt: timestamp,
-  };
+  const data: Record<string, unknown> = {};
 
   if (input.rawText !== undefined) {
     data.rawText = input.rawText.trim();
@@ -97,7 +89,6 @@ export const updateNoteWithAI = async (
     aiNextSteps: aiResults.aiNextSteps.join("|"),
     aiEntities: aiResults.aiEntities.join(","),
     processedAt: timestamp,
-    $updatedAt: timestamp,
   };
 
   const response = await databases.updateDocument(
@@ -111,15 +102,12 @@ export const updateNoteWithAI = async (
 };
 
 export const markNoteAsProcessing = async (noteId: string): Promise<Note> => {
-  const timestamp = new Date().toISOString();
-
   const response = await databases.updateDocument(
     DATABASE_ID,
     NOTES_TABLE_ID,
     noteId,
     {
       processingStatus: "processing" as NoteProcessingStatus,
-      $updatedAt: timestamp,
     }
   );
 
@@ -130,8 +118,6 @@ export const markNoteAsFailed = async (
   noteId: string,
   errorMessage: string
 ): Promise<Note> => {
-  const timestamp = new Date().toISOString();
-
   const response = await databases.updateDocument(
     DATABASE_ID,
     NOTES_TABLE_ID,
@@ -139,7 +125,6 @@ export const markNoteAsFailed = async (
     {
       processingStatus: "failed" as NoteProcessingStatus,
       processingError: errorMessage,
-      $updatedAt: timestamp,
     }
   );
 
@@ -220,11 +205,7 @@ export const searchNotes = async (
 ): Promise<Note[]> => {
   const response = await databases.listDocuments(DATABASE_ID, NOTES_TABLE_ID, [
     Query.equal("userId", userId),
-    Query.or([
-      Query.contains("rawText", searchText),
-      Query.contains("aiSummary", searchText),
-      Query.contains("tags", searchText),
-    ]),
+    Query.contains("rawText", searchText),
     Query.orderDesc("$updatedAt"),
     Query.limit(limit),
   ]);

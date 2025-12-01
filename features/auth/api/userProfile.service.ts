@@ -6,7 +6,7 @@ const USER_PROFILES_TABLE_ID =
   process.env.EXPO_PUBLIC_APPWRITE_USER_PROFILES_TABLE_ID!;
 
 export interface UserProfile {
-  id: string;
+  $id: string;
   clerkUserId: string;
   email: string;
   phone?: string;
@@ -14,8 +14,8 @@ export interface UserProfile {
   lastName?: string;
   displayName: string;
   isPremiumUser: boolean;
-  createdAt: string;
-  updatedAt: string;
+  $createdAt: string;
+  $updatedAt: string;
 }
 
 export async function getOrCreateUserProfile(
