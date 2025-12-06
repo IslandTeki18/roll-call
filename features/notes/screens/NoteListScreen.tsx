@@ -85,7 +85,7 @@ export default function NotesListScreen() {
   const unpinnedNotes = displayNotes.filter((n) => !n.isPinned);
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1">
       {/* Header */}
       <View className="px-4 pt-2 pb-4">
         <View className="flex-row items-center justify-between mb-4">

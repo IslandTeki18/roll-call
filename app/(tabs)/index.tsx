@@ -1,6 +1,5 @@
 import { Text, View, ScrollView } from "react-native";
 import React from "react";
-import { SignOutButton } from "../../features/auth/components/SignOutButton";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function index() {
@@ -11,7 +10,6 @@ export default function index() {
           <Text className="text-2xl font-bold mb-4">Home</Text>
           <Text className="text-gray-600">Not available yet</Text>
 
-          <SignOutButton />
         </View>
       </ScrollView>
     </SafeAreaView>
