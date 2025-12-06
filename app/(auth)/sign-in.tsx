@@ -25,7 +25,6 @@ export default function SignIn() {
         password,
       });
 
-      console.log("Sign in attempt response:", signInAttempt);
 
       if (signInAttempt.status === "complete") {
         console.log("Sign in successful, setting active session.");
