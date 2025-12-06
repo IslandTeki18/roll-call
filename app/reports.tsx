@@ -3,7 +3,7 @@ import { Lock } from "lucide-react-native";
 import React, { useEffect } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { usePremiumGate } from "../../features/auth/hooks/usePremiumGate";
+import { usePremiumGate } from "../features/auth/hooks/usePremiumGate";
 
 export default function Reports() {
   const { isPremium, requirePremium } = usePremiumGate();

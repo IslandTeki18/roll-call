@@ -1,6 +1,6 @@
 import "../global.css";
 import { useFonts } from "expo-font";
-import { Slot } from "expo-router";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
@@ -29,7 +29,10 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-        <Slot />
+        <Stack screenOptions={{ headerShown: false}}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="+not-found" />
+        </Stack>
       </ClerkProvider>
     </GestureHandlerRootView>
   );

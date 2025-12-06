@@ -1,12 +1,12 @@
 import { Redirect, Tabs } from "expo-router";
 import { useUserProfile } from "../../features/auth/hooks/useUserProfile";
 import { View, Text } from "react-native";
-import { useAuth } from "@clerk/clerk-expo"
+import { useAuth } from "@clerk/clerk-expo";
 import {
   HomeIcon,
   UsersIcon,
   FileTextIcon,
-  BarChart3Icon,
+  SettingsIcon,
   Contact,
 } from "lucide-react-native";
 
@@ -37,17 +37,11 @@ export default function TabsLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }}>
       <Tabs.Screen
-        name="index"
-        options={{
-          tabBarIcon: ({ color }) => <HomeIcon size={28} color={color} />,
-        }}
-        
-      />
-      <Tabs.Screen
         name="deck"
         options={{
           title: "Deck",
           tabBarIcon: ({ color }) => <Contact size={28} color={color} />,
+          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -58,6 +52,13 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="index"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color }) => <HomeIcon size={28} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="notes"
         options={{
           title: "Notes",
@@ -65,10 +66,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="reports"
+        name="settings"
         options={{
-          title: "Reports",
-          tabBarIcon: ({ color }) => <BarChart3Icon size={28} color={color} />,
+          title: "Settings",
+          tabBarIcon: ({ color }) => <SettingsIcon size={28} color={color} />,
         }}
       />
     </Tabs>
