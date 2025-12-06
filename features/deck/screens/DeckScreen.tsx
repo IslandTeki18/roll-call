@@ -17,6 +17,7 @@ import DraftPicker from "../components/DraftPicker";
 import EmptyDeck from "../components/EmptyDeck";
 import { useDeck } from "../hooks/useDeck";
 import { ChannelType, DeckCard } from "../types/deck.types";
+import { markCardDrafted, markCardSent } from "../api/deck.mutations";
 
 export default function DeckScreen() {
   const { profile } = useUserProfile(); // Changed from useUser
@@ -41,6 +42,9 @@ export default function DeckScreen() {
   >();
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
 
+  console.log("Profile in DeckScreen:", JSON.stringify(profile, null, 2)); // Debugging line
+  // console.log()
+
   const pendingCards =
     deck?.cards.filter((c: any) => c.status === "pending") || [];
   const completedCards =
@@ -52,16 +56,18 @@ export default function DeckScreen() {
 
   const handleCardTap = useCallback(
     (card: DeckCard) => {
+      console.log("Card tapped:", JSON.stringify(card, null, 2)); // Debugging line
       setSelectedCard(card);
       generateDraftsForCard(card);
+      markCardDrafted(profile?.$id as string, card.$id, card.contact.$id, card.$createdAt as string);
       setDraftPickerVisible(true);
     },
-    [generateDraftsForCard]
+    [generateDraftsForCard, profile?.$id]
   );
 
   const handleSwipeRight = useCallback(
     (cardId: string) => {
-      const card = deck?.cards.find((c: DeckCard) => c.id === cardId);
+      const card = deck?.cards.find((c: DeckCard) => c.$id === cardId);
       if (card) {
         setSelectedCard(card);
         generateDraftsForCard(card);
@@ -74,7 +80,7 @@ export default function DeckScreen() {
   const handleSwipeLeft = useCallback(
     async (cardId: string) => {
       if (!profile) return; // Changed from user
-      const card = deck?.cards.find((c: DeckCard) => c.id === cardId);
+      const card = deck?.cards.find((c: DeckCard) => c.$id === cardId);
       if (card) {
         // Log card_dismissed engagement event
         await createEngagementEvent(
@@ -93,7 +99,7 @@ export default function DeckScreen() {
   const handleSnooze = useCallback(
     async (cardId: string) => {
       if (!profile) return; // Changed from user
-      const card = deck?.cards.find((c: DeckCard) => c.id === cardId);
+      const card = deck?.cards.find((c: DeckCard) => c.$id === cardId);
       if (card) {
         // Log card_snoozed engagement event
         await createEngagementEvent(
@@ -172,10 +178,10 @@ export default function DeckScreen() {
         profile.clerkUserId, // Changed from user.id
         eventType,
         [contact.$id],
-        selectedCard.id,
+        selectedCard.$id,
         { message, channel }
       );
-
+      markCardSent(selectedCard.$id, event.$id);
       setCompletedEngagementId(event.$id);
       setDraftPickerVisible(false);
       setOutcomeSheetVisible(true);
@@ -185,7 +191,7 @@ export default function DeckScreen() {
 
   const handleOutcomeComplete = useCallback(async () => {
     if (selectedCard) {
-      await markCardCompleted(selectedCard.id);
+      await markCardCompleted(selectedCard.$id);
       setOutcomeSheetVisible(false);
       setSelectedCard(null);
       setCompletedEngagementId(undefined);
@@ -195,7 +201,7 @@ export default function DeckScreen() {
 
   const handleOutcomeClose = useCallback(async () => {
     if (selectedCard) {
-      await markCardCompleted(selectedCard.id);
+      await markCardCompleted(selectedCard.$id);
     }
     setOutcomeSheetVisible(false);
     setSelectedCard(null);
@@ -279,7 +285,7 @@ export default function DeckScreen() {
         onClose={handleOutcomeClose}
         contactIds={selectedCard ? [selectedCard.contact.$id] : []}
         contactNames={selectedCard ? [selectedCard.contact.displayName] : []}
-        linkedCardId={selectedCard?.id}
+        linkedCardId={selectedCard?.$id}
         linkedEngagementEventId={completedEngagementId}
         engagementType="sms_sent"
         onComplete={handleOutcomeComplete}

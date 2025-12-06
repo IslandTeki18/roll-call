@@ -10,7 +10,7 @@ export type CardStatus =
 export type ChannelType = "sms" | "call" | "facetime" | "email" | "slack";
 
 export interface DeckCard {
-  id: string;
+  $id: string;
   contact: ProfileContact;
   status: CardStatus;
   isFresh: boolean; // NEW pill for contacts < 14 days
@@ -19,6 +19,8 @@ export interface DeckCard {
   reason: string; // Why this contact surfaced (e.g., "Haven't connected in 2 weeks")
   completedAt?: string;
   outcomeId?: string;
+  $createdAt?: string;
+  $updatedAt?: string;
 }
 
 export interface Draft {
