@@ -85,8 +85,8 @@ export default function DraftPicker({
   if (!card) return null;
 
   const initials =
-    `${card.contact.firstName?.charAt(0) || ""}${
-      card.contact.lastName?.charAt(0) || ""
+    `${card.contact?.firstName?.charAt(0) || ""}${
+      card.contact?.lastName?.charAt(0) || ""
     }`.toUpperCase() || "?";
 
   return (
@@ -119,7 +119,7 @@ export default function DraftPicker({
                   </View>
                   <View className="flex-1">
                     <Text className="text-lg font-bold">
-                      {card.contact.displayName}
+                      {card.contact?.displayName}
                     </Text>
                     <Text className="text-sm text-gray-500">{card.reason}</Text>
                   </View>

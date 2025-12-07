@@ -56,7 +56,7 @@ export default function DeckScreen() {
       console.log("Card tapped:", JSON.stringify(card, null, 2)); // Debugging line
       setSelectedCard(card);
       generateDraftsForCard(card);
-      markCardDrafted(profile?.$id as string, card.$id, card.contact.$id, card.$createdAt as string);
+      markCardDrafted(card.$id as string);
       setDraftPickerVisible(true);
     },
     [generateDraftsForCard, profile?.$id]
@@ -83,7 +83,7 @@ export default function DeckScreen() {
         await createEngagementEvent(
           profile.$id,
           "card_dismissed",
-          [card.contact.$id],
+          [card.contact?.$id as string],
           cardId
         );
       }
@@ -100,7 +100,7 @@ export default function DeckScreen() {
         await createEngagementEvent(
           profile.$id,
           "card_snoozed",
-          [card.contact.$id],
+          [card.contact?.$id as string],
           cardId
         );
         await markCardSnoozed(cardId);
@@ -122,8 +122,8 @@ export default function DeckScreen() {
 
       const contact = selectedCard.contact;
       const phoneNumbers =
-        contact.phoneNumbers?.split(",").filter(Boolean) || [];
-      const emails = contact.emails?.split(",").filter(Boolean) || [];
+        contact?.phoneNumbers?.split(",").filter(Boolean) || [];
+      const emails = contact?.emails?.split(",").filter(Boolean) || [];
       const primaryPhone = phoneNumbers[0];
       const primaryEmail = emails[0];
 
@@ -172,13 +172,13 @@ export default function DeckScreen() {
       const event = await createEngagementEvent(
         profile.$id,
         eventType,
-        [contact.$id],
+        [contact?.$id as string],
         selectedCard.$id,
         { message, channel }
       );
 
       // Persist sent_at timestamp
-      await markCardSent(selectedCard.$id, event.$id);
+      await markCardSent(selectedCard.$id as string, event.$id);
 
       setCompletedEngagementId(event.$id);
       setDraftPickerVisible(false);
@@ -189,7 +189,7 @@ export default function DeckScreen() {
 
   const handleOutcomeComplete = useCallback(async () => {
     if (selectedCard) {
-      await markCardCompleted(selectedCard.$id);
+      await markCardCompleted(selectedCard.$id as string);
       setOutcomeSheetVisible(false);
       setSelectedCard(null);
       setCompletedEngagementId(undefined);
@@ -198,7 +198,7 @@ export default function DeckScreen() {
 
   const handleOutcomeClose = useCallback(async () => {
     if (selectedCard) {
-      await markCardCompleted(selectedCard.$id);
+      await markCardCompleted(selectedCard.$id as string);
     }
     setOutcomeSheetVisible(false);
     setSelectedCard(null);
@@ -279,8 +279,8 @@ export default function DeckScreen() {
       <OutcomeSheet
         visible={outcomeSheetVisible}
         onClose={handleOutcomeClose}
-        contactIds={selectedCard ? [selectedCard.contact.$id] : []}
-        contactNames={selectedCard ? [selectedCard.contact.displayName] : []}
+        contactIds={selectedCard ? [selectedCard.contact?.$id as string] : []}
+        contactNames={selectedCard ? [selectedCard.contact?.displayName as string] : []}
         linkedCardId={selectedCard?.$id}
         linkedEngagementEventId={completedEngagementId}
         engagementType="sms_sent"

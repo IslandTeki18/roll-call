@@ -10,17 +10,26 @@ export type CardStatus =
 export type ChannelType = "sms" | "call" | "facetime" | "email" | "slack";
 
 export interface DeckCard {
-  $id: string;
-  contact: ProfileContact;
+  $id?: string;
+  userId: string;
+  cardId: string;
+  contactId: string;
+  date: string;
   status: CardStatus;
-  isFresh: boolean; // NEW pill for contacts < 14 days
-  rhsScore: number; // Relationship Health Score
+  draftedAt: string;
+  sentAt: string;
+  completedAt: string;
+  linkedEngagementEventId: string;
+  linkedOutcomeId: string;
   suggestedChannel: ChannelType;
-  reason: string; // Why this contact surfaced (e.g., "Haven't connected in 2 weeks")
-  completedAt?: string;
-  outcomeId?: string;
-  $createdAt?: string;
-  $updatedAt?: string;
+  reason: string;
+  rhsScore: number;
+  isFresh: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+
+  // Hydrated field (not in table)
+  contact?: ProfileContact;
 }
 
 export interface Draft {
@@ -31,11 +40,10 @@ export interface Draft {
 }
 
 export interface DeckState {
-  id: string;
   userId: string;
-  date: string; // ISO date string (YYYY-MM-DD)
+  date: string;
   cards: DeckCard[];
-  maxCards: number; // 5 free, 10 premium
+  maxCards: number;
   generatedAt: string;
   completedAt?: string;
 }

@@ -32,7 +32,6 @@ export function useDeck() {
     setLoading(true);
     try {
       const maxCards = isPremium ? 10 : 5;
-      //TODO: Change to profile.id when backend is fixed
       const cards = await buildDeck(profile.$id, maxCards);
       const todayDate = new Date().toISOString().split("T")[0];
 
@@ -42,7 +41,6 @@ export function useDeck() {
       }
 
       setDeck({
-        id: `deck-${profile.$id}-${todayDate}`,
         userId: profile.$id,
         date: todayDate,
         cards,
@@ -65,14 +63,9 @@ export function useDeck() {
       setDraftsError(null);
       setDrafts([]);
 
-      // Persist drafted_at timestamp
+      // Persist drafted_at timestamp using Appwrite document $id
       try {
-        await persistCardDrafted(
-          profile.$id,
-          card.$id,
-          card.contact.$id,
-          new Date().toISOString().split("T")[0]
-        );
+        await persistCardDrafted(card.$id as string);
       } catch (error) {
         console.error("Failed to persist drafted timestamp:", error);
       }
@@ -82,7 +75,7 @@ export function useDeck() {
           {
             id: "1",
             text: `Hey ${
-              card.contact.firstName || "there"
+              card.contact?.firstName as string || "there"
             }! It's been a while - would love to catch up soon. How have you been?`,
             tone: "casual",
             channel: card.suggestedChannel,
@@ -90,7 +83,7 @@ export function useDeck() {
           {
             id: "2",
             text: `Hi ${
-              card.contact.firstName || "there"
+              card.contact?.firstName as string || "there"
             }, hope you're doing well. I was thinking of you and wanted to reconnect. Let me know if you have time for a quick call.`,
             tone: "professional",
             channel: card.suggestedChannel,
@@ -104,12 +97,12 @@ export function useDeck() {
         const [casualDraft, professionalDraft] = await Promise.all([
           generateDraft(
             profile.$id,
-            card.contact.$id,
+            card.contact?.$id as string,
             "casual friendly message"
           ),
           generateDraft(
             profile.$id,
-            card.contact.$id,
+            card.contact?.$id as string,
             "professional follow-up"
           ),
         ]);
@@ -135,7 +128,7 @@ export function useDeck() {
           {
             id: "1",
             text: `Hey ${
-              card.contact.firstName || "there"
+              card.contact?.firstName as string || "there"
             }! It's been a while - would love to catch up soon. How have you been?`,
             tone: "casual",
             channel: card.suggestedChannel,
@@ -143,7 +136,7 @@ export function useDeck() {
           {
             id: "2",
             text: `Hi ${
-              card.contact.firstName || "there"
+              card.contact?.firstName as string || "there"
             }, hope you're doing well. I was thinking of you and wanted to reconnect. Let me know if you have time for a quick call.`,
             tone: "professional",
             channel: card.suggestedChannel,

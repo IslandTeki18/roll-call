@@ -88,8 +88,8 @@ export default function Card({
 
   const ChannelIcon = channelIcons[card.suggestedChannel];
   const initials =
-    `${card.contact.firstName?.charAt(0) || ""}${
-      card.contact.lastName?.charAt(0) || ""
+    `${card.contact?.firstName?.charAt(0) || ""}${
+      card.contact?.lastName?.charAt(0) || ""
     }`.toUpperCase() || "?";
 
   return (
@@ -131,7 +131,7 @@ export default function Card({
           <View className="flex-1">
             <View className="flex-row items-center gap-2">
               <Text className="text-lg font-semibold">
-                {card.contact.displayName}
+                {card.contact?.displayName}
               </Text>
               {card.isFresh && (
                 <View className="bg-purple-100 px-2 py-0.5 rounded-full flex-row items-center gap-1">
@@ -142,9 +142,9 @@ export default function Card({
                 </View>
               )}
             </View>
-            {card.contact.organization && (
+            {card.contact?.organization && (
               <Text className="text-gray-500 text-sm">
-                {card.contact.organization}
+                {card.contact?.organization}
               </Text>
             )}
           </View>
