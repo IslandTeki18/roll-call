@@ -1,17 +1,21 @@
 # OutcomeNotes Table Schema
 
 ## Overview
+
 The `OutcomeNotes` table stores user reflections after engagement events (messages sent, calls made, etc.). Each outcome is processed by AI to extract summaries, next steps, entities, and sentiment.
 
 ## Appwrite Configuration
 
 ### Collection Name
+
 `OutcomeNotes`
 
 ### Collection ID
+
 Store in `.env` as: `EXPO_PUBLIC_APPWRITE_OUTCOME_NOTES_TABLE_ID`
 
 ### Permissions
+
 - **Read**: `user:{userId}`
 - **Create**: `user:{userId}`
 - **Update**: `user:{userId}`
@@ -21,16 +25,17 @@ Store in `.env` as: `EXPO_PUBLIC_APPWRITE_OUTCOME_NOTES_TABLE_ID`
 
 ### Core Fields
 
-| Attribute | Type | Size | Required | Default | Indexed |
-|-----------|------|------|----------|---------|---------|
-| userId | string | 255 | ✓ | - | ✓ |
-| rawText | string | 500 | ✓ | - | - |
-| userSentiment | string | 50 | ✓ | - | - |
-| contactIds | string | 1000 | ✓ | - | ✓ |
-| linkedCardId | string | 255 | - | "" | ✓ |
-| linkedEngagementEventId | string | 255 | - | "" | ✓ |
+| Attribute               | Type   | Size | Required | Default | Indexed |
+| ----------------------- | ------ | ---- | -------- | ------- | ------- |
+| userId                  | string | 255  | ✓        | -       | ✓       |
+| rawText                 | string | 500  | ✓        | -       | -       |
+| userSentiment           | string | 50   | ✓        | -       | -       |
+| contactIds              | string | 1000 | ✓        | -       | ✓       |
+| linkedCardId            | string | 255  | -        | ""      | ✓       |
+| linkedEngagementEventId | string | 255  | -        | ""      | ✓       |
 
 **Notes:**
+
 - `rawText`: User's free-form reflection (140 char limit enforced in UI, but allow 500 for flexibility)
 - `userSentiment`: Enum values: "positive", "neutral", "negative", "mixed"
 - `contactIds`: Comma-separated list of contact IDs
@@ -39,27 +44,29 @@ Store in `.env` as: `EXPO_PUBLIC_APPWRITE_OUTCOME_NOTES_TABLE_ID`
 
 ### AI Processing Fields
 
-| Attribute | Type | Size | Required | Default | Indexed |
-|-----------|------|------|----------|---------|---------|
-| aiAnalysisId | string | 255 | - | "" | ✓ |
-| processingStatus | string | 50 | ✓ | "pending" | ✓ |
-| processingError | string | 1000 | - | "" | - |
+| Attribute        | Type   | Size | Required | Default   | Indexed |
+| ---------------- | ------ | ---- | -------- | --------- | ------- |
+| aiAnalysisId     | string | 255  | -        | ""        | ✓       |
+| processingStatus | string | 50   | ✓        | "pending" | ✓       |
+| processingError  | string | 1000 | -        | ""        | -       |
 
 **Notes:**
+
 - `aiAnalysisId`: Links to `AIAnalysisLogs.$id` after AI processing completes
 - `processingStatus`: Enum values: "pending", "processing", "completed", "failed"
 - `processingError`: Error message if AI processing fails
 
 ### AI Results (Denormalized)
 
-| Attribute | Type | Size | Required | Default | Indexed |
-|-----------|------|------|----------|---------|---------|
-| aiSummary | string | 1000 | - | "" | - |
-| aiNextSteps | string | 2000 | - | "" | - |
-| aiEntities | string | 1000 | - | "" | - |
-| aiSentiment | string | 50 | - | "neutral" | - |
+| Attribute   | Type   | Size | Required | Default   | Indexed |
+| ----------- | ------ | ---- | -------- | --------- | ------- |
+| aiSummary   | string | 1000 | -        | ""        | -       |
+| aiNextSteps | string | 2000 | -        | ""        | -       |
+| aiEntities  | string | 1000 | -        | ""        | -       |
+| aiSentiment | string | 50   | -        | "neutral" | -       |
 
 **Notes:**
+
 - `aiSummary`: 1-2 sentence AI-generated summary
 - `aiNextSteps`: Pipe-separated list of actionable items
 - `aiEntities`: Comma-separated list of people/companies/organizations
@@ -67,14 +74,15 @@ Store in `.env` as: `EXPO_PUBLIC_APPWRITE_OUTCOME_NOTES_TABLE_ID`
 
 ### Metadata Fields
 
-| Attribute | Type | Size | Required | Default | Indexed |
-|-----------|------|------|----------|---------|---------|
-| recordedAt | datetime | - | ✓ | now() | ✓ |
-| processedAt | datetime | - | - | - | ✓ |
-| createdAt | datetime | - | ✓ | now() | ✓ |
-| updatedAt | datetime | - | ✓ | now() | ✓ |
+| Attribute   | Type     | Size | Required | Default | Indexed |
+| ----------- | -------- | ---- | -------- | ------- | ------- |
+| recordedAt  | datetime | -    | ✓        | now()   | ✓       |
+| processedAt | datetime | -    | -        | -       | ✓       |
+| createdAt   | datetime | -    | ✓        | now()   | ✓       |
+| updatedAt   | datetime | -    | ✓        | now()   | ✓       |
 
 **Notes:**
+
 - `recordedAt`: When user saved the outcome (use for recency sorting)
 - `processedAt`: When AI completed processing (use for analytics)
 - `createdAt`/`updatedAt`: Standard audit fields
@@ -84,21 +92,25 @@ Store in `.env` as: `EXPO_PUBLIC_APPWRITE_OUTCOME_NOTES_TABLE_ID`
 Create the following indexes for optimal query performance:
 
 1. **userId_recordedAt**
+
    - Type: Key
    - Attributes: `userId` (ASC), `recordedAt` (DESC)
    - Use: Main query pattern for user's outcomes
 
 2. **userId_processingStatus**
+
    - Type: Key
    - Attributes: `userId` (ASC), `processingStatus` (ASC)
    - Use: Finding pending/failed outcomes for background processing
 
 3. **userId_contactIds**
+
    - Type: Fulltext
    - Attributes: `contactIds`
    - Use: Finding outcomes for specific contacts
 
 4. **linkedEngagementEventId**
+
    - Type: Key
    - Attributes: `linkedEngagementEventId` (ASC)
    - Use: Finding outcome linked to specific engagement
@@ -111,13 +123,15 @@ Create the following indexes for optimal query performance:
 ## Relationships
 
 ### Direct References
-- `userId` → `UserProfiles.clerkUserId`
+
+- `userId` → `UserProfiles.$id`
 - `contactIds` → `ProfileContacts.$id` (comma-separated)
 - `linkedCardId` → Deck card ID (when deck system is built)
 - `linkedEngagementEventId` → `EngagementEvents.$id`
 - `aiAnalysisId` → `AIAnalysisLogs.$id`
 
 ### Reverse Relationships
+
 - One `OutcomeNote` → One `AIAnalysisLog`
 - One `OutcomeNote` → One `EngagementEvent`
 - One `OutcomeNote` → Many `ProfileContacts`
@@ -125,31 +139,33 @@ Create the following indexes for optimal query performance:
 ## Query Patterns
 
 ### Get user's recent outcomes
+
 ```typescript
-Query.equal("userId", userId),
-Query.orderDesc("recordedAt"),
-Query.limit(100)
+Query.equal("userId", userId), Query.orderDesc("recordedAt"), Query.limit(100);
 ```
 
 ### Get pending outcomes for background processing
+
 ```typescript
 Query.equal("userId", userId),
-Query.equal("processingStatus", "pending"),
-Query.limit(50)
+  Query.equal("processingStatus", "pending"),
+  Query.limit(50);
 ```
 
 ### Get outcomes for a contact
+
 ```typescript
 Query.equal("userId", userId),
-Query.contains("contactIds", contactId),
-Query.orderDesc("recordedAt")
+  Query.contains("contactIds", contactId),
+  Query.orderDesc("recordedAt");
 ```
 
 ### Get outcome for engagement event
+
 ```typescript
 Query.equal("userId", userId),
-Query.equal("linkedEngagementEventId", eventId),
-Query.limit(1)
+  Query.equal("linkedEngagementEventId", eventId),
+  Query.limit(1);
 ```
 
 ## Example Document
@@ -192,6 +208,7 @@ Query.limit(1)
 ## Analytics & Reports
 
 This table enables the following analytics:
+
 - Outcome completion rate per user
 - Average outcomes per contact
 - Sentiment distribution over time

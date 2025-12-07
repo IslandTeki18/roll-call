@@ -1,3 +1,8 @@
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Changed import
+import {
+  loadContacts,
+  ProfileContact,
+} from "@/features/contacts/api/contacts.service";
 import { Check, Search, X } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
@@ -8,11 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import {
-  loadContacts,
-  ProfileContact,
-} from "@/features/contacts/api/contacts.service";
-import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Changed import
 
 interface ContactPickerProps {
   visible: boolean;
@@ -38,7 +38,7 @@ export default function ContactPicker({
   useEffect(() => {
     if (visible && profile) {
       // Changed from user
-      loadContacts(profile.clerkUserId).then((data) => {
+      loadContacts(profile.$id).then((data) => {
         // Changed from user.id
         setContacts(data);
         setFilteredContacts(data);

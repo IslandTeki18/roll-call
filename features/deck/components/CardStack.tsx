@@ -32,9 +32,11 @@ export default function CardStack({
         const scale = 1 - (visibleCards.length - 1 - index) * 0.05;
         const translateY = (visibleCards.length - 1 - index) * 8;
 
+        console.log("Card from CardStack: ", JSON.stringify(card, null, 2)); // Debugging line
+
         return (
           <Animated.View
-            key={card.id}
+            key={card.$id}
             entering={FadeIn.duration(200)}
             exiting={FadeOut.duration(200)}
             layout={Layout.springify()}
@@ -47,8 +49,8 @@ export default function CardStack({
           >
             <Card
               card={card}
-              onSwipeLeft={() => onSwipeLeft(card.id)}
-              onSwipeRight={() => onSwipeRight(card.id)}
+              onSwipeLeft={() => onSwipeLeft(card.$id)}
+              onSwipeRight={() => onSwipeRight(card.$id)}
               onTap={() => onTap(card)}
             />
           </Animated.View>

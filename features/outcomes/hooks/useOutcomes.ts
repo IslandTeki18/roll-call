@@ -1,3 +1,4 @@
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 import { useCallback, useState } from "react";
 import { processOutcomeWithProgress } from "../api/aiProcessing.service";
 import {
@@ -7,7 +8,6 @@ import {
   OutcomeNote,
   OutcomeSentiment,
 } from "../api/outcomeNotes.service";
-import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 
 interface OutcomeSheetConfig {
   contactIds: string[];
@@ -56,7 +56,7 @@ export function useOutcome() {
         setError(null);
 
         const outcome = await createOutcomeNote({
-          userId: profile.clerkUserId, // Changed from user.id
+          userId: profile.$id, // Changed from user.id
           rawText: rawText.trim(),
           userSentiment: sentiment,
           contactIds,
@@ -96,7 +96,7 @@ export function useOutcome() {
         setLoading(true);
         setError(null);
         const outcomes = await getOutcomeNotesByContact(
-          profile.clerkUserId, // Changed from user.id
+          profile.$id, // Changed from user.id
           contactId,
           limit
         );
@@ -124,10 +124,7 @@ export function useOutcome() {
       try {
         setLoading(true);
         setError(null);
-        const outcomes = await getOutcomeNotesByUser(
-          profile.clerkUserId,
-          limit
-        ); // Changed from user.id
+        const outcomes = await getOutcomeNotesByUser(profile.$id, limit); // Changed from user.id
         return outcomes;
       } catch (err) {
         const errorMessage =

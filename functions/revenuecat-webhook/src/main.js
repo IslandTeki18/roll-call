@@ -21,7 +21,7 @@ export default async ({ req, res, log, error }) => {
       const users = await databases.listDocuments(
         process.env.DATABASE_ID,
         process.env.USER_PROFILES_TABLE_ID,
-        [Query.equal("clerkUserId", appUserId)]
+        [Query.equal("$id", appUserId)]
       );
 
       if (users.documents.length === 0) {
@@ -58,7 +58,7 @@ export default async ({ req, res, log, error }) => {
       const users = await databases.listDocuments(
         process.env.DATABASE_ID,
         process.env.USER_PROFILES_TABLE_ID,
-        [Query.equal("clerkUserId", appUserId)]
+        [Query.equal("$id", appUserId)]
       );
 
       if (users.documents.length > 0) {

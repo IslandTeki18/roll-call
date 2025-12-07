@@ -1,34 +1,34 @@
-import CadenceSelector from "../components/CadenceSelector";
-import { updateContactCadence } from "../api/contacts.service";
-import {
-  Text,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Linking,
-  Alert,
-  Platform,
-} from "react-native";
-import { useState, useEffect } from "react";
+import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Changed import
+import { generateDraft } from "@/features/messaging/api/drafts.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  Phone,
-  Mail,
-  MessageSquare,
-  Video,
   Calendar,
-  Tag,
   ChevronLeft,
   Edit3,
-  Trash2,
   Lock,
+  Mail,
+  MessageSquare,
+  Phone,
   Sparkles,
+  Tag,
+  Trash2,
+  Video,
 } from "lucide-react-native";
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  Linking,
+  Platform,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { tablesDB } from "../../shared/lib/appwrite";
-import { generateDraft } from "@/features/messaging/api/drafts.service";
-import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Changed import
-import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
+import { updateContactCadence } from "../api/contacts.service";
+import CadenceSelector from "../components/CadenceSelector";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const PROFILE_CONTACTS_COLLECTION_ID =
@@ -112,7 +112,7 @@ export default function ContactDetailsScreen() {
 
     setGeneratingDraft(true);
     try {
-      const generated = await generateDraft(profile.clerkUserId, contact.$id); // Changed from user.id
+      const generated = await generateDraft(profile.$id, contact.$id); // Changed from user.id
       setDraft(generated);
       Alert.alert("Draft Generated", generated);
     } catch (error) {

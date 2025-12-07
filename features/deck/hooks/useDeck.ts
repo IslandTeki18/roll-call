@@ -33,7 +33,7 @@ export function useDeck() {
     try {
       const maxCards = isPremium ? 10 : 5;
       //TODO: Change to profile.id when backend is fixed
-      const cards = await buildDeck(profile.clerkUserId, maxCards);
+      const cards = await buildDeck(profile.$id, maxCards);
       const todayDate = new Date().toISOString().split("T")[0];
 
       if (cards.length === 0) {

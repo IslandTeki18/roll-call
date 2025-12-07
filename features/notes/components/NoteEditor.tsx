@@ -1,3 +1,9 @@
+import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Already using useUserProfile
+import {
+  loadContacts,
+  ProfileContact,
+} from "@/features/contacts/api/contacts.service";
 import {
   ChevronLeft,
   Link2,
@@ -21,12 +27,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  loadContacts,
-  ProfileContact,
-} from "@/features/contacts/api/contacts.service";
-import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
-import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Already using useUserProfile
 import { useNoteEditor } from "../hooks/useNotes";
 import ContactPicker from "./ContactPicker";
 import TagInput from "./TagInput";
@@ -70,7 +70,7 @@ export default function NoteEditor({
   useEffect(() => {
     if (profile && contactIds.length > 0) {
       // Changed from user
-      loadContacts(profile.clerkUserId).then((allContacts) => {
+      loadContacts(profile.$id).then((allContacts) => {
         // Changed from user.id
         const linked = allContacts.filter((c) => contactIds.includes(c.$id));
         setLinkedContacts(linked);

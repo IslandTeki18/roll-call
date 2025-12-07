@@ -88,7 +88,6 @@ export default function DeckScreen() {
         );
       }
       await markCardSkipped(cardId);
-      checkDeckComplete();
     },
     [profile, deck, markCardSkipped]
   );
@@ -194,7 +193,6 @@ export default function DeckScreen() {
       setOutcomeSheetVisible(false);
       setSelectedCard(null);
       setCompletedEngagementId(undefined);
-      checkDeckComplete();
     }
   }, [selectedCard, markCardCompleted]);
 
@@ -205,8 +203,7 @@ export default function DeckScreen() {
     setOutcomeSheetVisible(false);
     setSelectedCard(null);
     setCompletedEngagementId(undefined);
-    checkDeckComplete();
-  }, [selectedCard, markCardCompleted]);
+  }, [selectedCard]);
 
   const checkDeckComplete = useCallback(() => {
     if (deck) {

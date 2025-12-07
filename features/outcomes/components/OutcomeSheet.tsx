@@ -1,4 +1,4 @@
-import { Frown, Meh, Smile, Sparkles, X, Lock } from "lucide-react-native";
+import { Frown, Lock, Meh, Smile, Sparkles, X } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -11,9 +11,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { processOutcomeWithProgress } from "../api/aiProcessing.service";
 import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
 import { useUserProfile } from "../../auth/hooks/useUserProfile"; // Changed import
+import { processOutcomeWithProgress } from "../api/aiProcessing.service";
 
 import {
   createOutcomeNote,
@@ -79,7 +79,7 @@ export default function OutcomeSheet({
       setError(null);
 
       const outcome = await createOutcomeNote({
-        userId: profile.clerkUserId, // Changed from user.id
+        userId: profile.$id,
         rawText: noteText.trim(),
         userSentiment: sentiment,
         contactIds,
