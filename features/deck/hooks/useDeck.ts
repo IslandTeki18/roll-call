@@ -1,12 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
-import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Changed import
 import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
-import { DeckState, Draft, DeckCard } from "../types/deck.types";
-import { buildDeck } from "../api/deckBuilder.service";
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 import { generateDraft } from "@/features/messaging/api/drafts.service";
+import { useCallback, useEffect, useState } from "react";
+import { buildDeck } from "../api/deckBuilder.service";
+import {
+  markCardDrafted as persistCardDrafted,
+  markCardSent as persistCardSent,
+  markCardCompleted as persistCardCompleted,
+  markCardSkipped as persistCardSkipped,
+} from "../api/deck.mutations";
+import { DeckCard, DeckState, Draft } from "../types/deck.types";
 
 export function useDeck() {
-  const { profile } = useUserProfile(); // Changed from useUser
+  const { profile } = useUserProfile();
   const { isPremium } = usePremiumGate();
   const [deck, setDeck] = useState<DeckState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -16,18 +22,18 @@ export function useDeck() {
 
   useEffect(() => {
     if (profile) {
-      // Changed from user
       loadDeck();
     }
-  }, [profile]); // Changed dependency
+  }, [profile]);
 
   const loadDeck = async () => {
-    if (!profile) return; // Changed from user
+    if (!profile) return;
 
     setLoading(true);
     try {
       const maxCards = isPremium ? 10 : 5;
-      const cards = await buildDeck(profile.clerkUserId, maxCards); // Changed from user.id
+      //TODO: Change to profile.id when backend is fixed
+      const cards = await buildDeck(profile.clerkUserId, maxCards);
       const todayDate = new Date().toISOString().split("T")[0];
 
       if (cards.length === 0) {
@@ -36,8 +42,8 @@ export function useDeck() {
       }
 
       setDeck({
-        id: `deck-${profile.clerkUserId}-${todayDate}`, // Changed from user.id
-        userId: profile.clerkUserId, // Changed from user.id
+        id: `deck-${profile.$id}-${todayDate}`,
+        userId: profile.$id,
         date: todayDate,
         cards,
         maxCards,
@@ -53,13 +59,24 @@ export function useDeck() {
 
   const generateDraftsForCard = useCallback(
     async (card: DeckCard) => {
-      if (!profile) return; // Changed from user
+      if (!profile) return;
 
       setDraftsLoading(true);
       setDraftsError(null);
       setDrafts([]);
 
-      // AI draft generation is premium only - free users get static drafts
+      // Persist drafted_at timestamp
+      try {
+        await persistCardDrafted(
+          profile.$id,
+          card.$id,
+          card.contact.$id,
+          new Date().toISOString().split("T")[0]
+        );
+      } catch (error) {
+        console.error("Failed to persist drafted timestamp:", error);
+      }
+
       if (!isPremium) {
         setDrafts([
           {
@@ -86,15 +103,15 @@ export function useDeck() {
       try {
         const [casualDraft, professionalDraft] = await Promise.all([
           generateDraft(
-            profile.clerkUserId,
+            profile.$id,
             card.contact.$id,
             "casual friendly message"
-          ), // Changed from user.id
+          ),
           generateDraft(
-            profile.clerkUserId,
+            profile.$id,
             card.contact.$id,
             "professional follow-up"
-          ), // Changed from user.id
+          ),
         ]);
 
         setDrafts([
@@ -136,20 +153,39 @@ export function useDeck() {
         setDraftsLoading(false);
       }
     },
-    [profile, isPremium] // Changed dependency
+    [profile, isPremium]
+  );
+
+  const markCardSent = useCallback(
+    async (cardId: string, engagementEventId: string) => {
+      try {
+        await persistCardSent(cardId, engagementEventId);
+      } catch (error) {
+        console.error("Failed to persist sent timestamp:", error);
+      }
+    },
+    []
   );
 
   const markCardCompleted = useCallback(
-    async (cardId: string) => {
+    async (cardId: string, outcomeId?: string) => {
       if (!deck) return;
+
+      try {
+        await persistCardCompleted(cardId, outcomeId);
+      } catch (error) {
+        console.error("Failed to persist completed timestamp:", error);
+      }
+
       setDeck({
         ...deck,
         cards: deck.cards.map((c) =>
-          c.id === cardId
+          c.$id === cardId
             ? {
                 ...c,
                 status: "completed",
                 completedAt: new Date().toISOString(),
+                outcomeId,
               }
             : c
         ),
@@ -161,10 +197,17 @@ export function useDeck() {
   const markCardSkipped = useCallback(
     async (cardId: string) => {
       if (!deck) return;
+
+      try {
+        await persistCardSkipped(cardId);
+      } catch (error) {
+        console.error("Failed to persist skipped timestamp:", error);
+      }
+
       setDeck({
         ...deck,
         cards: deck.cards.map((c) =>
-          c.id === cardId
+          c.$id === cardId
             ? { ...c, status: "skipped", completedAt: new Date().toISOString() }
             : c
         ),
@@ -179,7 +222,7 @@ export function useDeck() {
       setDeck({
         ...deck,
         cards: deck.cards.map((c) =>
-          c.id === cardId
+          c.$id === cardId
             ? { ...c, status: "snoozed", completedAt: new Date().toISOString() }
             : c
         ),
@@ -195,6 +238,7 @@ export function useDeck() {
     draftsLoading,
     draftsError,
     generateDraftsForCard,
+    markCardSent,
     markCardCompleted,
     markCardSkipped,
     markCardSnoozed,

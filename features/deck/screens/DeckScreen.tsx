@@ -3,7 +3,7 @@ import React, { useCallback, useState } from "react";
 import { Alert, Linking, Platform, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
-import { useUserProfile } from "../../auth/hooks/useUserProfile"; // Changed import
+import { useUserProfile } from "../../auth/hooks/useUserProfile";
 import OutcomeSheet from "../../outcomes/components/OutcomeSheet";
 
 import {
@@ -20,7 +20,7 @@ import { ChannelType, DeckCard } from "../types/deck.types";
 import { markCardDrafted, markCardSent } from "../api/deck.mutations";
 
 export default function DeckScreen() {
-  const { profile } = useUserProfile(); // Changed from useUser
+  const { profile } = useUserProfile();
   const router = useRouter();
   const { isPremium, requirePremium } = usePremiumGate();
   const {
@@ -41,9 +41,6 @@ export default function DeckScreen() {
     string | undefined
   >();
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
-
-  console.log("Profile in DeckScreen:", JSON.stringify(profile, null, 2)); // Debugging line
-  // console.log()
 
   const pendingCards =
     deck?.cards.filter((c: any) => c.status === "pending") || [];
@@ -79,12 +76,12 @@ export default function DeckScreen() {
 
   const handleSwipeLeft = useCallback(
     async (cardId: string) => {
-      if (!profile) return; // Changed from user
+      if (!profile) return;
       const card = deck?.cards.find((c: DeckCard) => c.$id === cardId);
       if (card) {
         // Log card_dismissed engagement event
         await createEngagementEvent(
-          profile.clerkUserId, // Changed from user.id
+          profile.$id,
           "card_dismissed",
           [card.contact.$id],
           cardId
@@ -93,17 +90,16 @@ export default function DeckScreen() {
       await markCardSkipped(cardId);
       checkDeckComplete();
     },
-    [profile, deck, markCardSkipped] // Changed dependency
+    [profile, deck, markCardSkipped]
   );
 
   const handleSnooze = useCallback(
     async (cardId: string) => {
-      if (!profile) return; // Changed from user
+      if (!profile) return;
       const card = deck?.cards.find((c: DeckCard) => c.$id === cardId);
       if (card) {
-        // Log card_snoozed engagement event
         await createEngagementEvent(
-          profile.clerkUserId, // Changed from user.id
+          profile.$id,
           "card_snoozed",
           [card.contact.$id],
           cardId
@@ -111,12 +107,12 @@ export default function DeckScreen() {
         await markCardSnoozed(cardId);
       }
     },
-    [profile, deck, markCardSnoozed] // Changed dependency
+    [profile, deck, markCardSnoozed]
   );
 
   const handleSend = useCallback(
     async (channel: ChannelType, message: string) => {
-      if (!selectedCard || !profile) return; // Changed from user
+      if (!selectedCard || !profile) return;
 
       // Gate premium channels
       const premiumChannels: ChannelType[] = ["email", "slack"];
@@ -175,18 +171,21 @@ export default function DeckScreen() {
 
       // Log engagement event
       const event = await createEngagementEvent(
-        profile.clerkUserId, // Changed from user.id
+        profile.$id,
         eventType,
         [contact.$id],
         selectedCard.$id,
         { message, channel }
       );
-      markCardSent(selectedCard.$id, event.$id);
+
+      // Persist sent_at timestamp
+      await markCardSent(selectedCard.$id, event.$id);
+
       setCompletedEngagementId(event.$id);
       setDraftPickerVisible(false);
       setOutcomeSheetVisible(true);
     },
-    [selectedCard, profile, isPremium, requirePremium] // Changed dependency
+    [selectedCard, profile, isPremium, requirePremium, markCardSent]
   );
 
   const handleOutcomeComplete = useCallback(async () => {
