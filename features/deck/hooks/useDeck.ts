@@ -2,7 +2,7 @@ import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
 import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 import { generateDraft } from "@/features/messaging/api/drafts.service";
 import { useCallback, useEffect, useState } from "react";
-import { buildDeck } from "../api/deckBuilder.service";
+import { buildDeck, isDailyQuotaExhausted } from "../api/deckBuilder.service";
 import {
   markCardDrafted as persistCardDrafted,
   markCardSent as persistCardSent,
@@ -19,6 +19,7 @@ export function useDeck() {
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [draftsLoading, setDraftsLoading] = useState(false);
   const [draftsError, setDraftsError] = useState<string | null>(null);
+  const [quotaExhausted, setQuotaExhausted] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -32,6 +33,10 @@ export function useDeck() {
     setLoading(true);
     try {
       const maxCards = isPremium ? 10 : 5;
+
+      const exhausted = await isDailyQuotaExhausted(profile.$id);
+      setQuotaExhausted(exhausted);
+
       const cards = await buildDeck(profile.$id, maxCards);
       const todayDate = new Date().toISOString().split("T")[0];
 
@@ -75,7 +80,7 @@ export function useDeck() {
           {
             id: "1",
             text: `Hey ${
-              card.contact?.firstName as string || "there"
+              (card.contact?.firstName as string) || "there"
             }! It's been a while - would love to catch up soon. How have you been?`,
             tone: "casual",
             channel: card.suggestedChannel,
@@ -83,7 +88,7 @@ export function useDeck() {
           {
             id: "2",
             text: `Hi ${
-              card.contact?.firstName as string || "there"
+              (card.contact?.firstName as string) || "there"
             }, hope you're doing well. I was thinking of you and wanted to reconnect. Let me know if you have time for a quick call.`,
             tone: "professional",
             channel: card.suggestedChannel,
@@ -128,7 +133,7 @@ export function useDeck() {
           {
             id: "1",
             text: `Hey ${
-              card.contact?.firstName as string || "there"
+              (card.contact?.firstName as string) || "there"
             }! It's been a while - would love to catch up soon. How have you been?`,
             tone: "casual",
             channel: card.suggestedChannel,
@@ -136,7 +141,7 @@ export function useDeck() {
           {
             id: "2",
             text: `Hi ${
-              card.contact?.firstName as string || "there"
+              (card.contact?.firstName as string) || "there"
             }, hope you're doing well. I was thinking of you and wanted to reconnect. Let me know if you have time for a quick call.`,
             tone: "professional",
             channel: card.suggestedChannel,
@@ -230,6 +235,7 @@ export function useDeck() {
     drafts,
     draftsLoading,
     draftsError,
+    quotaExhausted,
     generateDraftsForCard,
     markCardSent,
     markCardCompleted,

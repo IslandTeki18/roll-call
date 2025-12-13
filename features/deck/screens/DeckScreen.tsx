@@ -28,16 +28,18 @@ export default function DeckScreen() {
     loading,
     drafts,
     draftsLoading,
+    quotaExhausted,
     generateDraftsForCard,
     markCardCompleted,
     markCardSkipped,
-    // markCardSnoozed,
   } = useDeck();
 
   const [selectedCard, setSelectedCard] = useState<DeckCard | null>(null);
   const [draftPickerVisible, setDraftPickerVisible] = useState(false);
   const [outcomeSheetVisible, setOutcomeSheetVisible] = useState(false);
-  const [completedEngagementId, setCompletedEngagementId] = useState<string | undefined>();
+  const [completedEngagementId, setCompletedEngagementId] = useState<
+    string | undefined
+  >();
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
   const [cardStackKey, setCardStackKey] = useState(0);
 
@@ -89,28 +91,9 @@ export default function DeckScreen() {
     [profile, deck, markCardSkipped]
   );
 
-  // const handleSnooze = useCallback(
-  //   async (cardId: string) => {
-  //     if (!profile) return;
-  //     const card = deck?.cards.find((c: DeckCard) => c.$id === cardId);
-  //     if (card) {
-  //       await createEngagementEvent(
-  //         profile.$id,
-  //         "card_snoozed",
-  //         [card.contact?.$id as string],
-  //         cardId
-  //       );
-  //       await markCardSnoozed(cardId);
-  //     }
-  //   },
-  //   [profile, deck, markCardSnoozed]
-  // );
-
-  // Handle closing draft picker without sending - reset card position
   const handleDraftPickerClose = useCallback(() => {
     setDraftPickerVisible(false);
     setSelectedCard(null);
-    // Force CardStack to re-render and reset card positions
     setCardStackKey((prev) => prev + 1);
   }, []);
 
@@ -206,17 +189,6 @@ export default function DeckScreen() {
     setCompletedEngagementId(undefined);
   }, [selectedCard, markCardCompleted]);
 
-  // const checkDeckComplete = useCallback(() => {
-  //   if (deck) {
-  //     const remaining = deck.cards.filter(
-  //       (c: DeckCard) => c.status === "pending"
-  //     ).length;
-  //     if (remaining === 0) {
-  //       setTimeout(() => setCompleteModalVisible(true), 500);
-  //     }
-  //   }
-  // }, [deck]);
-
   const handleImportContacts = useCallback(() => {
     router.push("/(tabs)/contacts");
   }, [router]);
@@ -246,7 +218,16 @@ export default function DeckScreen() {
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <View className="px-6 pt-4 pb-2">
-        <Text className="text-2xl font-bold">Daily Deck</Text>
+        <View className="flex-row items-center justify-between">
+          <Text className="text-2xl font-bold">Daily Deck</Text>
+          {quotaExhausted && (
+            <View className="bg-green-100 px-3 py-1 rounded-full">
+              <Text className="text-green-700 text-xs font-semibold">
+                Today&apos;s Deck
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
 
       <DeckProgress cards={deck.cards} maxCards={deck.maxCards} />

@@ -26,6 +26,7 @@ export const buildDeck = async (
 ): Promise<DeckCard[]> => {
   const todayDate = new Date().toISOString().split("T")[0];
 
+  // Check if deck already exists for today
   const existingDeck = await tablesDB.listRows({
     databaseId: DATABASE_ID,
     tableId: DECK_CARDS_TABLE_ID,
@@ -111,7 +112,7 @@ export const buildDeck = async (
                 reason: getContactReason(scored.rhs),
                 rhsScore: scored.rhs.totalScore,
                 isFresh: scored.isFresh,
-              }
+              },
             });
 
             return {
@@ -165,7 +166,7 @@ export const buildDeck = async (
       }
     }
 
-    // Return existing deck with hydrated contact data
+    // Return existing deck with hydrated contact data (no additional cards needed or available)
     const contacts = await loadContacts(userId);
     const contactMap = new Map(contacts.map((c) => [c.$id, c]));
 
@@ -250,7 +251,7 @@ export const buildDeck = async (
           reason: getContactReason(scored.rhs),
           rhsScore: scored.rhs.totalScore,
           isFresh: scored.isFresh,
-        }
+        },
       });
 
       return {
@@ -277,6 +278,29 @@ export const buildDeck = async (
   );
 
   return deckCards as DeckCard[];
+};
+
+/**
+ * Check if user has exhausted their daily deck quota
+ * Returns true if deck exists and user should not be able to regenerate
+ */
+export const isDailyQuotaExhausted = async (
+  userId: string
+): Promise<boolean> => {
+  const todayDate = new Date().toISOString().split("T")[0];
+
+  const existingDeck = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: DECK_CARDS_TABLE_ID,
+    queries: [
+      Query.equal("userId", userId),
+      Query.equal("date", todayDate),
+      Query.limit(1),
+    ],
+  });
+
+  // Quota is exhausted if any deck exists for today
+  return existingDeck.rows.length > 0;
 };
 
 const getSuggestedChannel = (contact: ProfileContact): ChannelType => {
