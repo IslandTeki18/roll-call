@@ -6,6 +6,7 @@ import { calculateRHS, isFreshContact, RHSFactors } from "./rhs.service";
 import { DeckCard, ChannelType } from "../types/deck.types";
 import { tablesDB } from "@/features/shared/lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
+import { archiveOldDecks } from "./deckHistory.service";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const DECK_CARDS_TABLE_ID =
@@ -22,9 +23,27 @@ const FRESH_MAX = 2;
 
 export const buildDeck = async (
   userId: string,
-  maxCards: number
+  maxCards: number,
+  isPremiumUser: boolean
 ): Promise<DeckCard[]> => {
   const todayDate = new Date().toISOString().split("T")[0];
+
+  // CRITICAL: Archive old decks before checking/building today's deck
+  try {
+    const archiveResult = await archiveOldDecks(userId, isPremiumUser);
+    if (archiveResult.archivedDates.length > 0) {
+      console.log(
+        `Archived ${archiveResult.archivedDates.length} old deck(s):`,
+        archiveResult.archivedDates
+      );
+    }
+    if (archiveResult.errors.length > 0) {
+      console.error("Archive errors:", archiveResult.errors);
+    }
+  } catch (error) {
+    console.error("Failed to archive old decks:", error);
+    // Continue building deck even if archive fails
+  }
 
   // Check if deck already exists for today
   const existingDeck = await tablesDB.listRows({

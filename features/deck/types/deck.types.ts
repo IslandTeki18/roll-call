@@ -47,3 +47,41 @@ export interface DeckState {
   generatedAt: string;
   completedAt?: string;
 }
+
+export interface DeckHistoryRecord {
+  $id: string;
+  userId: string;
+  date: string;
+  maxCards: number;
+  totalCards: number;
+  completedCards: number;
+  skippedCards: number;
+  snoozedCards: number;
+  smsCount: number;
+  callCount: number;
+  emailCount: number;
+  facetimeCount: number;
+  slackCount: number;
+  freshContactsShown: number;
+  freshContactsEngaged: number;
+  outcomesRecorded: number;
+  positiveOutcomes: number;
+  neutralOutcomes: number;
+  negativeOutcomes: number;
+  firstCardOpenedAt: string;
+  lastCardCompletedAt: string;
+  deckGeneratedAt: string;
+  archivedAt: string;
+  isPremiumUser: boolean;
+  completionRate: number;
+  avgRhsScore: number;
+  $createdAt: string;
+  $updatedAt: string;
+}
+
+export interface ArchiveResult {
+  archived: boolean;
+  historyRecordId?: string;
+  cardsDeleted: number;
+  error?: string;
+}

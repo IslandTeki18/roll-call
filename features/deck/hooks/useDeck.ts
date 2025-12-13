@@ -37,7 +37,12 @@ export function useDeck() {
       const exhausted = await isDailyQuotaExhausted(profile.$id);
       setQuotaExhausted(exhausted);
 
-      const cards = await buildDeck(profile.$id, maxCards);
+      // Pass isPremiumUser to buildDeck for archiving
+      const cards = await buildDeck(
+        profile.$id,
+        maxCards,
+        profile.isPremiumUser
+      );
       const todayDate = new Date().toISOString().split("T")[0];
 
       if (cards.length === 0) {
