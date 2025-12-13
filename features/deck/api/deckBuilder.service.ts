@@ -4,7 +4,7 @@ import {
 } from "@/features/contacts/api/contacts.service";
 import { calculateRHS, isFreshContact, RHSFactors } from "./rhs.service";
 import { DeckCard, ChannelType } from "../types/deck.types";
-import { databases } from "@/features/shared/lib/appwrite";
+import { tablesDB } from "@/features/shared/lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
@@ -26,20 +26,150 @@ export const buildDeck = async (
 ): Promise<DeckCard[]> => {
   const todayDate = new Date().toISOString().split("T")[0];
 
-  // Check if deck already exists for today
-  const existingDeck = await databases.listDocuments(
-    DATABASE_ID,
-    DECK_CARDS_TABLE_ID,
-    [Query.equal("userId", userId), Query.equal("date", todayDate)]
-  );
+  const existingDeck = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: DECK_CARDS_TABLE_ID,
+    queries: [Query.equal("userId", userId), Query.equal("date", todayDate)],
+  });
 
-  if (existingDeck.documents.length > 0) {
-    // Load all contacts to hydrate the existing deck cards
+  if (existingDeck.rows.length > 0) {
+    const existingCardCount = existingDeck.rows.length;
+
+    // If user now has access to more cards (e.g., upgraded to premium), generate additional cards
+    if (maxCards > existingCardCount) {
+      const contacts = await loadContacts(userId);
+      const contactMap = new Map(contacts.map((c) => [c.$id, c]));
+
+      // Get IDs of contacts already in today's deck
+      const existingContactIds = new Set(
+        existingDeck.rows.map((row: any) => row.contactId)
+      );
+
+      // Filter out contacts already in deck
+      const availableContacts = contacts.filter(
+        (c) => !existingContactIds.has(c.$id)
+      );
+
+      if (availableContacts.length > 0) {
+        // Score and rank available contacts
+        const scored: ScoredContact[] = await Promise.all(
+          availableContacts.map(async (contact) => ({
+            contact,
+            rhs: await calculateRHS(userId, contact),
+            isFresh: isFreshContact(contact),
+          }))
+        );
+
+        const freshContacts = scored.filter((s) => s.isFresh);
+        const regularContacts = scored.filter((s) => !s.isFresh);
+
+        freshContacts.sort((a, b) => b.rhs.totalScore - a.rhs.totalScore);
+        regularContacts.sort((a, b) => b.rhs.totalScore - a.rhs.totalScore);
+
+        // Determine how many additional cards to generate
+        const additionalCardsNeeded = maxCards - existingCardCount;
+        const additionalDeck: ScoredContact[] = [];
+
+        const existingFreshCount = existingDeck.rows.filter(
+          (row: any) => row.isFresh
+        ).length;
+        const freshSlotsAvailable = Math.max(0, FRESH_MAX - existingFreshCount);
+        const freshToAdd = Math.min(
+          freshSlotsAvailable,
+          freshContacts.length,
+          additionalCardsNeeded
+        );
+
+        additionalDeck.push(...freshContacts.slice(0, freshToAdd));
+
+        // Fill remaining slots with regular contacts
+        const remainingSlots = additionalCardsNeeded - additionalDeck.length;
+        additionalDeck.push(...regularContacts.slice(0, remainingSlots));
+
+        // Create additional deck cards
+        const newCards: DeckCard[] = await Promise.all(
+          additionalDeck.slice(0, additionalCardsNeeded).map(async (scored) => {
+            const cardId = `${todayDate}-${scored.contact.$id}`;
+            const suggestedChannel = getSuggestedChannel(scored.contact);
+
+            const doc = await tablesDB.createRow({
+              databaseId: DATABASE_ID,
+              tableId: DECK_CARDS_TABLE_ID,
+              rowId: ID.unique(),
+              data: {
+                userId,
+                cardId,
+                contactId: scored.contact.$id,
+                date: todayDate,
+                status: "pending",
+                draftedAt: "",
+                sentAt: "",
+                completedAt: "",
+                linkedEngagementEventId: "",
+                linkedOutcomeId: "",
+                suggestedChannel,
+                reason: getContactReason(scored.rhs),
+                rhsScore: scored.rhs.totalScore,
+                isFresh: scored.isFresh,
+              }
+            });
+
+            return {
+              id: cardId,
+              $id: doc.$id,
+              userId,
+              cardId,
+              contactId: scored.contact.$id,
+              date: todayDate,
+              contact: scored.contact,
+              status: "pending" as const,
+              draftedAt: "",
+              sentAt: "",
+              isFresh: scored.isFresh,
+              rhsScore: scored.rhs.totalScore,
+              suggestedChannel,
+              reason: getContactReason(scored.rhs),
+              linkedOutcomeId: "",
+              completedAt: "",
+              linkedEngagementEventId: "",
+              outcomeId: "",
+            };
+          })
+        );
+
+        const allCards = [
+          ...existingDeck.rows.map((doc: any) => ({
+            id: doc.cardId,
+            $id: doc.$id,
+            userId: doc.userId,
+            cardId: doc.cardId,
+            contactId: doc.contactId,
+            date: doc.date,
+            contact: contactMap.get(doc.contactId),
+            status: doc.status,
+            draftedAt: doc.draftedAt || "",
+            sentAt: doc.sentAt || "",
+            isFresh: doc.isFresh,
+            rhsScore: doc.rhsScore,
+            suggestedChannel: doc.suggestedChannel,
+            reason: doc.reason,
+            linkedOutcomeId: doc.linkedOutcomeId || "",
+            completedAt: doc.completedAt || "",
+            linkedEngagementEventId: doc.linkedEngagementEventId || "",
+            outcomeId: doc.outcomeId || "",
+          })),
+          ...newCards,
+        ];
+
+        return allCards as DeckCard[];
+      }
+    }
+
+    // Return existing deck with hydrated contact data
     const contacts = await loadContacts(userId);
     const contactMap = new Map(contacts.map((c) => [c.$id, c]));
 
-    // Return existing deck cards WITH hydrated contact data
-    return existingDeck.documents.map((doc: any) => ({
+    return existingDeck.rows.map((doc: any) => ({
       id: doc.cardId,
       $id: doc.$id,
       userId: doc.userId,
@@ -48,19 +178,20 @@ export const buildDeck = async (
       date: doc.date,
       contact: contactMap.get(doc.contactId),
       status: doc.status,
-      draftedAt: doc.draftedAt || undefined,
-      sentAt: doc.sentAt || undefined,
+      draftedAt: doc.draftedAt || "",
+      sentAt: doc.sentAt || "",
       isFresh: doc.isFresh,
       rhsScore: doc.rhsScore,
       suggestedChannel: doc.suggestedChannel,
       reason: doc.reason,
-      linkedOutcomeId: doc.linkedOutcomeId || undefined,
-      completedAt: doc.completedAt || undefined,
-      linkedEngagementEventId: doc.linkedEngagementEventId || undefined,
-      outcomeId: doc.outcomeId || undefined,
-    }));
+      linkedOutcomeId: doc.linkedOutcomeId || "",
+      completedAt: doc.completedAt || "",
+      linkedEngagementEventId: doc.linkedEngagementEventId || "",
+      outcomeId: doc.outcomeId || "",
+    })) as DeckCard[];
   }
 
+  // No existing deck - build fresh deck
   const contacts = await loadContacts(userId);
 
   if (contacts.length === 0) return [];
@@ -100,11 +231,11 @@ export const buildDeck = async (
       const cardId = `${todayDate}-${scored.contact.$id}`;
       const suggestedChannel = getSuggestedChannel(scored.contact);
 
-      const doc = await databases.createDocument(
-        DATABASE_ID,
-        DECK_CARDS_TABLE_ID,
-        ID.unique(),
-        {
+      const doc = await tablesDB.createRow({
+        databaseId: DATABASE_ID,
+        tableId: DECK_CARDS_TABLE_ID,
+        rowId: ID.unique(),
+        data: {
           userId,
           cardId,
           contactId: scored.contact.$id,
@@ -120,7 +251,7 @@ export const buildDeck = async (
           rhsScore: scored.rhs.totalScore,
           isFresh: scored.isFresh,
         }
-      );
+      });
 
       return {
         id: cardId,
@@ -129,7 +260,7 @@ export const buildDeck = async (
         cardId,
         contactId: scored.contact.$id,
         date: todayDate,
-        contact: scored.contact, // Hydrated contact
+        contact: scored.contact,
         status: "pending" as const,
         draftedAt: "",
         sentAt: "",
