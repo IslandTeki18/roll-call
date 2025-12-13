@@ -10,6 +10,7 @@ import {
   createEngagementEvent,
   EngagementEventType,
 } from "@/features/messaging/api/engagement.service";
+import { markCardDrafted, markCardSent } from "../api/deck.mutations";
 import CardStack from "../components/CardStack";
 import DeckCompleteModal from "../components/DeckCompleteModal";
 import DeckProgress from "../components/DeckProgress";
@@ -17,7 +18,6 @@ import DraftPicker from "../components/DraftPicker";
 import EmptyDeck from "../components/EmptyDeck";
 import { useDeck } from "../hooks/useDeck";
 import { ChannelType, DeckCard } from "../types/deck.types";
-import { markCardDrafted, markCardSent } from "../api/deck.mutations";
 
 export default function DeckScreen() {
   const { profile } = useUserProfile();
@@ -31,19 +31,18 @@ export default function DeckScreen() {
     generateDraftsForCard,
     markCardCompleted,
     markCardSkipped,
-    markCardSnoozed,
+    // markCardSnoozed,
   } = useDeck();
 
   const [selectedCard, setSelectedCard] = useState<DeckCard | null>(null);
   const [draftPickerVisible, setDraftPickerVisible] = useState(false);
   const [outcomeSheetVisible, setOutcomeSheetVisible] = useState(false);
-  const [completedEngagementId, setCompletedEngagementId] = useState<
-    string | undefined
-  >();
+  const [completedEngagementId, setCompletedEngagementId] = useState<string | undefined>();
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
+  const [cardStackKey, setCardStackKey] = useState(0);
 
   const pendingCards =
-    deck?.cards.filter((c: any) => c.status === "pending") || [];
+    deck?.cards.filter((c: DeckCard) => c.status === "pending") || [];
   const completedCards =
     deck?.cards.filter(
       (c: DeckCard) => c.status === "completed" || c.status === "skipped"
@@ -53,13 +52,12 @@ export default function DeckScreen() {
 
   const handleCardTap = useCallback(
     (card: DeckCard) => {
-      console.log("Card tapped:", JSON.stringify(card, null, 2)); // Debugging line
       setSelectedCard(card);
       generateDraftsForCard(card);
       markCardDrafted(card.$id as string);
       setDraftPickerVisible(true);
     },
-    [generateDraftsForCard, profile?.$id]
+    [generateDraftsForCard]
   );
 
   const handleSwipeRight = useCallback(
@@ -79,7 +77,6 @@ export default function DeckScreen() {
       if (!profile) return;
       const card = deck?.cards.find((c: DeckCard) => c.$id === cardId);
       if (card) {
-        // Log card_dismissed engagement event
         await createEngagementEvent(
           profile.$id,
           "card_dismissed",
@@ -92,28 +89,35 @@ export default function DeckScreen() {
     [profile, deck, markCardSkipped]
   );
 
-  const handleSnooze = useCallback(
-    async (cardId: string) => {
-      if (!profile) return;
-      const card = deck?.cards.find((c: DeckCard) => c.$id === cardId);
-      if (card) {
-        await createEngagementEvent(
-          profile.$id,
-          "card_snoozed",
-          [card.contact?.$id as string],
-          cardId
-        );
-        await markCardSnoozed(cardId);
-      }
-    },
-    [profile, deck, markCardSnoozed]
-  );
+  // const handleSnooze = useCallback(
+  //   async (cardId: string) => {
+  //     if (!profile) return;
+  //     const card = deck?.cards.find((c: DeckCard) => c.$id === cardId);
+  //     if (card) {
+  //       await createEngagementEvent(
+  //         profile.$id,
+  //         "card_snoozed",
+  //         [card.contact?.$id as string],
+  //         cardId
+  //       );
+  //       await markCardSnoozed(cardId);
+  //     }
+  //   },
+  //   [profile, deck, markCardSnoozed]
+  // );
+
+  // Handle closing draft picker without sending - reset card position
+  const handleDraftPickerClose = useCallback(() => {
+    setDraftPickerVisible(false);
+    setSelectedCard(null);
+    // Force CardStack to re-render and reset card positions
+    setCardStackKey((prev) => prev + 1);
+  }, []);
 
   const handleSend = useCallback(
     async (channel: ChannelType, message: string) => {
       if (!selectedCard || !profile) return;
 
-      // Gate premium channels
       const premiumChannels: ChannelType[] = ["email", "slack"];
       if (premiumChannels.includes(channel) && !isPremium) {
         requirePremium(`${channel === "email" ? "Email" : "Slack"} sends`);
@@ -127,7 +131,6 @@ export default function DeckScreen() {
       const primaryPhone = phoneNumbers[0];
       const primaryEmail = emails[0];
 
-      // Determine event type based on channel
       let eventType: EngagementEventType;
       switch (channel) {
         case "sms":
@@ -168,7 +171,6 @@ export default function DeckScreen() {
           eventType = "sms_sent";
       }
 
-      // Log engagement event
       const event = await createEngagementEvent(
         profile.$id,
         eventType,
@@ -177,14 +179,13 @@ export default function DeckScreen() {
         { message, channel }
       );
 
-      // Persist sent_at timestamp
       await markCardSent(selectedCard.$id as string, event.$id);
 
       setCompletedEngagementId(event.$id);
       setDraftPickerVisible(false);
       setOutcomeSheetVisible(true);
     },
-    [selectedCard, profile, isPremium, requirePremium, markCardSent]
+    [selectedCard, profile, isPremium, requirePremium]
   );
 
   const handleOutcomeComplete = useCallback(async () => {
@@ -203,18 +204,18 @@ export default function DeckScreen() {
     setOutcomeSheetVisible(false);
     setSelectedCard(null);
     setCompletedEngagementId(undefined);
-  }, [selectedCard]);
+  }, [selectedCard, markCardCompleted]);
 
-  const checkDeckComplete = useCallback(() => {
-    if (deck) {
-      const remaining = deck.cards.filter(
-        (c: DeckCard) => c.status === "pending"
-      ).length;
-      if (remaining === 0) {
-        setTimeout(() => setCompleteModalVisible(true), 500);
-      }
-    }
-  }, [deck]);
+  // const checkDeckComplete = useCallback(() => {
+  //   if (deck) {
+  //     const remaining = deck.cards.filter(
+  //       (c: DeckCard) => c.status === "pending"
+  //     ).length;
+  //     if (remaining === 0) {
+  //       setTimeout(() => setCompleteModalVisible(true), 500);
+  //     }
+  //   }
+  // }, [deck]);
 
   const handleImportContacts = useCallback(() => {
     router.push("/(tabs)/contacts");
@@ -244,19 +245,17 @@ export default function DeckScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      {/* Header */}
       <View className="px-6 pt-4 pb-2">
         <Text className="text-2xl font-bold">Daily Deck</Text>
       </View>
 
-      {/* Progress */}
       <DeckProgress cards={deck.cards} maxCards={deck.maxCards} />
 
-      {/* Card Stack or Empty State */}
       {allCompleted ? (
         <EmptyDeck reason="all_completed" />
       ) : (
         <CardStack
+          key={cardStackKey}
           cards={deck.cards}
           onSwipeLeft={handleSwipeLeft}
           onSwipeRight={handleSwipeRight}
@@ -264,10 +263,9 @@ export default function DeckScreen() {
         />
       )}
 
-      {/* Draft Picker Bottom Sheet */}
       <DraftPicker
         visible={draftPickerVisible}
-        onClose={() => setDraftPickerVisible(false)}
+        onClose={handleDraftPickerClose}
         card={selectedCard}
         drafts={drafts}
         loading={draftsLoading}
@@ -275,19 +273,19 @@ export default function DeckScreen() {
         onSend={handleSend}
       />
 
-      {/* Outcome Sheet */}
       <OutcomeSheet
         visible={outcomeSheetVisible}
         onClose={handleOutcomeClose}
         contactIds={selectedCard ? [selectedCard.contact?.$id as string] : []}
-        contactNames={selectedCard ? [selectedCard.contact?.displayName as string] : []}
+        contactNames={
+          selectedCard ? [selectedCard.contact?.displayName as string] : []
+        }
         linkedCardId={selectedCard?.$id}
         linkedEngagementEventId={completedEngagementId}
         engagementType="sms_sent"
         onComplete={handleOutcomeComplete}
       />
 
-      {/* Deck Complete Modal */}
       <DeckCompleteModal
         visible={completeModalVisible}
         onClose={() => setCompleteModalVisible(false)}

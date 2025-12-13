@@ -1,4 +1,4 @@
-import { databases } from "@/features/shared/lib/appwrite";
+import { tablesDB } from "@/features/shared/lib/appwrite";
 import { ID, Query, Permission, Role } from "react-native-appwrite";
 import {
   Note,
@@ -27,17 +27,17 @@ export const createNote = async (input: CreateNoteInput): Promise<Note> => {
     processedAt: "",
   };
 
-  const response = await databases.createDocument(
-    DATABASE_ID,
-    NOTES_TABLE_ID,
-    ID.unique(),
-    data,
-    [
+  const response = await tablesDB.createRow({
+    databaseId: DATABASE_ID,
+    tableId: NOTES_TABLE_ID,
+    rowId: ID.unique(),
+    data: data,
+    permissions: [
       Permission.read(Role.any()),
       Permission.update(Role.any()),
       Permission.delete(Role.any()),
-    ]
-  );
+    ],
+  })
 
   return response as unknown as Note;
 };
@@ -71,12 +71,12 @@ export const updateNote = async (
     data.isPinned = input.isPinned;
   }
 
-  const response = await databases.updateDocument(
-    DATABASE_ID,
-    NOTES_TABLE_ID,
-    noteId,
-    data
-  );
+  const response = await tablesDB.updateRow({
+    databaseId: DATABASE_ID,
+    tableId: NOTES_TABLE_ID,
+    rowId: noteId,
+    data: data,
+  });
 
   return response as unknown as Note;
 };
@@ -96,25 +96,26 @@ export const updateNoteWithAI = async (
     processedAt: timestamp,
   };
 
-  const response = await databases.updateDocument(
-    DATABASE_ID,
-    NOTES_TABLE_ID,
-    noteId,
-    data
-  );
+  const response = await tablesDB.updateRow({
+    databaseId: DATABASE_ID,
+    tableId: NOTES_TABLE_ID,
+    rowId: noteId,
+    data: data,
+  });
 
   return response as unknown as Note;
 };
 
 export const markNoteAsProcessing = async (noteId: string): Promise<Note> => {
-  const response = await databases.updateDocument(
-    DATABASE_ID,
-    NOTES_TABLE_ID,
-    noteId,
-    {
+
+  const response = await tablesDB.updateRow({
+    databaseId: DATABASE_ID,
+    tableId: NOTES_TABLE_ID,
+    rowId: noteId,
+    data: {
       processingStatus: "processing" as NoteProcessingStatus,
-    }
-  );
+    },
+  });
 
   return response as unknown as Note;
 };
@@ -123,25 +124,27 @@ export const markNoteAsFailed = async (
   noteId: string,
   errorMessage: string
 ): Promise<Note> => {
-  const response = await databases.updateDocument(
-    DATABASE_ID,
-    NOTES_TABLE_ID,
-    noteId,
-    {
+
+  const response = await tablesDB.updateRow({
+    databaseId: DATABASE_ID,
+    tableId: NOTES_TABLE_ID,
+    rowId: noteId,
+    data: {
       processingStatus: "failed" as NoteProcessingStatus,
       processingError: errorMessage,
-    }
-  );
+    },
+  });
 
   return response as unknown as Note;
 };
 
 export const getNote = async (noteId: string): Promise<Note> => {
-  const response = await databases.getDocument(
-    DATABASE_ID,
-    NOTES_TABLE_ID,
-    noteId
-  );
+
+  const response = await tablesDB.getRow({
+    databaseId: DATABASE_ID,
+    tableId: NOTES_TABLE_ID,
+    rowId: noteId,
+  });
 
   return response as unknown as Note;
 };
@@ -150,27 +153,37 @@ export const getNotesByUser = async (
   userId: string,
   limit: number = 100
 ): Promise<Note[]> => {
-  const response = await databases.listDocuments(DATABASE_ID, NOTES_TABLE_ID, [
-    Query.equal("userId", userId),
-    Query.orderDesc("$updatedAt"),
-    Query.limit(limit),
-  ]);
 
-  return response.documents as unknown as Note[];
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: NOTES_TABLE_ID,
+    queries: [
+      Query.equal("userId", userId),
+      Query.orderDesc("$updatedAt"),
+      Query.limit(limit),
+    ],
+  });
+
+  return response.rows as unknown as Note[];
 };
 
 export const getPinnedNotes = async (
   userId: string,
   limit: number = 50
 ): Promise<Note[]> => {
-  const response = await databases.listDocuments(DATABASE_ID, NOTES_TABLE_ID, [
-    Query.equal("userId", userId),
-    Query.equal("isPinned", true),
-    Query.orderDesc("$updatedAt"),
-    Query.limit(limit),
-  ]);
 
-  return response.documents as unknown as Note[];
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: NOTES_TABLE_ID,
+    queries: [
+      Query.equal("userId", userId),
+      Query.equal("isPinned", true),
+      Query.orderDesc("$updatedAt"),
+      Query.limit(limit),
+    ],
+  });
+
+  return response.rows as unknown as Note[];
 };
 
 export const getNotesByContact = async (
@@ -178,14 +191,19 @@ export const getNotesByContact = async (
   contactId: string,
   limit: number = 50
 ): Promise<Note[]> => {
-  const response = await databases.listDocuments(DATABASE_ID, NOTES_TABLE_ID, [
-    Query.equal("userId", userId),
-    Query.contains("contactIds", contactId),
-    Query.orderDesc("$updatedAt"),
-    Query.limit(limit),
-  ]);
 
-  return response.documents as unknown as Note[];
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: NOTES_TABLE_ID,
+    queries: [
+      Query.equal("userId", userId),
+      Query.contains("contactIds", contactId),
+      Query.orderDesc("$updatedAt"),
+      Query.limit(limit),
+    ],
+  });
+
+  return response.rows as unknown as Note[];
 };
 
 export const getNotesByTag = async (
@@ -193,14 +211,19 @@ export const getNotesByTag = async (
   tag: string,
   limit: number = 50
 ): Promise<Note[]> => {
-  const response = await databases.listDocuments(DATABASE_ID, NOTES_TABLE_ID, [
-    Query.equal("userId", userId),
-    Query.contains("tags", tag),
-    Query.orderDesc("$updatedAt"),
-    Query.limit(limit),
-  ]);
 
-  return response.documents as unknown as Note[];
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: NOTES_TABLE_ID,
+    queries: [
+      Query.equal("userId", userId),
+      Query.contains("tags", tag),
+      Query.orderDesc("$updatedAt"),
+      Query.limit(limit),
+    ],
+  });
+
+  return response.rows as unknown as Note[];
 };
 
 export const searchNotes = async (
@@ -208,18 +231,27 @@ export const searchNotes = async (
   searchText: string,
   limit: number = 50
 ): Promise<Note[]> => {
-  const response = await databases.listDocuments(DATABASE_ID, NOTES_TABLE_ID, [
-    Query.equal("userId", userId),
-    Query.contains("rawText", searchText),
-    Query.orderDesc("$updatedAt"),
-    Query.limit(limit),
-  ]);
 
-  return response.documents as unknown as Note[];
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: NOTES_TABLE_ID,
+    queries: [
+      Query.equal("userId", userId),
+      Query.search("rawText", searchText),
+      Query.orderDesc("$updatedAt"),
+      Query.limit(limit),
+    ],
+  });
+
+  return response.rows as unknown as Note[];
 };
 
 export const deleteNote = async (noteId: string): Promise<void> => {
-  await databases.deleteDocument(DATABASE_ID, NOTES_TABLE_ID, noteId);
+  await tablesDB.deleteRow({
+    databaseId: DATABASE_ID,
+    tableId: NOTES_TABLE_ID,
+    rowId: noteId,
+  });
 };
 
 export const toggleNotePin = async (noteId: string): Promise<Note> => {
@@ -247,12 +279,17 @@ export const getPendingNotes = async (
   userId: string,
   limit: number = 50
 ): Promise<Note[]> => {
-  const response = await databases.listDocuments(DATABASE_ID, NOTES_TABLE_ID, [
-    Query.equal("userId", userId),
-    Query.equal("processingStatus", "pending"),
-    Query.orderDesc("$createdAt"),
-    Query.limit(limit),
-  ]);
 
-  return response.documents as unknown as Note[];
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: NOTES_TABLE_ID,
+    queries: [
+      Query.equal("userId", userId),
+      Query.equal("processingStatus", "pending"),
+      Query.orderDesc("$createdAt"),
+      Query.limit(limit),
+    ],
+  });
+
+  return response.rows as unknown as Note[];
 };

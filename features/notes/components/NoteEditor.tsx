@@ -1,5 +1,5 @@
 import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
-import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Already using useUserProfile
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 import {
   loadContacts,
   ProfileContact,
@@ -44,7 +44,7 @@ export default function NoteEditor({
   onDelete,
   existingTags = [],
 }: NoteEditorProps) {
-  const { profile } = useUserProfile(); // Already correct
+  const { profile } = useUserProfile();
   const { isPremium } = usePremiumGate();
   const {
     note,
@@ -66,19 +66,16 @@ export default function NoteEditor({
   const [contactPickerVisible, setContactPickerVisible] = useState(false);
   const [linkedContacts, setLinkedContacts] = useState<ProfileContact[]>([]);
 
-  // Load linked contact names
   useEffect(() => {
     if (profile && contactIds.length > 0) {
-      // Changed from user
       loadContacts(profile.$id).then((allContacts) => {
-        // Changed from user.id
         const linked = allContacts.filter((c) => contactIds.includes(c.$id));
         setLinkedContacts(linked);
       });
     } else {
       setLinkedContacts([]);
     }
-  }, [profile, contactIds]); // Changed dependency
+  }, [profile, contactIds]);
 
   const handleSave = async () => {
     const saved = await save();

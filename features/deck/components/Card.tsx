@@ -1,3 +1,4 @@
+// features/deck/components/Card.tsx
 import {
   Check,
   Clock,
@@ -6,7 +7,7 @@ import {
   Sparkles,
   Video,
 } from "lucide-react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import { Text, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
@@ -44,6 +45,11 @@ export default function Card({
   const translateX = useSharedValue(0);
   const isCompleted = card.status === "completed" || card.status === "skipped";
 
+  // Reset position when card remounts (e.g., after closing draft picker)
+  useEffect(() => {
+    translateX.value = 0;
+  }, []);
+
   const panGesture = Gesture.Pan()
     .enabled(!isCompleted)
     .onUpdate((event) => {
@@ -51,10 +57,11 @@ export default function Card({
     })
     .onEnd((event) => {
       if (event.translationX > SWIPE_THRESHOLD) {
-        translateX.value = withSpring(400, {}, () => {
-          runOnJS(onSwipeRight)();
-        });
+        // Swipe right - don't animate off screen, just trigger action
+        translateX.value = withSpring(0);
+        runOnJS(onSwipeRight)();
       } else if (event.translationX < -SWIPE_THRESHOLD) {
+        // Swipe left - animate off screen then trigger action
         translateX.value = withSpring(-400, {}, () => {
           runOnJS(onSwipeLeft)();
         });
@@ -100,7 +107,6 @@ export default function Card({
           isCompleted ? "opacity-50" : ""
         }`}
       >
-        {/* Swipe indicators */}
         <Animated.View
           style={leftIndicatorStyle}
           className="absolute top-4 left-4 bg-green-500 px-3 py-1 rounded-full z-10"
@@ -114,7 +120,6 @@ export default function Card({
           <Text className="text-white font-semibold text-sm">SKIP</Text>
         </Animated.View>
 
-        {/* Completed overlay */}
         {isCompleted && (
           <View className="absolute inset-0 items-center justify-center z-20">
             <View className="bg-green-500 rounded-full p-3">
@@ -123,7 +128,6 @@ export default function Card({
           </View>
         )}
 
-        {/* Header */}
         <View className="flex-row items-center mb-4">
           <View className="w-14 h-14 rounded-full bg-blue-100 items-center justify-center mr-3">
             <Text className="text-blue-600 text-xl font-bold">{initials}</Text>
@@ -153,13 +157,11 @@ export default function Card({
           </View>
         </View>
 
-        {/* Reason */}
         <View className="flex-row items-center gap-2 mb-4 bg-amber-50 px-3 py-2 rounded-lg">
           <Clock size={16} color="#D97706" />
           <Text className="text-amber-800 text-sm flex-1">{card.reason}</Text>
         </View>
 
-        {/* Footer hint */}
         <Text className="text-center text-gray-400 text-xs">
           Tap to draft • Swipe right to reach out • Swipe left to skip
         </Text>

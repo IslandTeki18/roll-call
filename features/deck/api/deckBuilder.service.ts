@@ -34,7 +34,11 @@ export const buildDeck = async (
   );
 
   if (existingDeck.documents.length > 0) {
-    // Return existing deck cards
+    // Load all contacts to hydrate the existing deck cards
+    const contacts = await loadContacts(userId);
+    const contactMap = new Map(contacts.map((c) => [c.$id, c]));
+
+    // Return existing deck cards WITH hydrated contact data
     return existingDeck.documents.map((doc: any) => ({
       id: doc.cardId,
       $id: doc.$id,
@@ -42,7 +46,7 @@ export const buildDeck = async (
       cardId: doc.cardId,
       contactId: doc.contactId,
       date: doc.date,
-      contact: { $id: doc.contactId } as ProfileContact,
+      contact: contactMap.get(doc.contactId),
       status: doc.status,
       draftedAt: doc.draftedAt || undefined,
       sentAt: doc.sentAt || undefined,
@@ -125,7 +129,7 @@ export const buildDeck = async (
         cardId,
         contactId: scored.contact.$id,
         date: todayDate,
-        contact: scored.contact,
+        contact: scored.contact, // Hydrated contact
         status: "pending" as const,
         draftedAt: "",
         sentAt: "",
