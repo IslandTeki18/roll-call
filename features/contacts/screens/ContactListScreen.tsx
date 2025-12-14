@@ -1,9 +1,23 @@
 import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
-import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Changed import
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 import { useRouter } from "expo-router";
-import { Lock, Mail, MessageSquare, Smartphone } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
-import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  Lock,
+  Mail,
+  MessageSquare,
+  Smartphone,
+  Search,
+  X,
+} from "lucide-react-native";
+import React, { useEffect, useState, useMemo } from "react";
+import {
+  Alert,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ContactCard from "../../../features/contacts/components/ContactCard";
 
@@ -15,13 +29,34 @@ import {
 } from "../api/contacts.service";
 
 export default function ContactListScreen() {
-  const { profile } = useUserProfile(); // Changed from useUser
+  const { profile } = useUserProfile();
   const router = useRouter();
   const { isPremium, requirePremium } = usePremiumGate();
   const [contacts, setContacts] = useState<ProfileContact[]>([]);
   const [importing, setImporting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [deviceContactCount, setDeviceContactCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter and sort contacts alphabetically
+  const filteredContacts = useMemo(() => {
+    let filtered = contacts;
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = contacts.filter(
+        (c) =>
+          c.displayName.toLowerCase().includes(query) ||
+          c.organization?.toLowerCase().includes(query) ||
+          c.emails?.toLowerCase().includes(query) ||
+          c.phoneNumbers?.toLowerCase().includes(query)
+      );
+    }
+
+    // Sort alphabetically by displayName
+    return filtered.sort((a, b) => a.displayName.localeCompare(b.displayName));
+  }, [contacts, searchQuery]);
 
   useEffect(() => {
     (async () => {
@@ -32,14 +67,14 @@ export default function ContactListScreen() {
 
   useEffect(() => {
     fetchContacts();
-  }, [profile]); // Changed dependency from user
+  }, [profile]);
 
   const fetchContacts = async () => {
-    if (!profile) return; // Changed from user
+    if (!profile) return;
 
     try {
       setLoading(true);
-      const data = await loadContacts(profile.$id); // Changed from user.id
+      const data = await loadContacts(profile.$id);
       setContacts(data);
     } catch (error) {
       console.error("Failed to load contacts:", error);
@@ -49,12 +84,12 @@ export default function ContactListScreen() {
   };
 
   const handleImportContacts = async () => {
-    if (!profile) return; // Changed from user
+    if (!profile) return;
 
     setImporting(true);
 
     try {
-      const imported = await importDeviceContacts(profile.$id); // Changed from user.id
+      const imported = await importDeviceContacts(profile.$id);
       Alert.alert("Import Complete", `Imported ${imported} new contacts`);
       await fetchContacts();
     } catch (error) {
@@ -85,6 +120,23 @@ export default function ContactListScreen() {
       <ScrollView className="h-screen">
         <View className="px-4 py-6">
           <Text className="text-2xl font-bold mb-4">Contacts</Text>
+
+          {/* Search Bar */}
+          <View className="flex-row items-center bg-white rounded-xl px-4 py-3 border border-gray-200 mb-4">
+            <Search size={18} color="#9CA3AF" />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search contacts..."
+              placeholderTextColor="#9CA3AF"
+              className="flex-1 ml-2 text-base text-gray-900"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery("")}>
+                <X size={18} color="#9CA3AF" />
+              </TouchableOpacity>
+            )}
+          </View>
 
           {/* Device Contacts Import */}
           {!allContactsImported && (
@@ -191,13 +243,16 @@ export default function ContactListScreen() {
             </View>
           </View>
 
+          {/* Contact List */}
           {loading ? (
             <Text className="text-gray-600">Loading...</Text>
-          ) : contacts.length === 0 ? (
-            <Text className="text-gray-600">No contacts yet</Text>
+          ) : filteredContacts.length === 0 ? (
+            <Text className="text-gray-600">
+              {searchQuery ? "No contacts found" : "No contacts yet"}
+            </Text>
           ) : (
             <View className="gap-3">
-              {contacts.map((contact) => (
+              {filteredContacts.map((contact) => (
                 <ContactCard
                   key={contact.$id}
                   displayName={contact.displayName}
