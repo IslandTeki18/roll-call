@@ -1,11 +1,17 @@
 import { ProfileContact } from "@/features/contacts/api/contacts.service";
 import { getLastEventForContact } from "@/features/messaging/api/engagement.service";
+import {
+  calculateEngagementFrequency,
+  calculateOutcomeQualityScore,
+} from "@/features/messaging/api/recommendations.service";
 
 export interface RHSFactors {
   recencyScore: number;
   freshnessBoost: number;
   fatigueGuardPenalty: number;
   cadenceWeight: number;
+  engagementQualityBonus: number; // NEW
+  conversationDepthBonus: number; // NEW
   totalScore: number;
 }
 
@@ -17,6 +23,8 @@ const FATIGUE_WINDOW_DAYS = 3;
 const FATIGUE_PENALTY = 20;
 const CADENCE_OVERDUE_BOOST_MAX = 30;
 const CADENCE_EARLY_PENALTY_MAX = 15;
+const ENGAGEMENT_QUALITY_MAX = 20; // NEW: Max bonus for high-quality outcomes
+const CONVERSATION_DEPTH_MAX = 15; // NEW: Max bonus for consistent engagement
 
 export const calculateRHS = async (
   userId: string,
@@ -31,11 +39,28 @@ export const calculateRHS = async (
   const fatigueGuardPenalty = calculateFatiguePenaltyFromEvent(lastEvent);
   const cadenceWeight = calculateCadenceWeight(contact, lastEvent);
 
+  // NEW: Calculate engagement quality bonus
+  const engagementQualityBonus = await calculateEngagementQualityBonus(
+    userId,
+    contact.$id
+  );
+
+  // NEW: Calculate conversation depth bonus
+  const conversationDepthBonus = await calculateConversationDepthBonus(
+    userId,
+    contact.$id
+  );
+
   const totalScore = Math.max(
     0,
     Math.min(
       100,
-      recencyScore + freshnessBoost + cadenceWeight - fatigueGuardPenalty
+      recencyScore +
+        freshnessBoost +
+        cadenceWeight +
+        engagementQualityBonus +
+        conversationDepthBonus -
+        fatigueGuardPenalty
     )
   );
 
@@ -44,10 +69,80 @@ export const calculateRHS = async (
     freshnessBoost,
     fatigueGuardPenalty,
     cadenceWeight,
+    engagementQualityBonus,
+    conversationDepthBonus,
     totalScore,
   };
 };
 
+/**
+ * NEW: Calculates bonus based on outcome quality
+ * Rewards contacts with positive, substantive conversations
+ */
+async function calculateEngagementQualityBonus(
+  userId: string,
+  contactId: string
+): Promise<number> {
+  try {
+    const qualityScore = await calculateOutcomeQualityScore(userId, contactId);
+
+    // Convert 0-100 score to 0-20 bonus
+    // Score > 70 gets full bonus
+    // Score < 30 gets penalty
+    if (qualityScore >= 70) {
+      return ENGAGEMENT_QUALITY_MAX;
+    } else if (qualityScore >= 50) {
+      // Partial bonus for neutral-positive
+      return Math.round((qualityScore - 50) / 20) * ENGAGEMENT_QUALITY_MAX;
+    } else if (qualityScore < 30) {
+      // Small penalty for consistently negative
+      return -5;
+    }
+
+    return 0;
+  } catch (error) {
+    console.error("Failed to calculate engagement quality bonus:", error);
+    return 0;
+  }
+}
+
+/**
+ * NEW: Calculates bonus based on conversation consistency
+ * Rewards regular, rhythmic engagement patterns
+ */
+async function calculateConversationDepthBonus(
+  userId: string,
+  contactId: string
+): Promise<number> {
+  try {
+    const avgFrequency = await calculateEngagementFrequency(userId, contactId);
+
+    // No history = no bonus
+    if (avgFrequency === 0) return 0;
+
+    // Consistent engagement (7-30 day rhythm) gets bonus
+    if (avgFrequency >= 7 && avgFrequency <= 30) {
+      return CONVERSATION_DEPTH_MAX;
+    }
+
+    // Very frequent (< 7 days) gets partial bonus
+    if (avgFrequency < 7) {
+      return Math.round(CONVERSATION_DEPTH_MAX * 0.6);
+    }
+
+    // Infrequent (> 30 days) gets small bonus for any engagement
+    if (avgFrequency > 30 && avgFrequency <= 90) {
+      return Math.round(CONVERSATION_DEPTH_MAX * 0.3);
+    }
+
+    return 0;
+  } catch (error) {
+    console.error("Failed to calculate conversation depth bonus:", error);
+    return 0;
+  }
+}
+
+// Existing functions remain unchanged
 const calculateRecencyScoreFromEvent = (
   lastEvent: { timestamp: string } | null
 ): number => {
@@ -98,20 +193,14 @@ const calculateFatiguePenaltyFromEvent = (
   return 0;
 };
 
-/**
- * Cadence soft-weight: boosts overdue contacts, penalizes early contacts
- * Returns positive value if overdue, negative if contacted too recently relative to cadence
- */
 const calculateCadenceWeight = (
   contact: ProfileContact,
   lastEvent: { timestamp: string } | null
 ): number => {
-  // No cadence set = no weight applied
   if (!contact.cadenceDays || contact.cadenceDays <= 0) {
     return 0;
   }
 
-  // Never contacted = treat as fully overdue
   if (!lastEvent) {
     return CADENCE_OVERDUE_BOOST_MAX;
   }
@@ -124,17 +213,13 @@ const calculateCadenceWeight = (
   const overdueRatio = daysSinceContact / cadenceDays;
 
   if (overdueRatio >= 1.5) {
-    // Significantly overdue: full boost
     return CADENCE_OVERDUE_BOOST_MAX;
   } else if (overdueRatio >= 1.0) {
-    // Overdue: scaled boost (0 to max as ratio goes from 1.0 to 1.5)
     const overdueProgress = (overdueRatio - 1.0) / 0.5;
     return Math.round(CADENCE_OVERDUE_BOOST_MAX * overdueProgress);
   } else if (overdueRatio >= 0.5) {
-    // On track: no weight adjustment
     return 0;
   } else {
-    // Too early: apply penalty (scaled from 0 to max as ratio goes from 0.5 to 0)
     const earlyProgress = (0.5 - overdueRatio) / 0.5;
     return -Math.round(CADENCE_EARLY_PENALTY_MAX * earlyProgress);
   }

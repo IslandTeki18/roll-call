@@ -19,7 +19,6 @@ export default function CardStack({
   onSwipeRight,
   onTap,
 }: CardStackProps) {
-  // Show top 3 cards, with the active one on top
   const pendingCards = cards.filter(
     (c) => c.status === "pending" || c.status === "active"
   );
@@ -31,7 +30,6 @@ export default function CardStack({
         const isTop = index === visibleCards.length - 1;
         const scale = 1 - (visibleCards.length - 1 - index) * 0.05;
         const translateY = (visibleCards.length - 1 - index) * 8;
-        console.log("Card from CardStack:", JSON.stringify(card, null, 2)); // Debugging line
         return (
           <Animated.View
             key={`card-${card.contact?.$id}`}

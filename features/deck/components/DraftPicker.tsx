@@ -1,12 +1,17 @@
 import {
+  ContactRecommendation,
+  getContactRecommendations,
+} from "@/features/messaging/api/recommendations.service";
+import {
+  Lightbulb,
+  Lock,
   Mail,
   MessageSquare,
   Phone,
   Send,
+  Sparkles,
   Video,
   X,
-  Lock,
-  Sparkles
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -20,8 +25,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { ChannelType, DeckCard, Draft } from "../types/deck.types";
 import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
+import { useUserProfile } from "../../auth/hooks/useUserProfile";
+import { ChannelType, DeckCard, Draft } from "../types/deck.types";
 
 interface DraftPickerProps {
   visible: boolean;
@@ -53,10 +59,16 @@ export default function DraftPicker({
   onSelectDraft,
   onSend,
 }: DraftPickerProps) {
+  const { profile } = useUserProfile();
   const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null);
   const [customMessage, setCustomMessage] = useState("");
   const [selectedChannel, setSelectedChannel] = useState<ChannelType>("sms");
   const { isPremium, requirePremium } = usePremiumGate();
+
+  // NEW: Recommendations state
+  const [recommendations, setRecommendations] =
+    useState<ContactRecommendation | null>(null);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   const freeChannels: ChannelType[] = ["sms", "call"];
   const premiumChannels: ChannelType[] = ["email", "slack"];
@@ -65,10 +77,32 @@ export default function DraftPicker({
     if (!visible) {
       setSelectedDraft(null);
       setCustomMessage("");
+      setRecommendations(null);
     } else if (card) {
       setSelectedChannel(card.suggestedChannel);
+      // NEW: Load recommendations when card is opened
+      loadRecommendations();
     }
   }, [visible, card]);
+
+  // NEW: Load contact recommendations
+  const loadRecommendations = async () => {
+    if (!profile || !card) return;
+
+    setLoadingRecommendations(true);
+    try {
+      const recs = await getContactRecommendations(
+        profile.$id,
+        card.contact?.$id as string,
+        card.contact
+      );
+      setRecommendations(recs);
+    } catch (error) {
+      console.error("Failed to load recommendations:", error);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
 
   const handleSelectDraft = (draft: Draft) => {
     setSelectedDraft(draft);
@@ -130,6 +164,52 @@ export default function DraftPicker({
               </View>
 
               <View className="px-6 py-6">
+                {/* NEW: Recommendations banner */}
+                {loadingRecommendations && (
+                  <View className="mb-4 p-3 bg-blue-50 rounded-lg flex-row items-center gap-2">
+                    <ActivityIndicator size="small" color="#3B82F6" />
+                    <Text className="text-sm text-blue-700">
+                      Analyzing conversation history...
+                    </Text>
+                  </View>
+                )}
+
+                {recommendations && !loadingRecommendations && (
+                  <View className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
+                    <View className="flex-row items-center gap-2 mb-2">
+                      <Lightbulb size={18} color="#7C3AED" />
+                      <Text className="text-sm font-semibold text-purple-900">
+                        Smart Insights
+                      </Text>
+                    </View>
+
+                    <Text className="text-sm text-gray-700 mb-2">
+                      {recommendations.reasoning}
+                    </Text>
+
+                    {recommendations.recentTopics.length > 0 && (
+                      <View className="flex-row flex-wrap gap-1 mt-2">
+                        {recommendations.recentTopics.map((topic, idx) => (
+                          <View
+                            key={idx}
+                            className="bg-purple-100 px-2 py-1 rounded-full"
+                          >
+                            <Text className="text-xs text-purple-700">
+                              {topic}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+
+                    {recommendations.conversationContext && (
+                      <Text className="text-xs text-gray-600 mt-2 italic">
+                        💬 {recommendations.conversationContext}
+                      </Text>
+                    )}
+                  </View>
+                )}
+
                 {/* Channel selector */}
                 <View className="mb-6">
                   <Text className="text-sm font-semibold text-gray-700 mb-3">
@@ -168,7 +248,7 @@ export default function DraftPicker({
                       const config = channelConfig[channel];
                       const Icon = config.icon;
                       const isSelected = selectedChannel === channel;
-                      
+
                       if (isPremium) {
                         return (
                           <TouchableOpacity
@@ -194,11 +274,13 @@ export default function DraftPicker({
                           </TouchableOpacity>
                         );
                       }
-                      
+
                       return (
                         <TouchableOpacity
                           key={channel}
-                          onPress={() => requirePremium(`${config.label} sends`)}
+                          onPress={() =>
+                            requirePremium(`${config.label} sends`)
+                          }
                           className="flex-1 items-center py-3 rounded-xl border-2 border-dashed border-gray-300"
                         >
                           <View className="relative">
@@ -225,7 +307,9 @@ export default function DraftPicker({
                     {isPremium ? (
                       <View className="flex-row items-center gap-1 bg-purple-100 px-2 py-1 rounded-full">
                         <Sparkles size={12} color="#7C3AED" />
-                        <Text className="text-xs text-purple-700 font-medium">AI Generated</Text>
+                        <Text className="text-xs text-purple-700 font-medium">
+                          AI Generated
+                        </Text>
                       </View>
                     ) : (
                       <Text className="text-xs text-gray-400">Templates</Text>
@@ -235,7 +319,9 @@ export default function DraftPicker({
                     <View className="py-8 items-center">
                       <ActivityIndicator size="large" color="#3B82F6" />
                       <Text className="text-gray-500 mt-2">
-                        {isPremium ? "Generating drafts..." : "Loading drafts..."}
+                        {isPremium
+                          ? "Generating drafts..."
+                          : "Loading drafts..."}
                       </Text>
                     </View>
                   ) : (

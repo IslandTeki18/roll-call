@@ -10,6 +10,7 @@ import {
   markCardSkipped as persistCardSkipped,
 } from "../api/deck.mutations";
 import { DeckCard, DeckState, Draft } from "../types/deck.types";
+import { getContactRecommendations } from "@/features/messaging/api/recommendations.service";
 
 export function useDeck() {
   const { profile } = useUserProfile();
@@ -73,7 +74,6 @@ export function useDeck() {
       setDraftsError(null);
       setDrafts([]);
 
-      // Persist drafted_at timestamp using Appwrite document $id
       try {
         await persistCardDrafted(card.$id as string);
       } catch (error) {
@@ -104,16 +104,28 @@ export function useDeck() {
       }
 
       try {
+        // NEW: Get recommendations for context
+        const recommendations = await getContactRecommendations(
+          profile.$id,
+          card.contact?.$id as string,
+          card.contact
+        );
+
+        // Use conversation context in draft generation
+        const contextString = recommendations.conversationContext
+          ? `Context: ${recommendations.conversationContext}. `
+          : "";
+
         const [casualDraft, professionalDraft] = await Promise.all([
           generateDraft(
             profile.$id,
             card.contact?.$id as string,
-            "casual friendly message"
+            `${contextString}Write a casual, friendly message`
           ),
           generateDraft(
             profile.$id,
             card.contact?.$id as string,
-            "professional follow-up"
+            `${contextString}Write a professional follow-up message`
           ),
         ]);
 
