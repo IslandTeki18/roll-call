@@ -104,8 +104,6 @@ export const createOutcomeNote = async (
     aiSentiment: "neutral" as OutcomeSentiment,
     recordedAt: timestamp,
     processedAt: "",
-    createdAt: timestamp,
-    updatedAt: timestamp,
   };
 
   const response = await tablesDB.createRow({
@@ -136,7 +134,6 @@ export const updateOutcomeWithAI = async (
     aiEntities: aiResults.aiEntities.join(","),
     aiSentiment: aiResults.aiSentiment,
     processedAt: timestamp,
-    updatedAt: timestamp,
   };
 
   const response = await tablesDB.updateRow({
@@ -156,12 +153,10 @@ export const markOutcomeAsFailed = async (
   outcomeId: string,
   errorMessage: string
 ): Promise<OutcomeNote> => {
-  const timestamp = new Date().toISOString();
 
   const data = {
     processingStatus: "failed" as ProcessingStatus,
     processingError: errorMessage,
-    updatedAt: timestamp,
   };
 
   const response = await tablesDB.updateRow({
@@ -180,11 +175,9 @@ export const markOutcomeAsFailed = async (
 export const markOutcomeAsProcessing = async (
   outcomeId: string
 ): Promise<OutcomeNote> => {
-  const timestamp = new Date().toISOString();
 
   const data = {
     processingStatus: "processing" as ProcessingStatus,
-    updatedAt: timestamp,
   };
 
   const response = await tablesDB.updateRow({

@@ -1,6 +1,5 @@
 import { Redirect, Tabs } from "expo-router";
 import { useUserProfile } from "../../features/auth/hooks/useUserProfile";
-import { useDeckCleanup } from "@/features/deck/hooks/useDeckCleanup";
 import { View, Text } from "react-native";
 import { useAuth } from "@clerk/clerk-expo";
 import {
@@ -10,12 +9,13 @@ import {
   SettingsIcon,
   Contact,
 } from "lucide-react-native";
+import { useDeckCleanup } from "@/features/deck/hooks/useDeckCleanup";
 
 export default function TabsLayout() {
   const { isSignedIn } = useAuth();
   const { profile, loading, error } = useUserProfile();
   useDeckCleanup();
-
+  
   if (!isSignedIn) {
     return <Redirect href="/(auth)/sign-in" />;
   }

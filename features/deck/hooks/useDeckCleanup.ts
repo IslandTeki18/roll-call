@@ -7,7 +7,6 @@ import { archiveOldDecks } from "../api/deckHistory.service";
  * Hook that automatically archives old decks when app becomes active
  * Ensures cleanup happens even if user doesn't open deck screen
  *
- * Usage: Add to root _layout.tsx or main app component
  */
 export function useDeckCleanup() {
   const { profile } = useUserProfile();
