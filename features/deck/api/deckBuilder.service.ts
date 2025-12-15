@@ -3,7 +3,8 @@ import {
   loadContacts,
   isContactNew,
 } from "@/features/contacts/api/contacts.service";
-import { calculateRHS, RHSFactors } from "./rhs.service";
+import { calculateRHS } from "./rhs.service";
+import { RHSFactors } from "../types/rhs.types";
 import { DeckCard, ChannelType } from "../types/deck.types";
 import { tablesDB } from "@/features/shared/lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
@@ -21,6 +22,43 @@ interface ScoredContact {
 
 const FRESH_MIN = 1;
 const FRESH_MAX = 2;
+
+const getContactReason = (rhs: RHSFactors): string => {
+  // Priority order: freshness > cadence > recency
+  if (rhs.freshnessBoost > 0) {
+    return "New connection - reach out while it's fresh!";
+  }
+
+  if (rhs.isOverdueByCadence && rhs.daysOverdue > 7) {
+    return `${rhs.daysOverdue} days overdue by your cadence`;
+  }
+
+  if (rhs.isOverdueByCadence) {
+    return "Past your check-in cadence";
+  }
+
+  if (rhs.daysSinceLastEngagement === null) {
+    return "You haven't connected yet";
+  }
+
+  if (rhs.daysSinceLastEngagement >= 60) {
+    return "It's been over 2 months";
+  }
+
+  if (rhs.daysSinceLastEngagement >= 30) {
+    return "It's been over a month";
+  }
+
+  if (rhs.daysSinceLastEngagement >= 21) {
+    return "It's been 3 weeks";
+  }
+
+  if (rhs.daysSinceLastEngagement >= 14) {
+    return "It's been 2 weeks";
+  }
+
+  return "Keep the momentum going";
+};
 
 export const buildDeck = async (
   userId: string,
@@ -314,18 +352,3 @@ const getSuggestedChannel = (contact: ProfileContact): ChannelType => {
   return "call";
 };
 
-const getContactReason = (rhs: RHSFactors): string => {
-  if (rhs.freshnessBoost > 0) {
-    return "New connection - reach out while it's fresh!";
-  }
-  if (rhs.recencyScore >= 100) {
-    return "You haven't connected yet";
-  }
-  if (rhs.recencyScore >= 80) {
-    return "It's been over 3 weeks";
-  }
-  if (rhs.recencyScore >= 60) {
-    return "Time to reconnect";
-  }
-  return "Keep the momentum going";
-};

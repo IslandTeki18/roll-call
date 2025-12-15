@@ -2,12 +2,17 @@ import {
   ProfileContact,
   isContactNew,
 } from "@/features/contacts/api/contacts.service";
-import { getLastEventForContact } from "@/features/messaging/api/engagement.service";
+import {
+  getEventsByContact,
+  getLastEventForContact,
+} from "@/features/messaging/api/engagement.service";
 import {
   calculateEngagementFrequency,
   calculateOutcomeQualityScore,
 } from "@/features/messaging/api/recommendations.service";
+import { getOutcomeNotesByContact } from "@/features/outcomes/api/outcomeNotes.service";
 
+// Enhanced interface with metadata
 export interface RHSFactors {
   recencyScore: number;
   freshnessBoost: number;
@@ -16,6 +21,15 @@ export interface RHSFactors {
   engagementQualityBonus: number;
   conversationDepthBonus: number;
   totalScore: number;
+
+  // NEW: Metadata for debugging and analytics
+  daysSinceLastEngagement: number | null;
+  totalEngagements: number;
+  positiveOutcomes: number;
+  negativeOutcomes: number;
+  averageEngagementFrequency: number;
+  isOverdueByCadence: boolean;
+  daysOverdue: number;
 }
 
 const FRESH_WINDOW_DAYS = 14;
@@ -33,14 +47,32 @@ export const calculateRHS = async (
   userId: string,
   contact: ProfileContact
 ): Promise<RHSFactors> => {
-  const lastEvent = await getLastEventForContact(userId, contact.$id).catch(
-    () => null
+  // Fetch engagement events for metadata
+  const [lastEvent, allEvents, outcomes] = await Promise.all([
+    getLastEventForContact(userId, contact.$id).catch(() => null),
+    getEventsByContact(userId, contact.$id, 50).catch(() => []),
+    getOutcomeNotesByContact(userId, contact.$id, 20).catch(() => []),
+  ]);
+
+  // Filter to meaningful engagements
+  const meaningfulEvents = allEvents.filter((e) =>
+    [
+      "sms_sent",
+      "call_made",
+      "email_sent",
+      "facetime_made",
+      "slack_sent",
+    ].includes(e.type)
   );
 
+  // Calculate core scores
   const recencyScore = calculateRecencyScoreFromEvent(lastEvent);
   const freshnessBoost = calculateFreshnessBoost(contact);
   const fatigueGuardPenalty = calculateFatiguePenaltyFromEvent(lastEvent);
-  const cadenceWeight = calculateCadenceWeight(contact, lastEvent);
+
+  // Calculate cadence with metadata
+  const cadenceResult = calculateCadenceWeightWithMetadata(contact, lastEvent);
+  const cadenceWeight = cadenceResult.weight;
 
   const engagementQualityBonus = await calculateEngagementQualityBonus(
     userId,
@@ -65,6 +97,23 @@ export const calculateRHS = async (
     )
   );
 
+  // Calculate metadata
+  const daysSinceLastEngagement = lastEvent
+    ? (Date.now() - new Date(lastEvent.timestamp).getTime()) /
+      (1000 * 60 * 60 * 24)
+    : null;
+
+  const positiveOutcomes = outcomes.filter(
+    (o) => o.userSentiment === "positive"
+  ).length;
+
+  const negativeOutcomes = outcomes.filter(
+    (o) => o.userSentiment === "negative"
+  ).length;
+
+  const averageEngagementFrequency =
+    calculateAverageFrequencyFromEvents(meaningfulEvents);
+
   return {
     recencyScore,
     freshnessBoost,
@@ -73,6 +122,13 @@ export const calculateRHS = async (
     engagementQualityBonus,
     conversationDepthBonus,
     totalScore,
+    daysSinceLastEngagement,
+    totalEngagements: meaningfulEvents.length,
+    positiveOutcomes,
+    negativeOutcomes,
+    averageEngagementFrequency,
+    isOverdueByCadence: cadenceResult.isOverdue,
+    daysOverdue: cadenceResult.daysOverdue,
   };
 };
 
@@ -176,16 +232,21 @@ const calculateFatiguePenaltyFromEvent = (
   return 0;
 };
 
-const calculateCadenceWeight = (
+// NEW: Enhanced to return metadata
+const calculateCadenceWeightWithMetadata = (
   contact: ProfileContact,
   lastEvent: { timestamp: string } | null
-): number => {
+): { weight: number; isOverdue: boolean; daysOverdue: number } => {
   if (!contact.cadenceDays || contact.cadenceDays <= 0) {
-    return 0;
+    return { weight: 0, isOverdue: false, daysOverdue: 0 };
   }
 
   if (!lastEvent) {
-    return CADENCE_OVERDUE_BOOST_MAX;
+    return {
+      weight: CADENCE_OVERDUE_BOOST_MAX,
+      isOverdue: true,
+      daysOverdue: contact.cadenceDays,
+    };
   }
 
   const daysSinceContact =
@@ -196,17 +257,51 @@ const calculateCadenceWeight = (
   const overdueRatio = daysSinceContact / cadenceDays;
 
   if (overdueRatio >= 1.5) {
-    return CADENCE_OVERDUE_BOOST_MAX;
+    return {
+      weight: CADENCE_OVERDUE_BOOST_MAX,
+      isOverdue: true,
+      daysOverdue: Math.round(daysSinceContact - cadenceDays),
+    };
   } else if (overdueRatio >= 1.0) {
     const overdueProgress = (overdueRatio - 1.0) / 0.5;
-    return Math.round(CADENCE_OVERDUE_BOOST_MAX * overdueProgress);
+    return {
+      weight: Math.round(CADENCE_OVERDUE_BOOST_MAX * overdueProgress),
+      isOverdue: true,
+      daysOverdue: Math.round(daysSinceContact - cadenceDays),
+    };
   } else if (overdueRatio >= 0.5) {
-    return 0;
+    return { weight: 0, isOverdue: false, daysOverdue: 0 };
   } else {
     const earlyProgress = (0.5 - overdueRatio) / 0.5;
-    return -Math.round(CADENCE_EARLY_PENALTY_MAX * earlyProgress);
+    return {
+      weight: -Math.round(CADENCE_EARLY_PENALTY_MAX * earlyProgress),
+      isOverdue: false,
+      daysOverdue: 0,
+    };
   }
 };
 
-// NEW: Updated to use centralized isContactNew function
+// Keep original function for backwards compatibility
+const calculateCadenceWeight = (
+  contact: ProfileContact,
+  lastEvent: { timestamp: string } | null
+): number => {
+  return calculateCadenceWeightWithMetadata(contact, lastEvent).weight;
+};
+
+// NEW: Calculate average frequency from events array
+const calculateAverageFrequencyFromEvents = (events: any[]): number => {
+  if (events.length < 2) return 0;
+
+  const gaps: number[] = [];
+  for (let i = 0; i < events.length - 1; i++) {
+    const time1 = new Date(events[i].timestamp).getTime();
+    const time2 = new Date(events[i + 1].timestamp).getTime();
+    const daysDiff = (time1 - time2) / (1000 * 60 * 60 * 24);
+    gaps.push(daysDiff);
+  }
+
+  return gaps.reduce((a, b) => a + b, 0) / gaps.length;
+};
+
 export const isFreshContact = isContactNew;
