@@ -26,7 +26,6 @@ export async function getOrCreateUserProfile(
   lastName?: string
 ): Promise<UserProfile> {
   try {
-    let displayName;
     const response = await tablesDB.listRows({
       databaseId: DATABASE_ID,
       tableId: USER_PROFILES_TABLE_ID,
@@ -37,11 +36,9 @@ export async function getOrCreateUserProfile(
       return response.rows[0] as unknown as UserProfile;
     }
 
-    if (!firstName && !lastName) {
-      displayName =
-        [firstName, lastName].filter(Boolean).join(" ").trim() ||
-        email.split("@")[0];
-    }
+    const displayName =
+      [firstName, lastName].filter(Boolean).join(" ").trim() ||
+      email.split("@")[0];
 
     const newProfile = await tablesDB.createRow({
       databaseId: DATABASE_ID,

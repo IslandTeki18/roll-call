@@ -1,5 +1,5 @@
 import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
-import { useUserProfile } from "@/features/auth/hooks/useUserProfile"; // Changed import
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 import { generateDraft } from "@/features/messaging/api/drafts.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -29,6 +29,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { tablesDB } from "../../shared/lib/appwrite";
 import { updateContactCadence } from "../api/contacts.service";
 import CadenceSelector from "../components/CadenceSelector";
+import RHSDebugCard from "@/features/deck/components/RHSDebugCard";
+import { calculateRHS, RHSFactors } from "@/features/deck/api/rhs.service";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const PROFILE_CONTACTS_COLLECTION_ID =
@@ -50,10 +52,12 @@ interface ProfileContact {
   firstImportedAt: string;
   lastImportedAt: string;
   firstSeenAt: string;
+  firstEngagementAt: string;
+  cadenceDays: number | null;
 }
 
 export default function ContactDetailsScreen() {
-  const { profile } = useUserProfile(); // Changed from useUser
+  const { profile } = useUserProfile();
   const { isPremium, requirePremium } = usePremiumGate();
   const params = useLocalSearchParams();
   const router = useRouter();
@@ -63,10 +67,24 @@ export default function ContactDetailsScreen() {
   const [generatingDraft, setGeneratingDraft] = useState(false);
   const [cadenceDays, setCadenceDays] = useState<number | null>(null);
   const [savingCadence, setSavingCadence] = useState(false);
+  const [showRHSDebug, setShowRHSDebug] = useState(false);
+  const [rhsData, setRhsData] = useState<RHSFactors | null>(null);
 
   useEffect(() => {
     loadContact();
   }, [params.id]);
+
+  useEffect(() => {
+    if (contact) {
+      loadRHS();
+    }
+  }, [contact]);
+
+  const loadRHS = async () => {
+    if (!profile || !contact) return;
+    const rhs = await calculateRHS(profile.$id, contact);
+    setRhsData(rhs);
+  };
 
   const loadContact = async () => {
     if (!params.id) return;
@@ -205,6 +223,12 @@ export default function ContactDetailsScreen() {
             </TouchableOpacity>
             <TouchableOpacity onPress={handleDelete} className="p-2">
               <Trash2 size={20} color="#EF4444" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowRHSDebug(!showRHSDebug)}
+              className="p-2"
+            >
+              <Text className="text-blue-600 text-sm">RHS</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -401,6 +425,12 @@ export default function ContactDetailsScreen() {
         </View>
 
         <View className="h-8" />
+
+        {__DEV__ && showRHSDebug && rhsData && (
+          <View className="px-6 py-4">
+            <RHSDebugCard rhs={rhsData} contactName={contact.displayName} />
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
