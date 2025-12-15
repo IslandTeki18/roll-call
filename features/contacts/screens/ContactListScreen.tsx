@@ -38,11 +38,9 @@ export default function ContactListScreen() {
   const [deviceContactCount, setDeviceContactCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Filter and sort contacts alphabetically
   const filteredContacts = useMemo(() => {
     let filtered = contacts;
 
-    // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = contacts.filter(
@@ -54,7 +52,6 @@ export default function ContactListScreen() {
       );
     }
 
-    // Sort alphabetically by displayName
     return filtered.sort((a, b) => a.displayName.localeCompare(b.displayName));
   }, [contacts, searchQuery]);
 
@@ -121,7 +118,6 @@ export default function ContactListScreen() {
         <View className="px-4 py-6">
           <Text className="text-2xl font-bold mb-4">Contacts</Text>
 
-          {/* Search Bar */}
           <View className="flex-row items-center bg-white rounded-xl px-4 py-3 border border-gray-200 mb-4">
             <Search size={18} color="#9CA3AF" />
             <TextInput
@@ -138,7 +134,6 @@ export default function ContactListScreen() {
             )}
           </View>
 
-          {/* Device Contacts Import */}
           {!allContactsImported && (
             <TouchableOpacity
               onPress={handleImportContacts}
@@ -154,7 +149,6 @@ export default function ContactListScreen() {
             </TouchableOpacity>
           )}
 
-          {/* External Source Imports - Premium Only */}
           <View className="mb-4">
             <Text className="text-xs font-semibold text-gray-500 uppercase mb-2">
               External Sources
@@ -243,7 +237,6 @@ export default function ContactListScreen() {
             </View>
           </View>
 
-          {/* Contact List */}
           {loading ? (
             <Text className="text-gray-600">Loading...</Text>
           ) : filteredContacts.length === 0 ? (
@@ -252,13 +245,11 @@ export default function ContactListScreen() {
             </Text>
           ) : (
             <View className="gap-3">
+              {/* NEW: Pass full contact object instead of individual props */}
               {filteredContacts.map((contact) => (
                 <ContactCard
                   key={contact.$id}
-                  displayName={contact.displayName}
-                  organization={contact.organization}
-                  phoneNumbers={contact.phoneNumbers}
-                  emails={contact.emails}
+                  contact={contact}
                   onPress={() => {
                     router.push({
                       pathname: "/(tabs)/contacts/details",

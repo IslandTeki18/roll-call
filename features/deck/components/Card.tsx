@@ -1,4 +1,3 @@
-// features/deck/components/Card.tsx
 import {
   Check,
   Clock,
@@ -18,6 +17,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { ChannelType, DeckCard } from "../types/deck.types";
+import { isContactNew } from "@/features/contacts/api/contacts.service";
 
 interface CardProps {
   card: DeckCard;
@@ -45,7 +45,9 @@ export default function Card({
   const translateX = useSharedValue(0);
   const isCompleted = card.status === "completed" || card.status === "skipped";
 
-  // Reset position when card remounts (e.g., after closing draft picker)
+  // NEW: Check if contact is still "new" based on engagement state
+  const showNewPill = card.contact ? isContactNew(card.contact) : false;
+
   useEffect(() => {
     translateX.value = 0;
   }, []);
@@ -57,11 +59,9 @@ export default function Card({
     })
     .onEnd((event) => {
       if (event.translationX > SWIPE_THRESHOLD) {
-        // Swipe right - don't animate off screen, just trigger action
         translateX.value = withSpring(0);
         runOnJS(onSwipeRight)();
       } else if (event.translationX < -SWIPE_THRESHOLD) {
-        // Swipe left - animate off screen then trigger action
         translateX.value = withSpring(-400, {}, () => {
           runOnJS(onSwipeLeft)();
         });
@@ -137,7 +137,8 @@ export default function Card({
               <Text className="text-lg font-semibold">
                 {card.contact?.displayName}
               </Text>
-              {card.isFresh && (
+              {/* NEW: Show pill only if contact passes isContactNew check */}
+              {showNewPill && (
                 <View className="bg-purple-100 px-2 py-0.5 rounded-full flex-row items-center gap-1">
                   <Sparkles size={12} color="#7C3AED" />
                   <Text className="text-purple-700 text-xs font-semibold">
