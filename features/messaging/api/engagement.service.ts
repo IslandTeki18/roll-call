@@ -1,5 +1,6 @@
+import { markContactEngaged } from "@/features/contacts/api/contacts.service";
 import { ID, Query } from "react-native-appwrite";
-import { databases } from "../../shared/lib/appwrite";
+import { databases, tablesDB } from "../../shared/lib/appwrite";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const ENGAGEMENT_EVENTS_TABLE_ID =
@@ -44,20 +45,37 @@ export const createEngagementEvent = async (
   metadata?: Record<string, unknown>
 ): Promise<EngagementEvent> => {
   const timestamp = new Date().toISOString();
+  const data = {
+    userId,
+    type,
+    contactIds: contactIds.join(","),
+    linkedCardId: linkedCardId || "",
+    timestamp,
+    metadata: metadata ? JSON.stringify(metadata) : "",
+  };
 
-  const event = await databases.createDocument(
-    DATABASE_ID,
-    ENGAGEMENT_EVENTS_TABLE_ID,
-    ID.unique(),
-    {
-      userId,
-      type,
-      contactIds: contactIds.join(","),
-      linkedCardId: linkedCardId || "",
-      timestamp,
-      metadata: metadata ? JSON.stringify(metadata) : "",
-    }
-  );
+  const event = await tablesDB.createRow({
+    databaseId: DATABASE_ID,
+    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    rowId: ID.unique(),
+    data,
+  });
+
+  const meaningfulTypes: EngagementEventType[] = [
+    "sms_sent",
+    "call_made",
+    "email_sent",
+    "facetime_made",
+    "slack_sent",
+  ];
+
+  if (meaningfulTypes.includes(type)) {
+    await Promise.all(
+      contactIds.map((contactId) => markContactEngaged(contactId))
+    ).catch((error) => {
+      console.error("Failed to mark contacts as engaged:", error);
+    });
+  }
 
   return event as unknown as EngagementEvent;
 };
@@ -67,18 +85,28 @@ export const getEventsByContact = async (
   contactId: string,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await databases.listDocuments(
-    DATABASE_ID,
-    ENGAGEMENT_EVENTS_TABLE_ID,
-    [
+  // const response = await databases.listDocuments(
+  //   DATABASE_ID,
+  //   ENGAGEMENT_EVENTS_TABLE_ID,
+  //   [
+  //     Query.equal("userId", userId),
+  //     Query.contains("contactIds", contactId),
+  //     Query.orderDesc("timestamp"),
+  //     Query.limit(limit),
+  //   ]
+  // );
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    queries: [
       Query.equal("userId", userId),
       Query.contains("contactIds", contactId),
       Query.orderDesc("timestamp"),
       Query.limit(limit),
-    ]
-  );
+    ],
+  });
 
-  return response.documents as unknown as EngagementEvent[];
+  return response.rows as unknown as EngagementEvent[];
 };
 
 export const getEventsByDateRange = async (
@@ -87,19 +115,30 @@ export const getEventsByDateRange = async (
   endDate: string,
   limit: number = 500
 ): Promise<EngagementEvent[]> => {
-  const response = await databases.listDocuments(
-    DATABASE_ID,
-    ENGAGEMENT_EVENTS_TABLE_ID,
-    [
+  // const response = await databases.listDocuments(
+  //   DATABASE_ID,
+  //   ENGAGEMENT_EVENTS_TABLE_ID,
+  //   [
+  //     Query.equal("userId", userId),
+  //     Query.greaterThanEqual("timestamp", startDate),
+  //     Query.lessThanEqual("timestamp", endDate),
+  //     Query.orderDesc("timestamp"),
+  //     Query.limit(limit),
+  //   ]
+  // );
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    queries: [
       Query.equal("userId", userId),
       Query.greaterThanEqual("timestamp", startDate),
       Query.lessThanEqual("timestamp", endDate),
       Query.orderDesc("timestamp"),
       Query.limit(limit),
-    ]
-  );
+    ],
+  });
 
-  return response.documents as unknown as EngagementEvent[];
+  return response.rows as unknown as EngagementEvent[];
 };
 
 export const getEventsByType = async (
@@ -107,18 +146,18 @@ export const getEventsByType = async (
   eventType: EngagementEventType,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await databases.listDocuments(
-    DATABASE_ID,
-    ENGAGEMENT_EVENTS_TABLE_ID,
-    [
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    queries: [
       Query.equal("userId", userId),
       Query.equal("type", eventType),
       Query.orderDesc("timestamp"),
       Query.limit(limit),
-    ]
-  );
+    ],
+  });
 
-  return response.documents as unknown as EngagementEvent[];
+  return response.rows as unknown as EngagementEvent[];
 };
 
 export const getEventsByContactAndType = async (
@@ -127,19 +166,19 @@ export const getEventsByContactAndType = async (
   eventType: EngagementEventType,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await databases.listDocuments(
-    DATABASE_ID,
-    ENGAGEMENT_EVENTS_TABLE_ID,
-    [
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    queries: [
       Query.equal("userId", userId),
       Query.contains("contactIds", contactId),
       Query.equal("type", eventType),
       Query.orderDesc("timestamp"),
       Query.limit(limit),
-    ]
-  );
+    ],
+  });
 
-  return response.documents as unknown as EngagementEvent[];
+  return response.rows as unknown as EngagementEvent[];
 };
 
 export const getEventsByContactAndDateRange = async (
@@ -149,39 +188,39 @@ export const getEventsByContactAndDateRange = async (
   endDate: string,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await databases.listDocuments(
-    DATABASE_ID,
-    ENGAGEMENT_EVENTS_TABLE_ID,
-    [
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    queries: [
       Query.equal("userId", userId),
       Query.contains("contactIds", contactId),
       Query.greaterThanEqual("timestamp", startDate),
       Query.lessThanEqual("timestamp", endDate),
       Query.orderDesc("timestamp"),
       Query.limit(limit),
-    ]
-  );
+    ],
+  });
 
-  return response.documents as unknown as EngagementEvent[];
+  return response.rows as unknown as EngagementEvent[];
 };
 
 export const getLastEventForContact = async (
   userId: string,
   contactId: string
 ): Promise<EngagementEvent | null> => {
-  const response = await databases.listDocuments(
-    DATABASE_ID,
-    ENGAGEMENT_EVENTS_TABLE_ID,
-    [
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    queries: [
       Query.equal("userId", userId),
       Query.contains("contactIds", contactId),
       Query.orderDesc("timestamp"),
       Query.limit(1),
-    ]
-  );
+    ],
+  });
 
-  return response.documents.length > 0
-    ? (response.documents[0] as unknown as EngagementEvent)
+  return response.rows.length > 0
+    ? (response.rows[0] as unknown as EngagementEvent)
     : null;
 };
 
@@ -189,17 +228,17 @@ export const getRecentEvents = async (
   userId: string,
   limit: number = 100
 ): Promise<EngagementEvent[]> => {
-  const response = await databases.listDocuments(
-    DATABASE_ID,
-    ENGAGEMENT_EVENTS_TABLE_ID,
-    [
+  const response = await tablesDB.listRows({
+    databaseId: DATABASE_ID,
+    tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+    queries: [
       Query.equal("userId", userId),
       Query.orderDesc("timestamp"),
       Query.limit(limit),
-    ]
-  );
+    ],
+  });
 
-  return response.documents as unknown as EngagementEvent[];
+  return response.rows as unknown as EngagementEvent[];
 };
 
 export const getCadenceAlignment = async (
@@ -263,8 +302,8 @@ export const getCadenceAlignment = async (
 
 export const getContactsOverdueByCadence = async (
   userId: string,
-  contacts: Array<{ $id: string; cadenceDays: number | null }>
-): Promise<Array<{ contactId: string; alignment: CadenceAlignment }>> => {
+  contacts: { $id: string; cadenceDays: number | null }[]
+): Promise<{ contactId: string; alignment: CadenceAlignment }[]> => {
   const results = await Promise.all(
     contacts
       .filter((c) => c.cadenceDays && c.cadenceDays > 0)

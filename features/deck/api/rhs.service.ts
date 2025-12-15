@@ -1,4 +1,7 @@
-import { ProfileContact } from "@/features/contacts/api/contacts.service";
+import {
+  ProfileContact,
+  isContactNew,
+} from "@/features/contacts/api/contacts.service";
 import { getLastEventForContact } from "@/features/messaging/api/engagement.service";
 import {
   calculateEngagementFrequency,
@@ -10,8 +13,8 @@ export interface RHSFactors {
   freshnessBoost: number;
   fatigueGuardPenalty: number;
   cadenceWeight: number;
-  engagementQualityBonus: number; // NEW
-  conversationDepthBonus: number; // NEW
+  engagementQualityBonus: number;
+  conversationDepthBonus: number;
   totalScore: number;
 }
 
@@ -23,8 +26,8 @@ const FATIGUE_WINDOW_DAYS = 3;
 const FATIGUE_PENALTY = 20;
 const CADENCE_OVERDUE_BOOST_MAX = 30;
 const CADENCE_EARLY_PENALTY_MAX = 15;
-const ENGAGEMENT_QUALITY_MAX = 20; // NEW: Max bonus for high-quality outcomes
-const CONVERSATION_DEPTH_MAX = 15; // NEW: Max bonus for consistent engagement
+const ENGAGEMENT_QUALITY_MAX = 20;
+const CONVERSATION_DEPTH_MAX = 15;
 
 export const calculateRHS = async (
   userId: string,
@@ -39,13 +42,11 @@ export const calculateRHS = async (
   const fatigueGuardPenalty = calculateFatiguePenaltyFromEvent(lastEvent);
   const cadenceWeight = calculateCadenceWeight(contact, lastEvent);
 
-  // NEW: Calculate engagement quality bonus
   const engagementQualityBonus = await calculateEngagementQualityBonus(
     userId,
     contact.$id
   );
 
-  // NEW: Calculate conversation depth bonus
   const conversationDepthBonus = await calculateConversationDepthBonus(
     userId,
     contact.$id
@@ -75,10 +76,6 @@ export const calculateRHS = async (
   };
 };
 
-/**
- * NEW: Calculates bonus based on outcome quality
- * Rewards contacts with positive, substantive conversations
- */
 async function calculateEngagementQualityBonus(
   userId: string,
   contactId: string
@@ -86,16 +83,11 @@ async function calculateEngagementQualityBonus(
   try {
     const qualityScore = await calculateOutcomeQualityScore(userId, contactId);
 
-    // Convert 0-100 score to 0-20 bonus
-    // Score > 70 gets full bonus
-    // Score < 30 gets penalty
     if (qualityScore >= 70) {
       return ENGAGEMENT_QUALITY_MAX;
     } else if (qualityScore >= 50) {
-      // Partial bonus for neutral-positive
       return Math.round((qualityScore - 50) / 20) * ENGAGEMENT_QUALITY_MAX;
     } else if (qualityScore < 30) {
-      // Small penalty for consistently negative
       return -5;
     }
 
@@ -106,10 +98,6 @@ async function calculateEngagementQualityBonus(
   }
 }
 
-/**
- * NEW: Calculates bonus based on conversation consistency
- * Rewards regular, rhythmic engagement patterns
- */
 async function calculateConversationDepthBonus(
   userId: string,
   contactId: string
@@ -117,20 +105,16 @@ async function calculateConversationDepthBonus(
   try {
     const avgFrequency = await calculateEngagementFrequency(userId, contactId);
 
-    // No history = no bonus
     if (avgFrequency === 0) return 0;
 
-    // Consistent engagement (7-30 day rhythm) gets bonus
     if (avgFrequency >= 7 && avgFrequency <= 30) {
       return CONVERSATION_DEPTH_MAX;
     }
 
-    // Very frequent (< 7 days) gets partial bonus
     if (avgFrequency < 7) {
       return Math.round(CONVERSATION_DEPTH_MAX * 0.6);
     }
 
-    // Infrequent (> 30 days) gets small bonus for any engagement
     if (avgFrequency > 30 && avgFrequency <= 90) {
       return Math.round(CONVERSATION_DEPTH_MAX * 0.3);
     }
@@ -142,7 +126,6 @@ async function calculateConversationDepthBonus(
   }
 }
 
-// Existing functions remain unchanged
 const calculateRecencyScoreFromEvent = (
   lastEvent: { timestamp: string } | null
 ): number => {
@@ -225,10 +208,5 @@ const calculateCadenceWeight = (
   }
 };
 
-export const isFreshContact = (contact: ProfileContact): boolean => {
-  if (!contact.firstSeenAt) return false;
-  const daysSinceFirstSeen =
-    (Date.now() - new Date(contact.firstSeenAt).getTime()) /
-    (1000 * 60 * 60 * 24);
-  return daysSinceFirstSeen < FRESH_WINDOW_DAYS;
-};
+// NEW: Updated to use centralized isContactNew function
+export const isFreshContact = isContactNew;

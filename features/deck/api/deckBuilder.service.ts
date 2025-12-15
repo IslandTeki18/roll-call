@@ -1,8 +1,9 @@
 import {
   ProfileContact,
   loadContacts,
+  isContactNew,
 } from "@/features/contacts/api/contacts.service";
-import { calculateRHS, isFreshContact, RHSFactors } from "./rhs.service";
+import { calculateRHS, RHSFactors } from "./rhs.service";
 import { DeckCard, ChannelType } from "../types/deck.types";
 import { tablesDB } from "@/features/shared/lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
@@ -28,7 +29,6 @@ export const buildDeck = async (
 ): Promise<DeckCard[]> => {
   const todayDate = new Date().toISOString().split("T")[0];
 
-  // CRITICAL: Archive old decks before checking/building today's deck
   try {
     const archiveResult = await archiveOldDecks(userId, isPremiumUser);
     if (archiveResult.archivedDates.length > 0) {
@@ -42,10 +42,8 @@ export const buildDeck = async (
     }
   } catch (error) {
     console.error("Failed to archive old decks:", error);
-    // Continue building deck even if archive fails
   }
 
-  // Check if deck already exists for today
   const existingDeck = await tablesDB.listRows({
     databaseId: DATABASE_ID,
     tableId: DECK_CARDS_TABLE_ID,
@@ -55,28 +53,24 @@ export const buildDeck = async (
   if (existingDeck.rows.length > 0) {
     const existingCardCount = existingDeck.rows.length;
 
-    // If user now has access to more cards (e.g., upgraded to premium), generate additional cards
     if (maxCards > existingCardCount) {
       const contacts = await loadContacts(userId);
       const contactMap = new Map(contacts.map((c) => [c.$id, c]));
 
-      // Get IDs of contacts already in today's deck
       const existingContactIds = new Set(
         existingDeck.rows.map((row: any) => row.contactId)
       );
 
-      // Filter out contacts already in deck
       const availableContacts = contacts.filter(
         (c) => !existingContactIds.has(c.$id)
       );
 
       if (availableContacts.length > 0) {
-        // Score and rank available contacts
         const scored: ScoredContact[] = await Promise.all(
           availableContacts.map(async (contact) => ({
             contact,
             rhs: await calculateRHS(userId, contact),
-            isFresh: isFreshContact(contact),
+            isFresh: isContactNew(contact), // NEW: Use centralized function
           }))
         );
 
@@ -86,7 +80,6 @@ export const buildDeck = async (
         freshContacts.sort((a, b) => b.rhs.totalScore - a.rhs.totalScore);
         regularContacts.sort((a, b) => b.rhs.totalScore - a.rhs.totalScore);
 
-        // Determine how many additional cards to generate
         const additionalCardsNeeded = maxCards - existingCardCount;
         const additionalDeck: ScoredContact[] = [];
 
@@ -102,11 +95,9 @@ export const buildDeck = async (
 
         additionalDeck.push(...freshContacts.slice(0, freshToAdd));
 
-        // Fill remaining slots with regular contacts
         const remainingSlots = additionalCardsNeeded - additionalDeck.length;
         additionalDeck.push(...regularContacts.slice(0, remainingSlots));
 
-        // Create additional deck cards
         const newCards: DeckCard[] = await Promise.all(
           additionalDeck.slice(0, additionalCardsNeeded).map(async (scored) => {
             const cardId = `${todayDate}-${scored.contact.$id}`;
@@ -185,7 +176,6 @@ export const buildDeck = async (
       }
     }
 
-    // Return existing deck with hydrated contact data (no additional cards needed or available)
     const contacts = await loadContacts(userId);
     const contactMap = new Map(contacts.map((c) => [c.$id, c]));
 
@@ -211,7 +201,6 @@ export const buildDeck = async (
     })) as DeckCard[];
   }
 
-  // No existing deck - build fresh deck
   const contacts = await loadContacts(userId);
 
   if (contacts.length === 0) return [];
@@ -220,7 +209,7 @@ export const buildDeck = async (
     contacts.map(async (contact) => ({
       contact,
       rhs: await calculateRHS(userId, contact),
-      isFresh: isFreshContact(contact),
+      isFresh: isContactNew(contact), // NEW: Use centralized function
     }))
   );
 
@@ -299,10 +288,6 @@ export const buildDeck = async (
   return deckCards as DeckCard[];
 };
 
-/**
- * Check if user has exhausted their daily deck quota
- * Returns true if deck exists and user should not be able to regenerate
- */
 export const isDailyQuotaExhausted = async (
   userId: string
 ): Promise<boolean> => {
@@ -318,7 +303,6 @@ export const isDailyQuotaExhausted = async (
     ],
   });
 
-  // Quota is exhausted if any deck exists for today
   return existingDeck.rows.length > 0;
 };
 

@@ -1,4 +1,4 @@
-import { databases } from "@/features/shared/lib/appwrite";
+import { databases, tablesDB } from "@/features/shared/lib/appwrite";
 import * as Contacts from "expo-contacts";
 import { Platform } from "react-native";
 import { ID, Query } from "react-native-appwrite";
@@ -23,7 +23,8 @@ export interface ProfileContact {
   firstImportedAt: string;
   lastImportedAt: string;
   firstSeenAt: string;
-  cadenceDays: number | null; // Target interaction interval in days, null = no cadence set
+  firstEngagementAt: string; // NEW: Tracks when first engagement happened
+  cadenceDays: number | null;
 }
 
 export const generateDedupeSignature = (
@@ -44,12 +45,12 @@ export const generateDedupeSignature = (
 export const loadContacts = async (
   userId: string
 ): Promise<ProfileContact[]> => {
-  const response = await databases.listDocuments({
+  const response = await tablesDB.listRows({
     databaseId: DATABASE_ID,
-    collectionId: PROFILE_CONTACTS_COLLECTION_ID,
+    tableId: PROFILE_CONTACTS_COLLECTION_ID,
     queries: [Query.equal("userId", userId), Query.limit(1000)],
   });
-  return response.documents as unknown as ProfileContact[];
+  return response.rows as unknown as ProfileContact[];
 };
 
 export const getDeviceContactCount = async (): Promise<number> => {
@@ -78,14 +79,14 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
 
   const { data } = await Contacts.getContactsAsync({ fields });
 
-  const existingResponse = await databases.listDocuments({
+  const existingResponse = await tablesDB.listRows({
     databaseId: DATABASE_ID,
-    collectionId: PROFILE_CONTACTS_COLLECTION_ID,
+    tableId: PROFILE_CONTACTS_COLLECTION_ID,
     queries: [Query.equal("userId", userId), Query.limit(1000)],
   });
 
   const existingSignatures = new Set(
-    existingResponse.documents.map((doc: any) => doc.dedupeSignature)
+    existingResponse.rows.map((doc: any) => doc.dedupeSignature)
   );
 
   const timestamp = new Date().toISOString();
@@ -132,13 +133,14 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
       firstImportedAt: timestamp,
       lastImportedAt: timestamp,
       firstSeenAt: timestamp,
+      firstEngagementAt: "",
       cadenceDays: null,
     };
 
-    await databases.createDocument({
+    await tablesDB.createRow({
       databaseId: DATABASE_ID,
-      collectionId: PROFILE_CONTACTS_COLLECTION_ID,
-      documentId: ID.unique(),
+      tableId: PROFILE_CONTACTS_COLLECTION_ID,
+      rowId: ID.unique(),
       data: profileContact,
     });
 
@@ -154,13 +156,42 @@ export const updateContactCadence = async (
   cadenceDays: number | null
 ): Promise<void> => {
   try {
-    await databases.updateDocument({
+    await tablesDB.updateRow({
       databaseId: DATABASE_ID,
-      collectionId: PROFILE_CONTACTS_COLLECTION_ID,
-      documentId: contactId,
+      tableId: PROFILE_CONTACTS_COLLECTION_ID,
+      rowId: contactId,
       data: { cadenceDays },
     });
   } catch (error) {
     console.error("Failed to update contact cadence:", error);
   }
+};
+
+export const markContactEngaged = async (contactId: string): Promise<void> => {
+  try {
+    const timestamp = new Date().toISOString();
+    await tablesDB.updateRow({
+      databaseId: DATABASE_ID,
+      tableId: PROFILE_CONTACTS_COLLECTION_ID,
+      rowId: contactId,
+      data: { firstEngagementAt: timestamp },
+    });
+  } catch (error) {
+    console.error("Failed to mark contact as engaged:", error);
+  }
+};
+
+
+export const isContactNew = (contact: ProfileContact): boolean => {
+  // If already engaged, not new
+  if (contact.firstEngagementAt && contact.firstEngagementAt.length > 0) {
+    return false;
+  }
+
+  // Check if within 14-day window from firstSeenAt
+  const daysSinceFirstSeen =
+    (Date.now() - new Date(contact.firstSeenAt).getTime()) /
+    (1000 * 60 * 60 * 24);
+
+  return daysSinceFirstSeen < 14;
 };
