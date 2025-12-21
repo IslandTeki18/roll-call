@@ -6,10 +6,12 @@ import {
   Calendar,
   ChevronLeft,
   Edit3,
+  FileText,
   Lock,
   Mail,
   MessageSquare,
   Phone,
+  Plus,
   Sparkles,
   Tag,
   Trash2,
@@ -29,8 +31,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { tablesDB } from "../../shared/lib/appwrite";
 import { updateContactCadence } from "../api/contacts.service";
 import CadenceSelector from "../components/CadenceSelector";
-import RHSDebugCard from "@/features/deck/components/RHSDebugCard";
-import { calculateRHS, RHSFactors } from "@/features/deck/api/rhs.service";
+// Add note imports
+import { getNotesByContact } from "@/features/notes/api/notes.service";
+import { Note } from "@/features/notes/types/notes.types";
+import NoteCard from "@/features/notes/components/NoteCard";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const PROFILE_CONTACTS_COLLECTION_ID =
@@ -52,8 +56,6 @@ interface ProfileContact {
   firstImportedAt: string;
   lastImportedAt: string;
   firstSeenAt: string;
-  firstEngagementAt: string;
-  cadenceDays: number | null;
 }
 
 export default function ContactDetailsScreen() {
@@ -67,24 +69,21 @@ export default function ContactDetailsScreen() {
   const [generatingDraft, setGeneratingDraft] = useState(false);
   const [cadenceDays, setCadenceDays] = useState<number | null>(null);
   const [savingCadence, setSavingCadence] = useState(false);
-  const [showRHSDebug, setShowRHSDebug] = useState(false);
-  const [rhsData, setRhsData] = useState<RHSFactors | null>(null);
+
+  // Add notes state
+  const [contactNotes, setContactNotes] = useState<Note[]>([]);
+  const [loadingNotes, setLoadingNotes] = useState(false);
 
   useEffect(() => {
     loadContact();
   }, [params.id]);
 
+  // Add effect to load notes when contact loads
   useEffect(() => {
-    if (contact) {
-      loadRHS();
+    if (contact && profile) {
+      loadContactNotes();
     }
-  }, [contact]);
-
-  const loadRHS = async () => {
-    if (!profile || !contact) return;
-    const rhs = await calculateRHS(profile.$id, contact);
-    setRhsData(rhs);
-  };
+  }, [contact, profile]);
 
   const loadContact = async () => {
     if (!params.id) return;
@@ -106,6 +105,21 @@ export default function ContactDetailsScreen() {
     }
   };
 
+  // Add function to load notes for this contact
+  const loadContactNotes = async () => {
+    if (!profile || !contact) return;
+
+    try {
+      setLoadingNotes(true);
+      const notes = await getNotesByContact(profile.$id, contact.$id, 10);
+      setContactNotes(notes);
+    } catch (error) {
+      console.error("Failed to load contact notes:", error);
+    } finally {
+      setLoadingNotes(false);
+    }
+  };
+
   const handleCadenceChange = async (newCadence: number | null) => {
     if (!contact) return;
 
@@ -121,7 +135,7 @@ export default function ContactDetailsScreen() {
   };
 
   const handleGenerateDraft = async () => {
-    if (!profile || !contact) return; // Changed from user
+    if (!profile || !contact) return;
 
     if (!isPremium) {
       requirePremium("AI Draft Generation");
@@ -130,7 +144,7 @@ export default function ContactDetailsScreen() {
 
     setGeneratingDraft(true);
     try {
-      const generated = await generateDraft(profile.$id, contact.$id); // Changed from user.id
+      const generated = await generateDraft(profile.$id, contact.$id);
       setDraft(generated);
       Alert.alert("Draft Generated", generated);
     } catch (error) {
@@ -138,6 +152,22 @@ export default function ContactDetailsScreen() {
     } finally {
       setGeneratingDraft(false);
     }
+  };
+
+  // Add function to create new note for this contact
+  const handleCreateNote = () => {
+    router.push({
+      pathname: "/(tabs)/notes",
+      params: { contactId: contact?.$id },
+    });
+  };
+
+  // Add function to view/edit note
+  const handleNotePress = (note: Note) => {
+    router.push({
+      pathname: "/(tabs)/notes",
+      params: { noteId: note.$id },
+    });
   };
 
   const handleCall = (phone: string) => {
@@ -223,12 +253,6 @@ export default function ContactDetailsScreen() {
             </TouchableOpacity>
             <TouchableOpacity onPress={handleDelete} className="p-2">
               <Trash2 size={20} color="#EF4444" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setShowRHSDebug(!showRHSDebug)}
-              className="p-2"
-            >
-              <Text className="text-blue-600 text-sm">RHS</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -328,6 +352,69 @@ export default function ContactDetailsScreen() {
           </View>
         </View>
 
+        {/* Notes Section - NEW */}
+        <View className="bg-white mt-2 px-6 py-4">
+          <View className="flex-row items-center justify-between mb-3">
+            <View className="flex-row items-center gap-2">
+              <FileText size={18} color="#6B7280" />
+              <Text className="text-xs font-semibold text-gray-500 uppercase">
+                Notes
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={handleCreateNote}
+              className="bg-blue-600 px-3 py-1.5 rounded-lg flex-row items-center gap-1"
+            >
+              <Plus size={14} color="white" />
+              <Text className="text-white text-xs font-semibold">Add Note</Text>
+            </TouchableOpacity>
+          </View>
+
+          {loadingNotes ? (
+            <View className="py-4">
+              <Text className="text-gray-500 text-center text-sm">
+                Loading notes...
+              </Text>
+            </View>
+          ) : contactNotes.length === 0 ? (
+            <View className="py-4 bg-gray-50 rounded-lg items-center">
+              <Text className="text-gray-500 text-sm mb-2">
+                No notes for this contact yet
+              </Text>
+              <TouchableOpacity onPress={handleCreateNote}>
+                <Text className="text-blue-600 text-sm font-medium">
+                  Create your first note
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View className="gap-3">
+              {contactNotes.map((note) => (
+                <NoteCard
+                  key={note.$id}
+                  note={note}
+                  onPress={() => handleNotePress(note)}
+                />
+              ))}
+              {contactNotes.length >= 10 && (
+                <TouchableOpacity
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(tabs)/notes",
+                      params: { contactId: contact.$id },
+                    })
+                  }
+                  className="py-2"
+                >
+                  <Text className="text-blue-600 text-center text-sm font-medium">
+                    View all notes
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
+
         {phoneNumbers.length > 0 && (
           <View className="bg-white mt-2 px-6 py-4">
             <Text className="text-xs font-semibold text-gray-500 uppercase mb-3">
@@ -425,12 +512,6 @@ export default function ContactDetailsScreen() {
         </View>
 
         <View className="h-8" />
-
-        {__DEV__ && showRHSDebug && rhsData && (
-          <View className="px-6 py-4">
-            <RHSDebugCard rhs={rhsData} contactName={contact.displayName} />
-          </View>
-        )}
       </ScrollView>
     </SafeAreaView>
   );
