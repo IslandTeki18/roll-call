@@ -1,5 +1,5 @@
 import { View, Text, ScrollView } from "react-native";
-import { RHSFactors } from "../api/rhs.service";
+import { RHSFactors } from "../types/rhs.types";
 
 interface RHSDebugCardProps {
   rhs: RHSFactors;
@@ -83,6 +83,16 @@ export default function RHSDebugCard({ rhs, contactName }: RHSDebugCardProps) {
           </View>
         )}
 
+        {/* NEW: Show decay penalty */}
+        {rhs.decayPenalty > 0 && (
+          <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
+            <Text className="text-sm text-gray-700">Decay Penalty</Text>
+            <Text className="font-semibold text-red-600">
+              -{rhs.decayPenalty}
+            </Text>
+          </View>
+        )}
+
         {rhs.fatigueGuardPenalty > 0 && (
           <View className="flex-row justify-between items-center py-2 border-b border-gray-100">
             <Text className="text-sm text-gray-700">Fatigue Guard</Text>
@@ -115,6 +125,12 @@ export default function RHSDebugCard({ rhs, contactName }: RHSDebugCardProps) {
         {rhs.isOverdueByCadence && (
           <Text className="text-xs text-orange-600 font-medium">
             Overdue by {rhs.daysOverdue} days
+          </Text>
+        )}
+        {/* NEW: Show decay info */}
+        {rhs.decayPenalty > 0 && (
+          <Text className="text-xs text-red-600 font-medium">
+            Relationship cooling (decay: -{rhs.decayPenalty})
           </Text>
         )}
       </View>

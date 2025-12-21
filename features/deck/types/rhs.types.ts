@@ -5,6 +5,7 @@ export interface RHSFactors {
   cadenceWeight: number;
   engagementQualityBonus: number;
   conversationDepthBonus: number;
+  decayPenalty: number;
   totalScore: number;
 
   daysSinceLastEngagement: number | null;
@@ -34,6 +35,11 @@ export interface RHSConfig {
   maxEngagementQualityBonus: number;
   maxConversationDepthBonus: number;
   maxFatiguePenalty: number;
+
+  // NEW: Decay configuration
+  decayStartDays: number; // Days after which decay begins
+  decayMaxPenalty: number; // Maximum penalty from decay
+  decayExponentialRate: number; // Rate of exponential decay
 }
 
 export const DEFAULT_RHS_CONFIG: RHSConfig = {
@@ -54,4 +60,8 @@ export const DEFAULT_RHS_CONFIG: RHSConfig = {
   maxEngagementQualityBonus: 20,
   maxConversationDepthBonus: 15,
   maxFatiguePenalty: 20,
+
+  decayStartDays: 30,
+  decayMaxPenalty: 40,
+  decayExponentialRate: 0.05,
 };

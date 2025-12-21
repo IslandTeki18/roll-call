@@ -11,42 +11,18 @@ import {
   calculateOutcomeQualityScore,
 } from "@/features/messaging/api/recommendations.service";
 import { getOutcomeNotesByContact } from "@/features/outcomes/api/outcomeNotes.service";
+import { RHSFactors, DEFAULT_RHS_CONFIG, RHSConfig } from "../types/rhs.types";
 
-// Enhanced interface with metadata
-export interface RHSFactors {
-  recencyScore: number;
-  freshnessBoost: number;
-  fatigueGuardPenalty: number;
-  cadenceWeight: number;
-  engagementQualityBonus: number;
-  conversationDepthBonus: number;
-  totalScore: number;
-
-  // NEW: Metadata for debugging and analytics
-  daysSinceLastEngagement: number | null;
-  totalEngagements: number;
-  positiveOutcomes: number;
-  negativeOutcomes: number;
-  averageEngagementFrequency: number;
-  isOverdueByCadence: boolean;
-  daysOverdue: number;
-}
-
-const FRESH_WINDOW_DAYS = 14;
-const FRESH_DECAY_DAYS = 21;
-const FRESH_BOOST_MAX = 25;
-const RECENCY_DECAY_DAYS = 30;
-const FATIGUE_WINDOW_DAYS = 3;
-const FATIGUE_PENALTY = 20;
-const CADENCE_OVERDUE_BOOST_MAX = 30;
-const CADENCE_EARLY_PENALTY_MAX = 15;
-const ENGAGEMENT_QUALITY_MAX = 20;
-const CONVERSATION_DEPTH_MAX = 15;
+// Use config for configurable decay parameters
+const config = DEFAULT_RHS_CONFIG;
 
 export const calculateRHS = async (
   userId: string,
-  contact: ProfileContact
+  contact: ProfileContact,
+  customConfig?: Partial<RHSConfig>
 ): Promise<RHSFactors> => {
+  const cfg = { ...config, ...customConfig };
+
   // Fetch engagement events for metadata
   const [lastEvent, allEvents, outcomes] = await Promise.all([
     getLastEventForContact(userId, contact.$id).catch(() => null),
@@ -66,23 +42,32 @@ export const calculateRHS = async (
   );
 
   // Calculate core scores
-  const recencyScore = calculateRecencyScoreFromEvent(lastEvent);
-  const freshnessBoost = calculateFreshnessBoost(contact);
-  const fatigueGuardPenalty = calculateFatiguePenaltyFromEvent(lastEvent);
+  const recencyScore = calculateRecencyScoreFromEvent(lastEvent, cfg);
+  const freshnessBoost = calculateFreshnessBoost(contact, cfg);
+  const fatigueGuardPenalty = calculateFatiguePenaltyFromEvent(lastEvent, cfg);
 
   // Calculate cadence with metadata
-  const cadenceResult = calculateCadenceWeightWithMetadata(contact, lastEvent);
+  const cadenceResult = calculateCadenceWeightWithMetadata(
+    contact,
+    lastEvent,
+    cfg
+  );
   const cadenceWeight = cadenceResult.weight;
 
   const engagementQualityBonus = await calculateEngagementQualityBonus(
     userId,
-    contact.$id
+    contact.$id,
+    cfg
   );
 
   const conversationDepthBonus = await calculateConversationDepthBonus(
     userId,
-    contact.$id
+    contact.$id,
+    cfg
   );
+
+  // NEW: Calculate decay penalty
+  const decayPenalty = calculateDecayPenalty(lastEvent, meaningfulEvents, cfg);
 
   const totalScore = Math.max(
     0,
@@ -93,7 +78,8 @@ export const calculateRHS = async (
         cadenceWeight +
         engagementQualityBonus +
         conversationDepthBonus -
-        fatigueGuardPenalty
+        fatigueGuardPenalty -
+        decayPenalty // Apply decay penalty
     )
   );
 
@@ -121,6 +107,7 @@ export const calculateRHS = async (
     cadenceWeight,
     engagementQualityBonus,
     conversationDepthBonus,
+    decayPenalty,
     totalScore,
     daysSinceLastEngagement,
     totalEngagements: meaningfulEvents.length,
@@ -132,17 +119,93 @@ export const calculateRHS = async (
   };
 };
 
+/**
+ * NEW: Calculate decay penalty using exponential decay formula
+ *
+ * Decay increases exponentially after decayStartDays:
+ * - 0 penalty before decayStartDays
+ * - Exponential growth after decayStartDays
+ * - Capped at decayMaxPenalty
+ *
+ * Formula: penalty = maxPenalty * (1 - e^(-rate * days_overdue))
+ *
+ * Examples with default config (start=30, max=40, rate=0.05):
+ * - 30 days: 0 penalty
+ * - 45 days: ~14 penalty (exponential growth begins)
+ * - 60 days: ~26 penalty
+ * - 90 days: ~37 penalty (approaching max)
+ * - 120+ days: ~40 penalty (max reached)
+ */
+const calculateDecayPenalty = (
+  lastEvent: { timestamp: string } | null,
+  meaningfulEvents: any[],
+  cfg: RHSConfig
+): number => {
+  // No penalty if contact is brand new (never engaged)
+  if (!lastEvent) {
+    return 0;
+  }
+
+  const daysSinceContact =
+    (Date.now() - new Date(lastEvent.timestamp).getTime()) /
+    (1000 * 60 * 60 * 24);
+
+  // No penalty before decay start threshold
+  if (daysSinceContact <= cfg.decayStartDays) {
+    return 0;
+  }
+
+  // Calculate days beyond threshold
+  const daysOverdue = daysSinceContact - cfg.decayStartDays;
+
+  // Exponential decay formula: max * (1 - e^(-rate * days))
+  // This creates smooth exponential growth from 0 to max
+  const exponentialFactor =
+    1 - Math.exp(-cfg.decayExponentialRate * daysOverdue);
+  const penalty = cfg.decayMaxPenalty * exponentialFactor;
+
+  // Account for engagement history - reduce penalty if strong history
+  const engagementHistoryFactor =
+    calculateEngagementHistoryFactor(meaningfulEvents);
+
+  return Math.round(penalty * engagementHistoryFactor);
+};
+
+/**
+ * Calculate factor to reduce decay penalty based on engagement history
+ * Strong engagement history = lower decay penalty
+ *
+ * Returns 1.0 (full penalty) for weak history, down to 0.6 (40% reduction) for strong history
+ */
+const calculateEngagementHistoryFactor = (meaningfulEvents: any[]): number => {
+  if (meaningfulEvents.length === 0) return 1.0;
+
+  // Strong history (10+ engagements) reduces penalty by 40%
+  if (meaningfulEvents.length >= 10) return 0.6;
+
+  // Medium history (5-9 engagements) reduces penalty by 20%
+  if (meaningfulEvents.length >= 5) return 0.8;
+
+  // Weak history (1-4 engagements) reduces penalty by 10%
+  if (meaningfulEvents.length >= 1) return 0.9;
+
+  return 1.0;
+};
+
 async function calculateEngagementQualityBonus(
   userId: string,
-  contactId: string
+  contactId: string,
+  cfg: RHSConfig
 ): Promise<number> {
   try {
     const qualityScore = await calculateOutcomeQualityScore(userId, contactId);
 
     if (qualityScore >= 70) {
-      return ENGAGEMENT_QUALITY_MAX;
+      return cfg.maxEngagementQualityBonus;
     } else if (qualityScore >= 50) {
-      return Math.round((qualityScore - 50) / 20) * ENGAGEMENT_QUALITY_MAX;
+      return (
+        Math.round((qualityScore - 50) / 20) * cfg.maxEngagementQualityBonus
+      );
     } else if (qualityScore < 30) {
       return -5;
     }
@@ -156,7 +219,8 @@ async function calculateEngagementQualityBonus(
 
 async function calculateConversationDepthBonus(
   userId: string,
-  contactId: string
+  contactId: string,
+  cfg: RHSConfig
 ): Promise<number> {
   try {
     const avgFrequency = await calculateEngagementFrequency(userId, contactId);
@@ -164,15 +228,15 @@ async function calculateConversationDepthBonus(
     if (avgFrequency === 0) return 0;
 
     if (avgFrequency >= 7 && avgFrequency <= 30) {
-      return CONVERSATION_DEPTH_MAX;
+      return cfg.maxConversationDepthBonus;
     }
 
     if (avgFrequency < 7) {
-      return Math.round(CONVERSATION_DEPTH_MAX * 0.6);
+      return Math.round(cfg.maxConversationDepthBonus * 0.6);
     }
 
     if (avgFrequency > 30 && avgFrequency <= 90) {
-      return Math.round(CONVERSATION_DEPTH_MAX * 0.3);
+      return Math.round(cfg.maxConversationDepthBonus * 0.3);
     }
 
     return 0;
@@ -183,42 +247,47 @@ async function calculateConversationDepthBonus(
 }
 
 const calculateRecencyScoreFromEvent = (
-  lastEvent: { timestamp: string } | null
+  lastEvent: { timestamp: string } | null,
+  cfg: RHSConfig
 ): number => {
   if (!lastEvent) {
-    return 100;
+    return cfg.maxRecencyScore;
   }
 
   const daysSinceContact =
     (Date.now() - new Date(lastEvent.timestamp).getTime()) /
     (1000 * 60 * 60 * 24);
 
-  if (daysSinceContact <= 7) return 20;
-  if (daysSinceContact <= 14) return 40;
-  if (daysSinceContact <= 21) return 60;
-  if (daysSinceContact <= RECENCY_DECAY_DAYS) return 80;
-  return 100;
+  if (daysSinceContact <= cfg.recencyExcellent) return 20;
+  if (daysSinceContact <= cfg.recencyGood) return 40;
+  if (daysSinceContact <= cfg.recencyFair) return 60;
+  if (daysSinceContact <= cfg.recencyPoor) return 80;
+  return cfg.maxRecencyScore;
 };
 
-const calculateFreshnessBoost = (contact: ProfileContact): number => {
+const calculateFreshnessBoost = (
+  contact: ProfileContact,
+  cfg: RHSConfig
+): number => {
   if (!contact.firstSeenAt) return 0;
 
   const daysSinceFirstSeen =
     (Date.now() - new Date(contact.firstSeenAt).getTime()) /
     (1000 * 60 * 60 * 24);
 
-  if (daysSinceFirstSeen >= FRESH_DECAY_DAYS) return 0;
-  if (daysSinceFirstSeen >= FRESH_WINDOW_DAYS) {
+  if (daysSinceFirstSeen >= cfg.freshnessDecayEnd) return 0;
+  if (daysSinceFirstSeen >= cfg.freshnessDecayStart) {
     const decayProgress =
-      (daysSinceFirstSeen - FRESH_WINDOW_DAYS) /
-      (FRESH_DECAY_DAYS - FRESH_WINDOW_DAYS);
-    return Math.round(FRESH_BOOST_MAX * (1 - decayProgress));
+      (daysSinceFirstSeen - cfg.freshnessDecayStart) /
+      (cfg.freshnessDecayEnd - cfg.freshnessDecayStart);
+    return Math.round(cfg.maxFreshnessBoost * (1 - decayProgress));
   }
-  return FRESH_BOOST_MAX;
+  return cfg.maxFreshnessBoost;
 };
 
 const calculateFatiguePenaltyFromEvent = (
-  lastEvent: { timestamp: string } | null
+  lastEvent: { timestamp: string } | null,
+  cfg: RHSConfig
 ): number => {
   if (!lastEvent) return 0;
 
@@ -226,16 +295,16 @@ const calculateFatiguePenaltyFromEvent = (
     (Date.now() - new Date(lastEvent.timestamp).getTime()) /
     (1000 * 60 * 60 * 24);
 
-  if (daysSinceContact < FATIGUE_WINDOW_DAYS) {
-    return FATIGUE_PENALTY;
+  if (daysSinceContact < cfg.fatigueWindowDays) {
+    return cfg.maxFatiguePenalty;
   }
   return 0;
 };
 
-// NEW: Enhanced to return metadata
 const calculateCadenceWeightWithMetadata = (
   contact: ProfileContact,
-  lastEvent: { timestamp: string } | null
+  lastEvent: { timestamp: string } | null,
+  cfg: RHSConfig
 ): { weight: number; isOverdue: boolean; daysOverdue: number } => {
   if (!contact.cadenceDays || contact.cadenceDays <= 0) {
     return { weight: 0, isOverdue: false, daysOverdue: 0 };
@@ -243,7 +312,7 @@ const calculateCadenceWeightWithMetadata = (
 
   if (!lastEvent) {
     return {
-      weight: CADENCE_OVERDUE_BOOST_MAX,
+      weight: cfg.maxCadenceBoost,
       isOverdue: true,
       daysOverdue: contact.cadenceDays,
     };
@@ -256,40 +325,33 @@ const calculateCadenceWeightWithMetadata = (
   const cadenceDays = contact.cadenceDays;
   const overdueRatio = daysSinceContact / cadenceDays;
 
-  if (overdueRatio >= 1.5) {
+  if (overdueRatio >= cfg.cadenceOverdueMultiplier) {
     return {
-      weight: CADENCE_OVERDUE_BOOST_MAX,
+      weight: cfg.maxCadenceBoost,
       isOverdue: true,
       daysOverdue: Math.round(daysSinceContact - cadenceDays),
     };
   } else if (overdueRatio >= 1.0) {
-    const overdueProgress = (overdueRatio - 1.0) / 0.5;
+    const overdueProgress =
+      (overdueRatio - 1.0) / (cfg.cadenceOverdueMultiplier - 1.0);
     return {
-      weight: Math.round(CADENCE_OVERDUE_BOOST_MAX * overdueProgress),
+      weight: Math.round(cfg.maxCadenceBoost * overdueProgress),
       isOverdue: true,
       daysOverdue: Math.round(daysSinceContact - cadenceDays),
     };
-  } else if (overdueRatio >= 0.5) {
+  } else if (overdueRatio >= cfg.cadenceEarlyMultiplier) {
     return { weight: 0, isOverdue: false, daysOverdue: 0 };
   } else {
-    const earlyProgress = (0.5 - overdueRatio) / 0.5;
+    const earlyProgress =
+      (cfg.cadenceEarlyMultiplier - overdueRatio) / cfg.cadenceEarlyMultiplier;
     return {
-      weight: -Math.round(CADENCE_EARLY_PENALTY_MAX * earlyProgress),
+      weight: -Math.round(cfg.maxCadencePenalty * earlyProgress),
       isOverdue: false,
       daysOverdue: 0,
     };
   }
 };
 
-// Keep original function for backwards compatibility
-const calculateCadenceWeight = (
-  contact: ProfileContact,
-  lastEvent: { timestamp: string } | null
-): number => {
-  return calculateCadenceWeightWithMetadata(contact, lastEvent).weight;
-};
-
-// NEW: Calculate average frequency from events array
 const calculateAverageFrequencyFromEvents = (events: any[]): number => {
   if (events.length < 2) return 0;
 
