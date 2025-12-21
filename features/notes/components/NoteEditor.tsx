@@ -27,6 +27,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { processNoteWithProgress } from "../api/notesProcessing.service";
 import { useNoteEditor } from "../hooks/useNotes";
 import ContactPicker from "./ContactPicker";
 import TagInput from "./TagInput";
@@ -67,6 +68,7 @@ export default function NoteEditor({
 
   const [contactPickerVisible, setContactPickerVisible] = useState(false);
   const [linkedContacts, setLinkedContacts] = useState<ProfileContact[]>([]);
+  const [analyzing, setAnalyzing] = useState(false); // Track AI analysis state
 
   // Handle pre-selected contact on mount
   useEffect(() => {
@@ -107,6 +109,33 @@ export default function NoteEditor({
     ]);
   };
 
+  // Trigger AI analysis manually
+  const handleAnalyze = async () => {
+    if (!note?.$id) {
+      Alert.alert("Save Required", "Please save the note before analyzing.");
+      return;
+    }
+
+    if (!rawText.trim() || rawText.trim().length < 10) {
+      Alert.alert("Insufficient Content", "Add more content to analyze.");
+      return;
+    }
+
+    setAnalyzing(true);
+    try {
+      await processNoteWithProgress(note.$id, (status) => {
+        if (status === "completed" || status === "failed") {
+          setAnalyzing(false);
+        }
+      });
+      // Reload note to show updated AI results
+      window.location.reload(); // Force refresh to show new data
+    } catch (err) {
+      setAnalyzing(false);
+      Alert.alert("Analysis Failed", "Could not analyze the note.");
+    }
+  };
+
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-gray-50">
@@ -116,6 +145,15 @@ export default function NoteEditor({
       </SafeAreaView>
     );
   }
+
+  const canAnalyze =
+    note?.$id &&
+    rawText.trim().length > 10 &&
+    note.processingStatus !== "processing";
+  const showAnalyzeButton =
+    note?.processingStatus === "pending" ||
+    note?.processingStatus === "failed" ||
+    !note?.processingStatus;
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
@@ -191,6 +229,44 @@ export default function NoteEditor({
             />
           </View>
 
+          {/* AI Analyze Button */}
+          {showAnalyzeButton && (
+            <View className="mx-4 mb-4">
+              <TouchableOpacity
+                onPress={handleAnalyze}
+                disabled={!canAnalyze || analyzing}
+                className={`flex-row items-center justify-center gap-2 py-3 rounded-xl border ${
+                  canAnalyze && !analyzing
+                    ? "bg-purple-50 border-purple-200"
+                    : "bg-gray-100 border-gray-200"
+                }`}
+              >
+                {analyzing ? (
+                  <>
+                    <ActivityIndicator size="small" color="#7C3AED" />
+                    <Text className="text-purple-700 font-semibold">
+                      Analyzing...
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles
+                      size={18}
+                      color={canAnalyze ? "#7C3AED" : "#9CA3AF"}
+                    />
+                    <Text
+                      className={`font-semibold ${
+                        canAnalyze ? "text-purple-700" : "text-gray-400"
+                      }`}
+                    >
+                      Analyze with AI
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Linked contacts */}
           <View className="mx-4 mb-4">
             <TouchableOpacity
@@ -265,7 +341,7 @@ export default function NoteEditor({
               <View className="flex-row items-center gap-2 mb-2">
                 <Sparkles size={16} color="#7C3AED" />
                 <Text className="text-sm font-semibold text-purple-700">
-                  AI Summary
+                  AI Analysis
                 </Text>
               </View>
               <Text className="text-gray-700 text-sm mb-3">
@@ -286,18 +362,23 @@ export default function NoteEditor({
               )}
 
               {note.aiEntities && (
-                <View className="flex-row flex-wrap gap-1 mt-2">
-                  {note.aiEntities.split(",").map((entity, idx) => (
-                    <View
-                      key={idx}
-                      className="bg-purple-200 px-2 py-0.5 rounded-full"
-                    >
-                      <Text className="text-xs text-purple-800">
-                        {entity.trim()}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
+                <>
+                  <Text className="text-xs font-semibold text-purple-700 mt-3 mb-1">
+                    Topics & People
+                  </Text>
+                  <View className="flex-row flex-wrap gap-1">
+                    {note.aiEntities.split(",").map((entity, idx) => (
+                      <View
+                        key={idx}
+                        className="bg-purple-200 px-2 py-0.5 rounded-full"
+                      >
+                        <Text className="text-xs text-purple-800">
+                          {entity.trim()}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </>
               )}
             </View>
           )}
@@ -306,6 +387,17 @@ export default function NoteEditor({
             <View className="mx-4 mb-4 bg-blue-50 p-4 rounded-xl flex-row items-center gap-2">
               <ActivityIndicator size="small" color="#3B82F6" />
               <Text className="text-blue-700 text-sm">Analyzing note...</Text>
+            </View>
+          )}
+
+          {note?.processingStatus === "failed" && (
+            <View className="mx-4 mb-4 bg-red-50 p-4 rounded-xl">
+              <Text className="text-red-700 text-sm font-semibold mb-1">
+                Analysis Failed
+              </Text>
+              <Text className="text-red-600 text-xs">
+                {note.processingError || "Unknown error occurred"}
+              </Text>
             </View>
           )}
 
