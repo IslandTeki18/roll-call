@@ -12,18 +12,22 @@ import {
   MessageSquare,
   Phone,
   Plus,
+  Send,
   Sparkles,
   Tag,
   Trash2,
   Video,
+  X,
 } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Linking,
   Platform,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -31,7 +35,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { tablesDB } from "../../shared/lib/appwrite";
 import { updateContactCadence } from "../api/contacts.service";
 import CadenceSelector from "../components/CadenceSelector";
-// Add note imports
 import { getNotesByContact } from "@/features/notes/api/notes.service";
 import { Note } from "@/features/notes/types/notes.types";
 import NoteCard from "@/features/notes/components/NoteCard";
@@ -67,10 +70,9 @@ export default function ContactDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [draft, setDraft] = useState<string>("");
   const [generatingDraft, setGeneratingDraft] = useState(false);
+  const [showDraftEditor, setShowDraftEditor] = useState(false); // New state for showing draft editor
   const [cadenceDays, setCadenceDays] = useState<number | null>(null);
   const [savingCadence, setSavingCadence] = useState(false);
-
-  // Add notes state
   const [contactNotes, setContactNotes] = useState<Note[]>([]);
   const [loadingNotes, setLoadingNotes] = useState(false);
 
@@ -78,7 +80,6 @@ export default function ContactDetailsScreen() {
     loadContact();
   }, [params.id]);
 
-  // Add effect to load notes when contact loads
   useEffect(() => {
     if (contact && profile) {
       loadContactNotes();
@@ -105,7 +106,6 @@ export default function ContactDetailsScreen() {
     }
   };
 
-  // Add function to load notes for this contact
   const loadContactNotes = async () => {
     if (!profile || !contact) return;
 
@@ -143,10 +143,12 @@ export default function ContactDetailsScreen() {
     }
 
     setGeneratingDraft(true);
+    setShowDraftEditor(false);
+
     try {
       const generated = await generateDraft(profile.$id, contact.$id);
       setDraft(generated);
-      Alert.alert("Draft Generated", generated);
+      setShowDraftEditor(true); // Show draft editor after generation
     } catch (error) {
       Alert.alert("Error", "Could not generate draft");
     } finally {
@@ -154,7 +156,45 @@ export default function ContactDetailsScreen() {
     }
   };
 
-  // Add function to create new note for this contact
+  const handleSendDraft = async () => {
+    if (!draft.trim()) {
+      Alert.alert("Error", "Cannot send empty message");
+      return;
+    }
+
+    const phoneNumbers = contact?.phoneNumbers.split(",").filter(Boolean) || [];
+    const primaryPhone = phoneNumbers[0];
+
+    if (!primaryPhone) {
+      Alert.alert("Error", "No phone number available for this contact");
+      return;
+    }
+
+    try {
+      // iOS requires a specific format - use open instead of /open for the body parameter
+      const smsUrl = `sms:${primaryPhone}?&body=${encodeURIComponent(draft)}`;
+
+      const canOpen = await Linking.canOpenURL(smsUrl);
+      if (canOpen) {
+        await Linking.openURL(smsUrl);
+
+        // Reset draft state after sending
+        setShowDraftEditor(false);
+        setDraft("");
+      } else {
+        Alert.alert("Error", "Cannot open SMS app");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to open SMS app");
+      console.error("SMS error:", error);
+    }
+  };
+
+  const handleCancelDraft = () => {
+    setShowDraftEditor(false);
+    setDraft("");
+  };
+
   const handleCreateNote = () => {
     router.push({
       pathname: "/(tabs)/notes",
@@ -162,7 +202,6 @@ export default function ContactDetailsScreen() {
     });
   };
 
-  // Add function to view/edit note
   const handleNotePress = (note: Note) => {
     router.push({
       pathname: "/(tabs)/notes",
@@ -218,7 +257,7 @@ export default function ContactDetailsScreen() {
     return (
       <SafeAreaView className="flex-1 bg-white">
         <View className="flex-1 justify-center items-center">
-          <Text className="text-gray-600">Loading...</Text>
+          <ActivityIndicator size="large" color="#3B82F6" />
         </View>
       </SafeAreaView>
     );
@@ -334,7 +373,9 @@ export default function ContactDetailsScreen() {
               className="items-center"
             >
               <View className="w-14 h-14 rounded-full bg-orange-100 items-center justify-center mb-2 relative">
-                {isPremium ? (
+                {generatingDraft ? (
+                  <ActivityIndicator size="small" color="#F97316" />
+                ) : isPremium ? (
                   <Sparkles size={24} color="#F97316" />
                 ) : (
                   <>
@@ -352,7 +393,68 @@ export default function ContactDetailsScreen() {
           </View>
         </View>
 
-        {/* Notes Section - NEW */}
+        {/* AI Draft Editor - shown after generation */}
+        {showDraftEditor && (
+          <View className="bg-white mt-2 px-6 py-4">
+            <View className="flex-row items-center justify-between mb-3">
+              <View className="flex-row items-center gap-2">
+                <Sparkles size={18} color="#7C3AED" />
+                <Text className="text-xs font-semibold text-gray-500 uppercase">
+                  AI Generated Draft
+                </Text>
+              </View>
+              <TouchableOpacity onPress={handleCancelDraft}>
+                <X size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              value={draft}
+              onChangeText={setDraft}
+              multiline
+              className="bg-gray-50 p-4 rounded-xl text-base text-gray-900 min-h-[120px] mb-4 border border-gray-200"
+              style={{ textAlignVertical: "top" }}
+              placeholder="Edit your message..."
+            />
+
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                onPress={handleCancelDraft}
+                className="flex-1 py-3 rounded-xl border border-gray-300 active:bg-gray-50"
+              >
+                <Text className="text-center font-semibold text-gray-700">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSendDraft}
+                disabled={!draft.trim()}
+                className={`flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2 ${
+                  draft.trim()
+                    ? "bg-blue-600 active:bg-blue-700"
+                    : "bg-gray-300"
+                }`}
+              >
+                <Send size={18} color="white" />
+                <Text className="text-center font-semibold text-white">
+                  Send SMS
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Loading state for draft generation */}
+        {generatingDraft && (
+          <View className="bg-white mt-2 px-6 py-4">
+            <View className="flex-row items-center justify-center gap-3 py-4">
+              <ActivityIndicator size="small" color="#7C3AED" />
+              <Text className="text-gray-600">Generating AI draft...</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Notes Section */}
         <View className="bg-white mt-2 px-6 py-4">
           <View className="flex-row items-center justify-between mb-3">
             <View className="flex-row items-center gap-2">
@@ -502,7 +604,6 @@ export default function ContactDetailsScreen() {
           </View>
         </View>
 
-        {/* Cadence Settings */}
         <View className="bg-white mt-2 px-6 py-4">
           <CadenceSelector
             value={cadenceDays}
