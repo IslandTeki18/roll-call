@@ -1,5 +1,5 @@
 import { Plus, Search, X } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -10,12 +10,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useLocalSearchParams } from "expo-router";
 import NoteCard from "../components/NoteCard";
 import NoteEditor from "../components/NoteEditor";
 import { useNotes } from "../hooks/useNotes";
 import { Note } from "../types/notes.types";
 
 export default function NotesListScreen() {
+  const params = useLocalSearchParams();
   const {
     notes,
     pinnedNotes,
@@ -31,6 +33,20 @@ export default function NotesListScreen() {
   const [editorVisible, setEditorVisible] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | undefined>();
   const [refreshing, setRefreshing] = useState(false);
+  const [preSelectedContactId, setPreSelectedContactId] = useState<
+    string | undefined
+  >();
+
+  // Handle params for note creation with pre-selected contact or note editing
+  useEffect(() => {
+    if (params.contactId && typeof params.contactId === "string") {
+      setPreSelectedContactId(params.contactId);
+      setEditorVisible(true);
+    } else if (params.noteId && typeof params.noteId === "string") {
+      setEditingNoteId(params.noteId);
+      setEditorVisible(true);
+    }
+  }, [params.contactId, params.noteId]);
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -50,17 +66,20 @@ export default function NotesListScreen() {
 
   const handleNotePress = (note: Note) => {
     setEditingNoteId(note.$id);
+    setPreSelectedContactId(undefined);
     setEditorVisible(true);
   };
 
   const handleNewNote = () => {
     setEditingNoteId(undefined);
+    setPreSelectedContactId(undefined);
     setEditorVisible(true);
   };
 
   const handleEditorClose = () => {
     setEditorVisible(false);
     setEditingNoteId(undefined);
+    setPreSelectedContactId(undefined);
     loadNotes();
   };
 
@@ -74,6 +93,7 @@ export default function NotesListScreen() {
     return (
       <NoteEditor
         noteId={editingNoteId}
+        preSelectedContactId={preSelectedContactId}
         onBack={handleEditorClose}
         onDelete={handleDelete}
         existingTags={userTags}

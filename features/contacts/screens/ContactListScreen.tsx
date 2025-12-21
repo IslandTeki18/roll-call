@@ -134,7 +134,7 @@ export default function ContactListScreen() {
             )}
           </View>
 
-          {!allContactsImported && (
+          {!allContactsImported && !loading && (
             <TouchableOpacity
               onPress={handleImportContacts}
               disabled={importing}

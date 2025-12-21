@@ -33,6 +33,7 @@ import TagInput from "./TagInput";
 
 interface NoteEditorProps {
   noteId?: string;
+  preSelectedContactId?: string;
   onBack: () => void;
   onDelete?: () => void;
   existingTags?: string[];
@@ -40,6 +41,7 @@ interface NoteEditorProps {
 
 export default function NoteEditor({
   noteId,
+  preSelectedContactId,
   onBack,
   onDelete,
   existingTags = [],
@@ -65,6 +67,13 @@ export default function NoteEditor({
 
   const [contactPickerVisible, setContactPickerVisible] = useState(false);
   const [linkedContacts, setLinkedContacts] = useState<ProfileContact[]>([]);
+
+  // Handle pre-selected contact on mount
+  useEffect(() => {
+    if (preSelectedContactId && !noteId) {
+      updateContactIds([preSelectedContactId]);
+    }
+  }, [preSelectedContactId, noteId]);
 
   useEffect(() => {
     if (profile && contactIds.length > 0) {

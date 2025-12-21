@@ -27,58 +27,68 @@ export const createNote = async (input: CreateNoteInput): Promise<Note> => {
     processedAt: "",
   };
 
-  const response = await tablesDB.createRow({
-    databaseId: DATABASE_ID,
-    tableId: NOTES_TABLE_ID,
-    rowId: ID.unique(),
-    data: data,
-    permissions: [
-      Permission.read(Role.any()),
-      Permission.update(Role.any()),
-      Permission.delete(Role.any()),
-    ],
-  })
+  try {
+    const response = await tablesDB.createRow({
+      databaseId: DATABASE_ID,
+      tableId: NOTES_TABLE_ID,
+      rowId: ID.unique(),
+      data: data,
+      permissions: [
+        Permission.read(Role.any()),
+        Permission.update(Role.any()),
+        Permission.delete(Role.any()),
+      ],
+    });
 
-  return response as unknown as Note;
+    return response as unknown as Note;
+  } catch (error) {
+    console.error("Error creating note:", error);
+    throw error;
+  }
 };
 
 export const updateNote = async (
   noteId: string,
   input: UpdateNoteInput
 ): Promise<Note> => {
-  const data: Record<string, unknown> = {};
+  try {
+    const data: Record<string, unknown> = {};
 
-  if (input.rawText !== undefined) {
-    data.rawText = input.rawText.trim();
-    // Reset AI processing when raw text changes
-    data.processingStatus = "pending";
-    data.aiSummary = "";
-    data.aiNextSteps = "";
-    data.aiEntities = "";
-    data.aiAnalysis = "";
-    data.processedAt = "";
+    if (input.rawText !== undefined) {
+      data.rawText = input.rawText.trim();
+      // Reset AI processing when raw text changes
+      data.processingStatus = "pending";
+      data.aiSummary = "";
+      data.aiNextSteps = "";
+      data.aiEntities = "";
+      data.aiAnalysis = "";
+      data.processedAt = "";
+    }
+
+    if (input.contactIds !== undefined) {
+      data.contactIds = input.contactIds.join(",");
+    }
+
+    if (input.tags !== undefined) {
+      data.tags = input.tags.join(",");
+    }
+
+    if (input.isPinned !== undefined) {
+      data.isPinned = input.isPinned;
+    }
+
+    const response = await tablesDB.updateRow({
+      databaseId: DATABASE_ID,
+      tableId: NOTES_TABLE_ID,
+      rowId: noteId,
+      data: data,
+    });
+
+    return response as unknown as Note;
+  } catch (error) {
+    console.error("Error updating note:", error);
+    throw error;
   }
-
-  if (input.contactIds !== undefined) {
-    data.contactIds = input.contactIds.join(",");
-  }
-
-  if (input.tags !== undefined) {
-    data.tags = input.tags.join(",");
-  }
-
-  if (input.isPinned !== undefined) {
-    data.isPinned = input.isPinned;
-  }
-
-  const response = await tablesDB.updateRow({
-    databaseId: DATABASE_ID,
-    tableId: NOTES_TABLE_ID,
-    rowId: noteId,
-    data: data,
-  });
-
-  return response as unknown as Note;
 };
 
 export const updateNoteWithAI = async (
@@ -107,7 +117,6 @@ export const updateNoteWithAI = async (
 };
 
 export const markNoteAsProcessing = async (noteId: string): Promise<Note> => {
-
   const response = await tablesDB.updateRow({
     databaseId: DATABASE_ID,
     tableId: NOTES_TABLE_ID,
@@ -124,7 +133,6 @@ export const markNoteAsFailed = async (
   noteId: string,
   errorMessage: string
 ): Promise<Note> => {
-
   const response = await tablesDB.updateRow({
     databaseId: DATABASE_ID,
     tableId: NOTES_TABLE_ID,
@@ -139,7 +147,6 @@ export const markNoteAsFailed = async (
 };
 
 export const getNote = async (noteId: string): Promise<Note> => {
-
   const response = await tablesDB.getRow({
     databaseId: DATABASE_ID,
     tableId: NOTES_TABLE_ID,
@@ -153,7 +160,6 @@ export const getNotesByUser = async (
   userId: string,
   limit: number = 100
 ): Promise<Note[]> => {
-
   const response = await tablesDB.listRows({
     databaseId: DATABASE_ID,
     tableId: NOTES_TABLE_ID,
@@ -171,7 +177,6 @@ export const getPinnedNotes = async (
   userId: string,
   limit: number = 50
 ): Promise<Note[]> => {
-
   const response = await tablesDB.listRows({
     databaseId: DATABASE_ID,
     tableId: NOTES_TABLE_ID,
@@ -191,7 +196,6 @@ export const getNotesByContact = async (
   contactId: string,
   limit: number = 50
 ): Promise<Note[]> => {
-
   const response = await tablesDB.listRows({
     databaseId: DATABASE_ID,
     tableId: NOTES_TABLE_ID,
@@ -211,7 +215,6 @@ export const getNotesByTag = async (
   tag: string,
   limit: number = 50
 ): Promise<Note[]> => {
-
   const response = await tablesDB.listRows({
     databaseId: DATABASE_ID,
     tableId: NOTES_TABLE_ID,
@@ -231,7 +234,6 @@ export const searchNotes = async (
   searchText: string,
   limit: number = 50
 ): Promise<Note[]> => {
-
   const response = await tablesDB.listRows({
     databaseId: DATABASE_ID,
     tableId: NOTES_TABLE_ID,
@@ -279,7 +281,6 @@ export const getPendingNotes = async (
   userId: string,
   limit: number = 50
 ): Promise<Note[]> => {
-
   const response = await tablesDB.listRows({
     databaseId: DATABASE_ID,
     tableId: NOTES_TABLE_ID,

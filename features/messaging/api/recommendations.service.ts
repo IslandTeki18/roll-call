@@ -4,6 +4,8 @@ import {
   OutcomeNote,
 } from "@/features/outcomes/api/outcomeNotes.service";
 import { ProfileContact } from "@/features/contacts/api/contacts.service";
+import { getNotesByContact } from "@/features/notes/api/notes.service";
+import { Note } from "@/features/notes/types/notes.types";
 
 export interface ContactRecommendation {
   suggestedChannel: "sms" | "email" | "call";
@@ -24,10 +26,11 @@ export const getContactRecommendations = async (
   contactId: string,
   contact?: ProfileContact
 ): Promise<ContactRecommendation> => {
-  // Get recent engagement events and outcomes
-  const [engagementEvents, outcomes] = await Promise.all([
+  // Get recent engagement events, outcomes, and notes
+  const [engagementEvents, outcomes, notes] = await Promise.all([
     getEventsByContact(userId, contactId, 20),
     getOutcomeNotesByContact(userId, contactId, 10),
+    getNotesByContact(userId, contactId, 10),
   ]);
 
   // Calculate channel effectiveness (prefer SMS for now, but track others)
@@ -43,8 +46,8 @@ export const getContactRecommendations = async (
   // Analyze sentiment trend from outcomes
   const sentimentTrend = analyzeSentimentTrend(outcomes);
 
-  // Extract topics from outcomes
-  const recentTopics = extractTopicsFromOutcomes(outcomes);
+  // Extract topics from both outcomes and notes
+  const recentTopics = extractTopicsFromNotesAndOutcomes(outcomes, notes);
 
   // Calculate response rate (outcomes recorded / messages sent)
   const messagesSent = engagementEvents.filter((e) =>
@@ -60,12 +63,14 @@ export const getContactRecommendations = async (
     sentimentTrend,
     recentTopics,
     responseRate,
-    outcomes.length
+    outcomes.length,
+    notes.length
   );
 
-  // Build conversation context for AI
+  // Build conversation context for AI (enhanced with Notes)
   const conversationContext = buildConversationContext(
     outcomes,
+    notes,
     recentTopics,
     sentimentTrend
   );
@@ -120,12 +125,16 @@ function analyzeSentimentTrend(
 }
 
 /**
- * Extracts conversation topics from outcome notes
+ * Extracts conversation topics from both outcome notes and regular notes
+ * Prioritizes AI-processed entities, falls back to keyword extraction
  */
-function extractTopicsFromOutcomes(outcomes: OutcomeNote[]): string[] {
+function extractTopicsFromNotesAndOutcomes(
+  outcomes: OutcomeNote[],
+  notes: Note[]
+): string[] {
   const topics = new Set<string>();
 
-  // Get topics from AI entities (most reliable)
+  // Get topics from outcome AI entities
   outcomes.forEach((outcome) => {
     if (outcome.aiEntities) {
       outcome.aiEntities
@@ -134,8 +143,28 @@ function extractTopicsFromOutcomes(outcomes: OutcomeNote[]): string[] {
     }
   });
 
-  // If no AI entities, extract from raw text (simple keyword extraction)
-  if (topics.size === 0 && outcomes.length > 0) {
+  // Get topics from note AI entities
+  notes
+    .filter((note) => note.processingStatus === "completed")
+    .forEach((note) => {
+      if (note.aiEntities) {
+        note.aiEntities
+          .split(",")
+          .forEach((entity) => topics.add(entity.trim().toLowerCase()));
+      }
+    });
+
+  // If still no topics, extract from tags
+  notes.forEach((note) => {
+    if (note.tags) {
+      note.tags
+        .split(",")
+        .forEach((tag) => topics.add(tag.trim().toLowerCase()));
+    }
+  });
+
+  // If still no topics, do simple keyword extraction
+  if (topics.size === 0 && (outcomes.length > 0 || notes.length > 0)) {
     const commonTopics = [
       "work",
       "project",
@@ -150,8 +179,8 @@ function extractTopicsFromOutcomes(outcomes: OutcomeNote[]): string[] {
       "catch up",
     ];
 
-    outcomes.forEach((outcome) => {
-      const text = outcome.rawText.toLowerCase();
+    [...outcomes, ...notes].forEach((item) => {
+      const text = ("rawText" in item ? item.rawText : "").toLowerCase();
       commonTopics.forEach((topic) => {
         if (text.includes(topic)) topics.add(topic);
       });
@@ -190,12 +219,14 @@ function determineTone(
 
 /**
  * Builds reasoning string for why this approach is recommended
+ * Now includes note context
  */
 function buildReasoning(
   sentimentTrend: string,
   recentTopics: string[],
   responseRate: number,
-  outcomeCount: number
+  outcomeCount: number,
+  noteCount: number
 ): string {
   const parts: string[] = [];
 
@@ -209,9 +240,13 @@ function buildReasoning(
     parts.push(`Recent topics: ${recentTopics.slice(0, 3).join(", ")}`);
   }
 
+  if (noteCount > 0) {
+    parts.push(`${noteCount} note${noteCount > 1 ? "s" : ""} on file`);
+  }
+
   if (outcomeCount > 0 && responseRate > 0.5) {
     parts.push("Good engagement history");
-  } else if (outcomeCount === 0) {
+  } else if (outcomeCount === 0 && noteCount === 0) {
     parts.push("First real conversation - keep it light");
   }
 
@@ -220,30 +255,50 @@ function buildReasoning(
 
 /**
  * Builds conversation context string for AI draft generation
+ * Enhanced to include Notes alongside OutcomeNotes, with proper weighting
  */
 function buildConversationContext(
   outcomes: OutcomeNote[],
+  notes: Note[],
   recentTopics: string[],
   sentimentTrend: string
 ): string {
   const parts: string[] = [];
 
-  // Add recent conversation summary
+  // Prioritize AI-processed notes (they have richer summaries)
+  const processedNotes = notes
+    .filter((n) => n.processingStatus === "completed" && n.aiSummary)
+    .slice(0, 3);
+
+  if (processedNotes.length > 0) {
+    const summaries = processedNotes.map((n) => n.aiSummary).join(". ");
+    parts.push(`Recent notes: ${summaries}`);
+  }
+
+  // Add outcome conversation summary if different from notes
   if (outcomes.length > 0 && outcomes[0].aiSummary) {
-    parts.push(`Last conversation: ${outcomes[0].aiSummary}`);
+    parts.push(`Last interaction outcome: ${outcomes[0].aiSummary}`);
   }
 
-  // Add topics context
-  if (recentTopics.length > 0) {
-    parts.push(`Previous topics discussed: ${recentTopics.join(", ")}`);
-  }
+  // Add next steps from most recent note or outcome
+  const latestNote = processedNotes[0];
+  const latestOutcome = outcomes[0];
 
-  // Add next steps if available
-  if (outcomes.length > 0 && outcomes[0].aiNextSteps) {
-    const nextSteps = outcomes[0].aiNextSteps.split("|")[0]; // Get first step
+  if (latestNote?.aiNextSteps) {
+    const nextSteps = latestNote.aiNextSteps.split("|")[0];
+    if (nextSteps) {
+      parts.push(`Pending from notes: ${nextSteps}`);
+    }
+  } else if (latestOutcome?.aiNextSteps) {
+    const nextSteps = latestOutcome.aiNextSteps.split("|")[0];
     if (nextSteps) {
       parts.push(`Follow up on: ${nextSteps}`);
     }
+  }
+
+  // Add topics context if not already covered
+  if (recentTopics.length > 0 && parts.length < 2) {
+    parts.push(`Previous topics discussed: ${recentTopics.join(", ")}`);
   }
 
   // Add sentiment context
@@ -251,6 +306,15 @@ function buildConversationContext(
     parts.push("Relationship is strengthening");
   } else if (sentimentTrend === "declining") {
     parts.push("Reconnect with care");
+  }
+
+  // Fallback to raw note snippets if no AI processing
+  if (parts.length === 0 && notes.length > 0) {
+    const rawSnippets = notes
+      .map((n) => n.rawText.substring(0, 100))
+      .slice(0, 2)
+      .join(". ");
+    parts.push(`From your notes: ${rawSnippets}`);
   }
 
   return parts.join(". ") || "No previous conversation history";
