@@ -33,12 +33,11 @@ export function useDeck() {
 
     setLoading(true);
     try {
-      const maxCards = isPremium ? 10 : 5;
+      const maxCards = profile.isPremiumUser ? 10 : 5;
 
       const exhausted = await isDailyQuotaExhausted(profile.$id);
       setQuotaExhausted(exhausted);
 
-      // Pass isPremiumUser to buildDeck for archiving
       const cards = await buildDeck(
         profile.$id,
         maxCards,
@@ -104,14 +103,12 @@ export function useDeck() {
       }
 
       try {
-        // NEW: Get recommendations for context
         const recommendations = await getContactRecommendations(
           profile.$id,
           card.contact?.$id as string,
           card.contact
         );
 
-        // Use conversation context in draft generation
         const contextString = recommendations.conversationContext
           ? `Context: ${recommendations.conversationContext}. `
           : "";
