@@ -128,8 +128,8 @@ export default function NoteEditor({
           setAnalyzing(false);
         }
       });
-      // Reload note to show updated AI results
-      window.location.reload(); // Force refresh to show new data
+      // Close and reopen editor to refresh note data
+      onBack();
     } catch (err) {
       setAnalyzing(false);
       Alert.alert("Analysis Failed", "Could not analyze the note.");
