@@ -9,7 +9,7 @@ import {
   getCachedPremiumStatus,
 } from "@/features/auth/api/premiumCache.service";
 
-const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+const REFRESH_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes - reduced from 5 to minimize API calls
 
 export function useUserProfile() {
   const { user, isLoaded } = useUser();
