@@ -79,7 +79,7 @@ export const processNoteWithProgress = async (
 
 export const batchProcessNotes = async (
   noteIds: string[]
-): Promise<Array<{ noteId: string; success: boolean; error?: string }>> => {
+): Promise<{ noteId: string; success: boolean; error?: string }[]> => {
   const results = await Promise.allSettled(
     noteIds.map((id) => processNoteWithAI(id))
   );
