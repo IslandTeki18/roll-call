@@ -1,5 +1,6 @@
-import { markContactEngaged } from "@/features/contacts/api/contacts.service";
+import { markContactEngaged, getContactById } from "@/features/contacts/api/contacts.service";
 import { invalidateContactRHS } from "@/features/deck/api/rhs.cache";
+import { recalculateAndPersistRHS } from "@/features/deck/api/rhsMetrics.service";
 import { ID, Query } from "react-native-appwrite";
 import { databases, tablesDB } from "../../shared/lib/appwrite";
 
@@ -80,6 +81,22 @@ export const createEngagementEvent = async (
     // Invalidate RHS cache for these contacts since they have new engagements
     contactIds.forEach((contactId) => {
       invalidateContactRHS(userId, contactId);
+    });
+
+    // Recalculate and persist RHS metrics for affected contacts (async, non-blocking)
+    Promise.all(
+      contactIds.map((contactId) =>
+        recalculateAndPersistRHS(userId, contactId, getContactById).catch(
+          (error) => {
+            console.error(
+              `Failed to recalculate RHS for contact ${contactId}:`,
+              error
+            );
+          }
+        )
+      )
+    ).catch((error) => {
+      console.error("Failed to batch recalculate RHS:", error);
     });
   }
 

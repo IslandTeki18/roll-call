@@ -1,6 +1,8 @@
 // import { tablesDB } from "../lib/appwrite";
 import { tablesDB } from "@/features/shared/lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
+import { recalculateAndPersistRHS } from "@/features/deck/api/rhsMetrics.service";
+import { getContactById } from "@/features/contacts/api/contacts.service";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const OUTCOME_NOTES_TABLE_ID =
@@ -113,7 +115,28 @@ export const createOutcomeNote = async (
     data,
   });
 
-  return response as unknown as OutcomeNote;
+  const outcome = response as unknown as OutcomeNote;
+
+  // Recalculate RHS for associated contacts (async, non-blocking)
+  // Outcomes affect engagement quality bonus
+  if (input.contactIds && input.contactIds.length > 0) {
+    Promise.all(
+      input.contactIds.map((contactId) =>
+        recalculateAndPersistRHS(input.userId, contactId, getContactById).catch(
+          (error) => {
+            console.error(
+              `Failed to recalculate RHS for contact ${contactId} after outcome creation:`,
+              error
+            );
+          }
+        )
+      )
+    ).catch((error) => {
+      console.error("Failed to batch recalculate RHS after outcome creation:", error);
+    });
+  }
+
+  return outcome;
 };
 
 /**

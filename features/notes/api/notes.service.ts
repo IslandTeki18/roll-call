@@ -7,6 +7,8 @@ import {
   UpdateNoteInput,
   UpdateNoteWithAIInput,
 } from "../types/notes.types";
+import { recalculateAndPersistRHS } from "@/features/deck/api/rhsMetrics.service";
+import { getContactById } from "@/features/contacts/api/contacts.service";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const NOTES_TABLE_ID = process.env.EXPO_PUBLIC_APPWRITE_NOTES_TABLE_ID!;
@@ -40,7 +42,27 @@ export const createNote = async (input: CreateNoteInput): Promise<Note> => {
       ],
     });
 
-    return response as unknown as Note;
+    const note = response as unknown as Note;
+
+    // Recalculate RHS for associated contacts (async, non-blocking)
+    if (input.contactIds && input.contactIds.length > 0) {
+      Promise.all(
+        input.contactIds.map((contactId) =>
+          recalculateAndPersistRHS(input.userId, contactId, getContactById).catch(
+            (error) => {
+              console.error(
+                `Failed to recalculate RHS for contact ${contactId} after note creation:`,
+                error
+              );
+            }
+          )
+        )
+      ).catch((error) => {
+        console.error("Failed to batch recalculate RHS after note creation:", error);
+      });
+    }
+
+    return note;
   } catch (error) {
     console.error("Error creating note:", error);
     throw error;
