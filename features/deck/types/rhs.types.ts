@@ -15,6 +15,13 @@ export interface RHSFactors {
   averageEngagementFrequency: number;
   isOverdueByCadence: boolean;
   daysOverdue: number;
+
+  // NEW: Enhanced cadence scoring metadata
+  cadenceAdherenceScore: number; // How well actual intervals match target
+  cadenceConsistencyScore: number; // How consistent the engagement pattern is
+  cadenceTrendScore: number; // Whether intervals are improving or worsening
+  targetCadenceDays: number; // The target cadence being used (explicit or default)
+  actualAverageInterval: number; // Average days between actual engagements
 }
 
 export interface RHSConfig {
@@ -40,6 +47,12 @@ export interface RHSConfig {
   decayStartDays: number; // Days after which decay begins
   decayMaxPenalty: number; // Maximum penalty from decay
   decayExponentialRate: number; // Rate of exponential decay
+
+  // NEW: Cadence scoring configuration
+  defaultCadenceDays: number; // Global default cadence when none is set
+  cadenceAdherenceWeight: number; // Max points for perfect cadence adherence (0-40)
+  cadenceConsistencyWeight: number; // Max points for consistent engagement pattern (0-20)
+  cadenceTrendWeight: number; // Max points for improving trend (-10 to +10)
 }
 
 export const DEFAULT_RHS_CONFIG: RHSConfig = {
@@ -64,4 +77,9 @@ export const DEFAULT_RHS_CONFIG: RHSConfig = {
   decayStartDays: 30,
   decayMaxPenalty: 40,
   decayExponentialRate: 0.05,
+
+  defaultCadenceDays: 30,
+  cadenceAdherenceWeight: 40,
+  cadenceConsistencyWeight: 20,
+  cadenceTrendWeight: 10,
 };

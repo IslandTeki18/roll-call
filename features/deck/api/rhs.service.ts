@@ -47,13 +47,14 @@ export const calculateRHS = async (
   const freshnessBoost = calculateFreshnessBoost(contact, cfg);
   const fatigueGuardPenalty = calculateFatiguePenaltyFromEvent(lastEvent, cfg);
 
-  // Calculate cadence with metadata
-  const cadenceResult = calculateCadenceWeightWithMetadata(
+  // Calculate enhanced cadence scoring with metadata
+  const cadenceResult = calculateEnhancedCadenceScoring(
     contact,
     lastEvent,
+    meaningfulEvents,
     cfg
   );
-  const cadenceWeight = cadenceResult.weight;
+  const cadenceWeight = cadenceResult.totalWeight;
 
   const engagementQualityBonus = await calculateEngagementQualityBonus(
     userId,
@@ -117,6 +118,11 @@ export const calculateRHS = async (
     averageEngagementFrequency,
     isOverdueByCadence: cadenceResult.isOverdue,
     daysOverdue: cadenceResult.daysOverdue,
+    cadenceAdherenceScore: cadenceResult.adherenceScore,
+    cadenceConsistencyScore: cadenceResult.consistencyScore,
+    cadenceTrendScore: cadenceResult.trendScore,
+    targetCadenceDays: cadenceResult.targetCadenceDays,
+    actualAverageInterval: cadenceResult.actualAverageInterval,
   };
 };
 
@@ -302,20 +308,90 @@ const calculateFatiguePenaltyFromEvent = (
   return 0;
 };
 
-const calculateCadenceWeightWithMetadata = (
+/**
+ * ENHANCED: Calculate comprehensive cadence scoring
+ *
+ * Compares actual engagement intervals against target cadence (explicit or global default)
+ * Returns three independent scores:
+ * 1. Adherence Score (0-40): How well current timing matches target cadence
+ * 2. Consistency Score (0-20): How consistent the engagement pattern is over time
+ * 3. Trend Score (-10 to +10): Whether engagement frequency is improving or worsening
+ *
+ * Total weight is the sum of all three scores, replacing the old simple cadenceWeight
+ */
+const calculateEnhancedCadenceScoring = (
   contact: ProfileContact,
   lastEvent: { timestamp: string } | null,
+  meaningfulEvents: any[],
   cfg: RHSConfig
-): { weight: number; isOverdue: boolean; daysOverdue: number } => {
-  if (!contact.cadenceDays || contact.cadenceDays <= 0) {
-    return { weight: 0, isOverdue: false, daysOverdue: 0 };
-  }
+): {
+  totalWeight: number;
+  adherenceScore: number;
+  consistencyScore: number;
+  trendScore: number;
+  isOverdue: boolean;
+  daysOverdue: number;
+  targetCadenceDays: number;
+  actualAverageInterval: number;
+} => {
+  // Determine target cadence: use contact's explicit cadence or global default
+  const targetCadenceDays = contact.cadenceDays && contact.cadenceDays > 0
+    ? contact.cadenceDays
+    : cfg.defaultCadenceDays;
 
+  // Calculate actual engagement intervals from history
+  const intervals = calculateEngagementIntervals(meaningfulEvents);
+  const actualAverageInterval = intervals.length > 0
+    ? intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length
+    : 0;
+
+  // 1. ADHERENCE SCORE: Compare current timing vs target
+  const adherenceResult = calculateAdherenceScore(
+    lastEvent,
+    targetCadenceDays,
+    cfg
+  );
+
+  // 2. CONSISTENCY SCORE: Measure engagement pattern variance
+  const consistencyScore = calculateConsistencyScore(
+    intervals,
+    targetCadenceDays,
+    cfg
+  );
+
+  // 3. TREND SCORE: Track if engagement frequency is improving
+  const trendScore = calculateTrendScore(intervals, cfg);
+
+  // Total weight is sum of all components
+  const totalWeight = adherenceResult.score + consistencyScore + trendScore;
+
+  return {
+    totalWeight,
+    adherenceScore: adherenceResult.score,
+    consistencyScore,
+    trendScore,
+    isOverdue: adherenceResult.isOverdue,
+    daysOverdue: adherenceResult.daysOverdue,
+    targetCadenceDays,
+    actualAverageInterval,
+  };
+};
+
+/**
+ * Calculate adherence score based on current timing vs target cadence
+ * Replaces the old simple ratio-based calculation with more nuanced scoring
+ */
+const calculateAdherenceScore = (
+  lastEvent: { timestamp: string } | null,
+  targetCadenceDays: number,
+  cfg: RHSConfig
+): { score: number; isOverdue: boolean; daysOverdue: number } => {
+  // Never contacted: maximum boost to encourage first contact
   if (!lastEvent) {
     return {
-      weight: cfg.maxCadenceBoost,
+      score: cfg.cadenceAdherenceWeight,
       isOverdue: true,
-      daysOverdue: contact.cadenceDays,
+      daysOverdue: targetCadenceDays,
     };
   }
 
@@ -323,34 +399,130 @@ const calculateCadenceWeightWithMetadata = (
     (Date.now() - new Date(lastEvent.timestamp).getTime()) /
     (1000 * 60 * 60 * 24);
 
-  const cadenceDays = contact.cadenceDays;
-  const overdueRatio = daysSinceContact / cadenceDays;
+  const overdueRatio = daysSinceContact / targetCadenceDays;
 
+  // Very overdue (>= 1.5x target): max boost
   if (overdueRatio >= cfg.cadenceOverdueMultiplier) {
     return {
-      weight: cfg.maxCadenceBoost,
+      score: cfg.cadenceAdherenceWeight,
       isOverdue: true,
-      daysOverdue: Math.round(daysSinceContact - cadenceDays),
+      daysOverdue: Math.round(daysSinceContact - targetCadenceDays),
     };
-  } else if (overdueRatio >= 1.0) {
+  }
+
+  // Late (1.0x to 1.5x target): scaled boost from 0 to max
+  if (overdueRatio >= 1.0) {
     const overdueProgress =
       (overdueRatio - 1.0) / (cfg.cadenceOverdueMultiplier - 1.0);
     return {
-      weight: Math.round(cfg.maxCadenceBoost * overdueProgress),
+      score: Math.round(cfg.cadenceAdherenceWeight * overdueProgress),
       isOverdue: true,
-      daysOverdue: Math.round(daysSinceContact - cadenceDays),
-    };
-  } else if (overdueRatio >= cfg.cadenceEarlyMultiplier) {
-    return { weight: 0, isOverdue: false, daysOverdue: 0 };
-  } else {
-    const earlyProgress =
-      (cfg.cadenceEarlyMultiplier - overdueRatio) / cfg.cadenceEarlyMultiplier;
-    return {
-      weight: -Math.round(cfg.maxCadencePenalty * earlyProgress),
-      isOverdue: false,
-      daysOverdue: 0,
+      daysOverdue: Math.round(daysSinceContact - targetCadenceDays),
     };
   }
+
+  // On-track (0.5x to 1.0x target): neutral score
+  if (overdueRatio >= cfg.cadenceEarlyMultiplier) {
+    return { score: 0, isOverdue: false, daysOverdue: 0 };
+  }
+
+  // Too early (< 0.5x target): small penalty
+  const earlyProgress =
+    (cfg.cadenceEarlyMultiplier - overdueRatio) / cfg.cadenceEarlyMultiplier;
+  return {
+    score: -Math.round(cfg.maxCadencePenalty * earlyProgress),
+    isOverdue: false,
+    daysOverdue: 0,
+  };
+};
+
+/**
+ * Calculate consistency score based on variance in engagement intervals
+ * Rewards contacts with predictable, regular engagement patterns
+ */
+const calculateConsistencyScore = (
+  intervals: number[],
+  targetCadenceDays: number,
+  cfg: RHSConfig
+): number => {
+  if (intervals.length < 2) return 0;
+
+  // Calculate coefficient of variation (CV) = std dev / mean
+  const mean = intervals.reduce((sum, val) => sum + val, 0) / intervals.length;
+  if (mean === 0) return 0;
+
+  const variance =
+    intervals.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) /
+    intervals.length;
+  const stdDev = Math.sqrt(variance);
+  const cv = stdDev / mean;
+
+  // Low CV (< 0.3) = very consistent = max score
+  // Medium CV (0.3-0.7) = moderately consistent = scaled score
+  // High CV (> 0.7) = inconsistent = zero score
+  if (cv < 0.3) {
+    return cfg.cadenceConsistencyWeight;
+  } else if (cv < 0.7) {
+    const consistencyFactor = 1 - (cv - 0.3) / 0.4; // Scale from 1 to 0
+    return Math.round(cfg.cadenceConsistencyWeight * consistencyFactor);
+  }
+
+  return 0;
+};
+
+/**
+ * Calculate trend score based on whether intervals are improving (getting shorter)
+ * Positive score for improving trends, negative for worsening trends
+ */
+const calculateTrendScore = (
+  intervals: number[],
+  cfg: RHSConfig
+): number => {
+  if (intervals.length < 3) return 0;
+
+  // Compare first half vs second half of intervals
+  const midpoint = Math.floor(intervals.length / 2);
+  const firstHalf = intervals.slice(0, midpoint);
+  const secondHalf = intervals.slice(midpoint);
+
+  const avgFirstHalf =
+    firstHalf.reduce((sum, val) => sum + val, 0) / firstHalf.length;
+  const avgSecondHalf =
+    secondHalf.reduce((sum, val) => sum + val, 0) / secondHalf.length;
+
+  // Improving trend = second half has shorter intervals than first half
+  const improvement = avgFirstHalf - avgSecondHalf;
+  const improvementRatio = improvement / avgFirstHalf;
+
+  // > 20% improvement: max positive score
+  // -20% to +20%: scaled score
+  // < -20% decline: max negative score
+  if (improvementRatio > 0.2) {
+    return cfg.cadenceTrendWeight;
+  } else if (improvementRatio < -0.2) {
+    return -cfg.cadenceTrendWeight;
+  } else {
+    // Scale linearly from -10 to +10
+    return Math.round((improvementRatio / 0.2) * cfg.cadenceTrendWeight);
+  }
+};
+
+/**
+ * Calculate intervals (in days) between consecutive engagement events
+ * Returns array of gaps between events, sorted chronologically
+ */
+const calculateEngagementIntervals = (events: any[]): number[] => {
+  if (events.length < 2) return [];
+
+  const intervals: number[] = [];
+  for (let i = 0; i < events.length - 1; i++) {
+    const time1 = new Date(events[i].timestamp).getTime();
+    const time2 = new Date(events[i + 1].timestamp).getTime();
+    const daysDiff = Math.abs(time1 - time2) / (1000 * 60 * 60 * 24);
+    intervals.push(daysDiff);
+  }
+
+  return intervals;
 };
 
 const calculateAverageFrequencyFromEvents = (events: any[]): number => {
