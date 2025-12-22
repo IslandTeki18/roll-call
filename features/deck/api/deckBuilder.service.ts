@@ -9,6 +9,10 @@ import { DeckCard, ChannelType } from "../types/deck.types";
 import { tablesDB } from "@/features/shared/lib/appwrite";
 import { ID, Query } from "react-native-appwrite";
 import { archiveOldDecks } from "./deckHistory.service";
+import {
+  shouldArchiveToday,
+  markArchiveCompleted,
+} from "./deckArchive.cache";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const DECK_CARDS_TABLE_ID =
@@ -67,19 +71,27 @@ export const buildDeck = async (
 ): Promise<DeckCard[]> => {
   const todayDate = new Date().toISOString().split("T")[0];
 
-  try {
-    const archiveResult = await archiveOldDecks(userId, isPremiumUser);
-    if (archiveResult.archivedDates.length > 0) {
-      console.log(
-        `Archived ${archiveResult.archivedDates.length} old deck(s):`,
-        archiveResult.archivedDates
-      );
+  // Only archive old decks once per day to reduce API calls
+  if (shouldArchiveToday(userId)) {
+    try {
+      const archiveResult = await archiveOldDecks(userId, isPremiumUser);
+      if (archiveResult.archivedDates.length > 0) {
+        console.log(
+          `Archived ${archiveResult.archivedDates.length} old deck(s):`,
+          archiveResult.archivedDates
+        );
+        markArchiveCompleted(userId);
+      } else {
+        // No decks to archive, still mark as completed to avoid checking again today
+        markArchiveCompleted(userId);
+      }
+      if (archiveResult.errors.length > 0) {
+        console.error("Archive errors:", archiveResult.errors);
+      }
+    } catch (error) {
+      console.error("Failed to archive old decks:", error);
+      // Don't mark as completed on error, allow retry
     }
-    if (archiveResult.errors.length > 0) {
-      console.error("Archive errors:", archiveResult.errors);
-    }
-  } catch (error) {
-    console.error("Failed to archive old decks:", error);
   }
 
   const existingDeck = await tablesDB.listRows({
