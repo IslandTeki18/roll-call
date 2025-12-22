@@ -1,4 +1,5 @@
 import { markContactEngaged } from "@/features/contacts/api/contacts.service";
+import { invalidateContactRHS } from "@/features/deck/api/rhs.cache";
 import { ID, Query } from "react-native-appwrite";
 import { databases, tablesDB } from "../../shared/lib/appwrite";
 
@@ -74,6 +75,11 @@ export const createEngagementEvent = async (
       contactIds.map((contactId) => markContactEngaged(contactId))
     ).catch((error) => {
       console.error("Failed to mark contacts as engaged:", error);
+    });
+
+    // Invalidate RHS cache for these contacts since they have new engagements
+    contactIds.forEach((contactId) => {
+      invalidateContactRHS(userId, contactId);
     });
   }
 

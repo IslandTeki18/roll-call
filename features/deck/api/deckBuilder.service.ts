@@ -3,7 +3,7 @@ import {
   loadContacts,
   isContactNew,
 } from "@/features/contacts/api/contacts.service";
-import { calculateRHS } from "./rhs.service";
+import { getCachedRHS } from "./rhs.cache";
 import { RHSFactors } from "../types/rhs.types";
 import { DeckCard, ChannelType } from "../types/deck.types";
 import { tablesDB } from "@/features/shared/lib/appwrite";
@@ -107,7 +107,7 @@ export const buildDeck = async (
         const scored: ScoredContact[] = await Promise.all(
           availableContacts.map(async (contact) => ({
             contact,
-            rhs: await calculateRHS(userId, contact),
+            rhs: await getCachedRHS(userId, contact),
             isFresh: isContactNew(contact), // NEW: Use centralized function
           }))
         );
@@ -246,7 +246,7 @@ export const buildDeck = async (
   const scored: ScoredContact[] = await Promise.all(
     contacts.map(async (contact) => ({
       contact,
-      rhs: await calculateRHS(userId, contact),
+      rhs: await getCachedRHS(userId, contact),
       isFresh: isContactNew(contact), // NEW: Use centralized function
     }))
   );
