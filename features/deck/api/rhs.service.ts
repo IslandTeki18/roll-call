@@ -24,10 +24,11 @@ export const calculateRHS = async (
   const cfg = { ...config, ...customConfig };
 
   // Fetch engagement events for metadata
+  // Reduced limits to minimize API data transfer - 20 events is sufficient for frequency/decay calculations
   const [lastEvent, allEvents, outcomes] = await Promise.all([
     getLastEventForContact(userId, contact.$id).catch(() => null),
-    getEventsByContact(userId, contact.$id, 50).catch(() => []),
-    getOutcomeNotesByContact(userId, contact.$id, 20).catch(() => []),
+    getEventsByContact(userId, contact.$id, 20).catch(() => []),
+    getOutcomeNotesByContact(userId, contact.$id, 10).catch(() => []),
   ]);
 
   // Filter to meaningful engagements

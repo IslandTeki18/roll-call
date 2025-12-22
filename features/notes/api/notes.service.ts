@@ -262,7 +262,8 @@ export const toggleNotePin = async (noteId: string): Promise<Note> => {
 };
 
 export const getUserTags = async (userId: string): Promise<string[]> => {
-  const notes = await getNotesByUser(userId, 500);
+  // Reduced from 500 to 100 - most users won't have more than 100 notes, and this is just for tag suggestions
+  const notes = await getNotesByUser(userId, 100);
   const tagSet = new Set<string>();
 
   notes.forEach((note) => {
