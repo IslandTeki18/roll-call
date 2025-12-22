@@ -4,6 +4,10 @@ import {
   markNoteAsFailed,
   updateNoteWithAI,
 } from "./notes.service";
+import {
+  extractEntitiesHybrid,
+  serializeStructuredEntities,
+} from "./hybridEntityExtraction.service";
 
 const AI_ENGINE_ENDPOINT = process.env.EXPO_PUBLIC_AI_ENGINE_ENDPOINT!;
 
@@ -49,11 +53,23 @@ export const processNoteWithAI = async (noteId: string): Promise<void> => {
 
     const aiResult: AIEngineResponse = await response.json();
 
+    // Hybrid entity extraction: deterministic + AI
+    const entityResult = extractEntitiesHybrid(
+      note.rawText,
+      aiResult.entities
+    );
+
+    // Serialize structured entities for storage
+    const structuredEntitiesJson = serializeStructuredEntities(
+      entityResult.structured
+    );
+
     await updateNoteWithAI(noteId, {
       aiAnalysisId: aiResult.execution_id,
       aiSummary: aiResult.summary,
       aiNextSteps: aiResult.next_steps,
       aiEntities: aiResult.entities,
+      structuredEntities: structuredEntitiesJson,
     });
   } catch (error) {
     const errorMessage =

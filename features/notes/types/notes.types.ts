@@ -26,7 +26,10 @@ export interface Note {
   // AI results
   aiSummary: string;
   aiNextSteps: string; // pipe-separated
-  aiEntities: string; // comma-separated
+  aiEntities: string; // comma-separated (legacy AI extraction)
+
+  // Structured entities (deterministic + AI hybrid)
+  structuredEntities?: string; // JSON-serialized StructuredEntities
 
   // Timestamps (Appwrite system fields)
   $createdAt: string;
@@ -54,4 +57,5 @@ export interface UpdateNoteWithAIInput {
   aiSummary: string;
   aiNextSteps: string[];
   aiEntities: string[];
+  structuredEntities?: string; // JSON-serialized StructuredEntities
 }

@@ -97,7 +97,7 @@ export const updateNoteWithAI = async (
 ): Promise<Note> => {
   const timestamp = new Date().toISOString();
 
-  const data = {
+  const data: Record<string, any> = {
     aiAnalysis: aiResults.aiAnalysisId,
     processingStatus: "completed" as NoteProcessingStatus,
     aiSummary: aiResults.aiSummary,
@@ -105,6 +105,11 @@ export const updateNoteWithAI = async (
     aiEntities: aiResults.aiEntities.join(","),
     processedAt: timestamp,
   };
+
+  // Include structured entities if provided
+  if (aiResults.structuredEntities) {
+    data.structuredEntities = aiResults.structuredEntities;
+  }
 
   const response = await tablesDB.updateRow({
     databaseId: DATABASE_ID,
