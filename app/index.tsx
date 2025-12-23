@@ -1,16 +1,6 @@
 import { Redirect } from "expo-router";
-import { useAuth } from "@clerk/clerk-expo";
 
 export default function LaunchScreen() {
-  const { isSignedIn, isLoaded } = useAuth();
-
-  if (!isLoaded) {
-    return null;
-  }
-
-  if (isSignedIn) {
-    return <Redirect href="/(tabs)" />;
-  }
-
+  // Default redirect to auth - Clerk will handle the actual routing
   return <Redirect href="/(auth)/sign-in" />;
 }

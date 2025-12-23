@@ -4,7 +4,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { tokenCache } from "@clerk/clerk-expo/token-cache";
-import { ClerkProvider } from "@clerk/clerk-expo";
+import { ClerkProvider, ClerkLoaded } from "@clerk/clerk-expo";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 SplashScreen.preventAutoHideAsync();
@@ -29,10 +29,14 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-        <Stack screenOptions={{ headerShown: false}}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="+not-found" />
-        </Stack>
+        <ClerkLoaded>
+          <Stack screenOptions={{ headerShown: false}}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+        </ClerkLoaded>
       </ClerkProvider>
     </GestureHandlerRootView>
   );

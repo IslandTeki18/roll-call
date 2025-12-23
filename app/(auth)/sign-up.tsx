@@ -1,11 +1,19 @@
 import * as React from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
-import { useSignUp } from "@clerk/clerk-expo";
+import { useSignUp, useAuth } from "@clerk/clerk-expo";
 import { Link, useRouter } from "expo-router";
 
 export default function SignUp() {
   const { isLoaded, signUp, setActive } = useSignUp();
+  const { isSignedIn } = useAuth();
   const router = useRouter();
+
+  // Redirect if already signed in
+  React.useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      router.replace("/(tabs)");
+    }
+  }, [isLoaded, isSignedIn]);
 
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
