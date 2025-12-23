@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { useCallback } from "react";
 import { Alert } from "react-native";
 import { useUserProfile } from "./useUserProfile";
@@ -5,6 +6,7 @@ import { useUserProfile } from "./useUserProfile";
 export function usePremiumGate() {
   const { profile, refreshPremiumStatus } = useUserProfile();
   const isPremium = profile?.isPremiumUser ?? false;
+  const router = useRouter();
 
   const requirePremium = useCallback(
     (feature: string, onUpgrade?: () => void): boolean => {
@@ -14,7 +16,13 @@ export function usePremiumGate() {
         "Premium Feature",
         `${feature} is available with Premium. Unlock 10-card deck, email/Slack sends, and Reports.`,
         [
-          { text: "Not Now", style: "cancel" },
+          {
+            text: "Not Now",
+            style: "cancel",
+            onPress: () => {
+              router.push("/");
+            },
+          },
           {
             text: "Upgrade",
             onPress: onUpgrade,

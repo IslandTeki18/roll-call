@@ -7,11 +7,13 @@ import { useUser } from "@clerk/clerk-expo";
 import { loadContacts } from "../features/contacts/api/contacts.service";
 import { getRecentEvents } from "../features/messaging/api/engagement.service";
 import { queryRHSMetrics } from "../features/deck/api/rhsMetrics.service";
+import { useRouter } from "expo-router";
 
 export default function Reports() {
   const { isPremium, requirePremium } = usePremiumGate();
   const { user } = useUser();
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
   const [stats, setStats] = useState({
     totalContacts: 0,
     engagementsThisWeek: 0,
@@ -26,15 +28,16 @@ export default function Reports() {
     if (!isPremium) {
       requirePremium("Reports", () => {
         // TODO: Navigate to paywall
+        router.push("/")
       });
     }
   }, [isPremium]);
 
-  useEffect(() => {
-    if (isPremium && user) {
-      loadReportData();
-    }
-  }, [isPremium, user]);
+  // useEffect(() => {
+  //   if (isPremium && user) {
+  //     loadReportData();
+  //   }
+  // }, [isPremium, user]);
 
   const loadReportData = async () => {
     if (!user) return;
