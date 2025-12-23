@@ -61,7 +61,7 @@ export const extractPeople = (text: string): PersonEntity[] => {
   const doc = nlp(text);
   const people = doc.people().out("array");
 
-  return people.map((name) => ({
+  return people.map((name: string) => ({
     type: "person" as const,
     value: name,
     normalizedValue: name.trim(),
@@ -80,7 +80,7 @@ export const extractCompanies = (text: string): CompanyEntity[] => {
   const doc = nlp(text);
   const orgs = doc.organizations().out("array");
 
-  return orgs.map((org) => ({
+  return orgs.map((org: string) => ({
     type: "company" as const,
     value: org,
     normalizedValue: org.trim(),
@@ -131,7 +131,7 @@ export const extractLocations = (text: string): LocationEntity[] => {
   const doc = nlp(text);
   const places = doc.places().out("array");
 
-  return places.map((place) => ({
+  return places.map((place: string) => ({
     type: "location" as const,
     value: place,
     normalizedValue: place.trim(),

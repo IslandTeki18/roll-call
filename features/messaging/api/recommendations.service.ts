@@ -34,7 +34,7 @@ export const getContactRecommendations = async (
   ]);
 
   // Calculate channel effectiveness (prefer SMS for now, but track others)
-  const channelCounts = {
+  const _channelCounts = {
     sms: engagementEvents.filter((e) => e.type === "sms_sent").length,
     email: engagementEvents.filter((e) => e.type === "email_sent").length,
     call: engagementEvents.filter((e) => e.type === "call_made").length,

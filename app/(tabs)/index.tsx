@@ -163,7 +163,7 @@ export default function Index() {
                     }}
                   />
                 </View>
-                {deck.cards.slice(0, 3).map((card, index) => (
+                {deck.cards.slice(0, 3).map((card) => (
                   <TouchableOpacity
                     key={card.$id}
                     className="flex-row items-center justify-between py-2 border-b border-gray-100"

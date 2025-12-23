@@ -2,7 +2,7 @@ import { markContactEngaged, getContactById } from "@/features/contacts/api/cont
 import { invalidateContactRHS } from "@/features/deck/api/rhs.cache";
 import { recalculateAndPersistRHS } from "@/features/deck/api/rhsMetrics.service";
 import { ID, Query } from "react-native-appwrite";
-import { databases, tablesDB } from "../../shared/lib/appwrite";
+import { tablesDB } from "../../shared/lib/appwrite";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const ENGAGEMENT_EVENTS_TABLE_ID =

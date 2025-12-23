@@ -442,7 +442,7 @@ const calculateAdherenceScore = (
  */
 const calculateConsistencyScore = (
   intervals: number[],
-  targetCadenceDays: number,
+  _targetCadenceDays: number,
   cfg: RHSConfig
 ): number => {
   if (intervals.length < 2) return 0;

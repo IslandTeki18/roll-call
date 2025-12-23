@@ -1,4 +1,4 @@
-import { databases, tablesDB } from "@/features/shared/lib/appwrite";
+import { tablesDB } from "@/features/shared/lib/appwrite";
 import * as Contacts from "expo-contacts";
 import { Platform } from "react-native";
 import { ID, Query } from "react-native-appwrite";
@@ -51,6 +51,22 @@ export const loadContacts = async (
     queries: [Query.equal("userId", userId), Query.limit(1000)],
   });
   return response.rows as unknown as ProfileContact[];
+};
+
+export const getContactById = async (
+  contactId: string
+): Promise<ProfileContact | null> => {
+  try {
+    const row = await tablesDB.getRow({
+      databaseId: DATABASE_ID,
+      tableId: PROFILE_CONTACTS_COLLECTION_ID,
+      rowId: contactId,
+    });
+    return row as unknown as ProfileContact;
+  } catch (error) {
+    console.error("Failed to get contact by ID:", error);
+    return null;
+  }
 };
 
 export const getDeviceContactCount = async (): Promise<number> => {

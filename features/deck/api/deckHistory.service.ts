@@ -248,7 +248,7 @@ export const archiveOldDecks = async (
     const errors: string[] = [];
 
     // Archive each date's deck
-    for (const [date, cards] of decksByDate) {
+    for (const [date] of decksByDate) {
       const result = await archiveDeckSession(userId, date, isPremiumUser);
       if (result.archived) {
         archivedDates.push(date);

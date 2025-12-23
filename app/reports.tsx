@@ -1,4 +1,3 @@
-import { useRouter } from "expo-router";
 import { Lock } from "lucide-react-native";
 import React, { useEffect } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -7,7 +6,6 @@ import { usePremiumGate } from "../features/auth/hooks/usePremiumGate";
 
 export default function Reports() {
   const { isPremium, requirePremium } = usePremiumGate();
-  const router = useRouter();
 
   useEffect(() => {
     if (!isPremium) {

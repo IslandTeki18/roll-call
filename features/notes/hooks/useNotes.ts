@@ -11,7 +11,7 @@ import {
   toggleNotePin,
   updateNote,
 } from "../api/notes.service";
-import { Note, CreateNoteInput, UpdateNoteInput } from "../types/notes.types";
+import { Note, UpdateNoteInput } from "../types/notes.types";
 import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 
 const AUTOSAVE_DELAY_MS = 1500;

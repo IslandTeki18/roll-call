@@ -6,8 +6,8 @@
  */
 
 import { ID, Query } from "react-native-appwrite";
-import { databases, tablesDB } from "@/features/shared/lib/appwrite";
-import { calculateRHS, getCachedRHS } from "./rhs.service";
+import { tablesDB } from "@/features/shared/lib/appwrite";
+import { calculateRHS } from "./rhs.service";
 import { invalidateContactRHS } from "./rhs.cache";
 import type { ProfileContact } from "@/features/contacts/api/contacts.service";
 import type { RHSFactors, RHSConfig } from "../types/rhs.types";

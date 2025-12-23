@@ -13,7 +13,7 @@ import { useDeckCleanup } from "@/features/deck/hooks/useDeckCleanup";
 
 export default function TabsLayout() {
   const { isSignedIn } = useAuth();
-  const { profile, loading, error } = useUserProfile();
+  const { loading, error } = useUserProfile();
   useDeckCleanup();
   
   if (!isSignedIn) {

@@ -62,7 +62,7 @@ const createMockContact = (
 });
 
 // Helper to create mock engagement events
-const createMockEvent = (daysAgo: number, type = "sms_sent") => ({
+const createMockEvent = (daysAgo: number, type: "sms_sent" | "call_made" | "email_sent" | "facetime_made" | "slack_sent" | "note_added" | "card_dismissed" | "card_snoozed" = "sms_sent") => ({
   $id: `event-${daysAgo}`,
   type,
   contactIds: "test-contact-1",
