@@ -22,6 +22,9 @@ export default function CardStack({
   const pendingCards = cards.filter(
     (c) => c.status === "pending" || c.status === "active"
   );
+  // Cards are already sorted by RHS priority (highest first)
+  // Take first 3 for stacking, reverse for visual z-index layering
+  // This ensures highest priority card is on top
   const visibleCards = pendingCards.slice(0, 3).reverse();
 
   return (
