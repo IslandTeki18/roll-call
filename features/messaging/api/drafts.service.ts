@@ -86,7 +86,6 @@ export const generateDraft = async (
   // Build enriched context from notes
   const notesContext = await buildNotesContext(userId, contactId);
 
-  // Combine provided context with notes context
   const enrichedContext = [context, notesContext].filter(Boolean).join(". ");
 
   const payload: DraftRequest = {
