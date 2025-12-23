@@ -134,7 +134,7 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
       continue;
     }
 
-    const profileContact = {
+    const profileContact: Record<string, any> = {
       userId,
       sourceType: "device",
       firstName,
@@ -150,7 +150,6 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
       lastImportedAt: timestamp,
       firstSeenAt: timestamp,
       firstEngagementAt: "",
-      cadenceDays: null,
     };
 
     await tablesDB.createRow({
