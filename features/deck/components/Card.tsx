@@ -1,4 +1,5 @@
 import {
+  AlertCircle,
   Check,
   Clock,
   MessageSquare,
@@ -18,6 +19,76 @@ import Animated, {
 } from "react-native-reanimated";
 import { ChannelType, DeckCard } from "../types/deck.types";
 import { isContactNew } from "@/features/contacts/api/contacts.service";
+
+// Urgency tier definitions based on RHS score
+type UrgencyTier = "critical" | "high" | "medium" | "low";
+
+interface UrgencyConfig {
+  tier: UrgencyTier;
+  label: string;
+  borderColor: string;
+  bgColor: string;
+  textColor: string;
+  badgeBgColor: string;
+  badgeTextColor: string;
+  iconColor: string;
+}
+
+/**
+ * Determines urgency tier and visual styling based on RHS score
+ * Higher RHS = More urgent (relationship needs attention)
+ */
+function getUrgencyConfig(rhsScore: number): UrgencyConfig {
+  if (rhsScore >= 70) {
+    return {
+      tier: "critical",
+      label: "URGENT",
+      borderColor: "border-red-500",
+      bgColor: "bg-red-50",
+      textColor: "text-red-700",
+      badgeBgColor: "bg-red-500",
+      badgeTextColor: "text-white",
+      iconColor: "#DC2626",
+    };
+  }
+
+  if (rhsScore >= 50) {
+    return {
+      tier: "high",
+      label: "HIGH",
+      borderColor: "border-orange-500",
+      bgColor: "bg-orange-50",
+      textColor: "text-orange-700",
+      badgeBgColor: "bg-orange-500",
+      badgeTextColor: "text-white",
+      iconColor: "#EA580C",
+    };
+  }
+
+  if (rhsScore >= 30) {
+    return {
+      tier: "medium",
+      label: "MEDIUM",
+      borderColor: "border-yellow-500",
+      bgColor: "bg-yellow-50",
+      textColor: "text-yellow-700",
+      badgeBgColor: "bg-yellow-500",
+      badgeTextColor: "text-white",
+      iconColor: "#CA8A04",
+    };
+  }
+
+  return {
+    tier: "low",
+    label: "LOW",
+    borderColor: "border-green-500",
+    bgColor: "bg-green-50",
+    textColor: "text-green-700",
+    badgeBgColor: "bg-green-500",
+    badgeTextColor: "text-white",
+    iconColor: "#16A34A",
+  };
+}
 
 interface CardProps {
   card: DeckCard;
@@ -47,6 +118,9 @@ export default function Card({
 
   // NEW: Check if contact is still "new" based on engagement state
   const showNewPill = card.contact ? isContactNew(card.contact) : false;
+
+  // Get urgency configuration based on RHS score
+  const urgencyConfig = getUrgencyConfig(card.rhsScore);
 
   useEffect(() => {
     translateX.value = 0;
@@ -103,7 +177,7 @@ export default function Card({
     <GestureDetector gesture={composedGesture}>
       <Animated.View
         style={animatedStyle}
-        className={`bg-white rounded-2xl shadow-lg border border-gray-200 p-5 mx-4 ${
+        className={`bg-white rounded-2xl shadow-lg border-l-4 ${urgencyConfig.borderColor} ${urgencyConfig.bgColor} p-5 mx-4 ${
           isCompleted ? "opacity-50" : ""
         }`}
       >
@@ -128,12 +202,28 @@ export default function Card({
           </View>
         )}
 
+        {/* Urgency Badge - Top Right Corner */}
+        <View className="absolute top-3 right-3 z-10">
+          <View
+            className={`${urgencyConfig.badgeBgColor} px-2 py-1 rounded-full flex-row items-center gap-1`}
+          >
+            {urgencyConfig.tier === "critical" && (
+              <AlertCircle size={12} color={urgencyConfig.badgeTextColor} />
+            )}
+            <Text
+              className={`${urgencyConfig.badgeTextColor} text-xs font-bold`}
+            >
+              {urgencyConfig.label}
+            </Text>
+          </View>
+        </View>
+
         <View className="flex-row items-center mb-4">
           <View className="w-14 h-14 rounded-full bg-blue-100 items-center justify-center mr-3">
             <Text className="text-blue-600 text-xl font-bold">{initials}</Text>
           </View>
           <View className="flex-1">
-            <View className="flex-row items-center gap-2">
+            <View className="flex-row items-center gap-2 flex-wrap">
               <Text className="text-lg font-semibold">
                 {card.contact?.displayName}
               </Text>
@@ -146,6 +236,12 @@ export default function Card({
                   </Text>
                 </View>
               )}
+              {/* RHS Score Badge */}
+              <View className="bg-gray-200 px-2 py-0.5 rounded-full">
+                <Text className="text-gray-700 text-xs font-semibold">
+                  RHS: {Math.round(card.rhsScore)}
+                </Text>
+              </View>
             </View>
             {card.contact?.organization && (
               <Text className="text-gray-500 text-sm">
