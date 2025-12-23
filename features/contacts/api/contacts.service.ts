@@ -82,6 +82,15 @@ export const getDeviceContactCount = async (): Promise<number> => {
 };
 
 export const importDeviceContacts = async (userId: string): Promise<number> => {
+  let { status } = await Contacts.getPermissionsAsync();
+
+  console.log("Current contact permission status:", status);
+
+  if (status !== "granted") {
+    const response = await Contacts.requestPermissionsAsync();
+    status = response.status;
+  }
+
   const fields = [
     Contacts.Fields.FirstName,
     Contacts.Fields.LastName,
@@ -149,7 +158,6 @@ export const importDeviceContacts = async (userId: string): Promise<number> => {
       firstImportedAt: timestamp,
       lastImportedAt: timestamp,
       firstSeenAt: timestamp,
-      firstEngagementAt: "",
     };
 
     await tablesDB.createRow({
