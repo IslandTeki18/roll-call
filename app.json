@@ -1,19 +1,24 @@
 {
   "expo": {
-    "name": "roll-call",
-    "slug": "roll-call",
+    "name": "DailyCircle",
+    "slug": "dailycircle",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "scheme": "rollcall",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "v",
+      "bundleIdentifier": "app.rollcall.landonroney",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSContactsUsageDescription": "RollCall needs access to your contacts to help you stay in touch."
+        "NSContactsUsageDescription": "DailyCircle needs access to your contacts to help you stay in touch."
       }
     },
     "android": {
@@ -27,7 +32,9 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.landonroney.rollcall",
       "permissions": [
-        "READ_CONTACTS"
+        "READ_CONTACTS",
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS"
       ]
     },
     "web": {
@@ -64,7 +71,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "e6d71b63-9640-46fe-bf85-ab7d04f29499"
+        "projectId": "906c98ab-0ec0-4165-9bbb-ab2f2d5c708a"
       }
     }
   }
