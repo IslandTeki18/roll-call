@@ -3,8 +3,6 @@ import { useUserProfile } from "../../features/auth/hooks/useUserProfile";
 import { View, Text } from "react-native";
 import { useAuth } from "@clerk/clerk-expo";
 import {
-  HomeIcon,
-  UsersIcon,
   FileTextIcon,
   SettingsIcon,
   Contact,
@@ -15,7 +13,7 @@ export default function TabsLayout() {
   const { isSignedIn } = useAuth();
   const { loading, error } = useUserProfile();
   useDeckCleanup();
-  
+
   if (!isSignedIn) {
     return <Redirect href="/(auth)/sign-in" />;
   }
@@ -47,20 +45,6 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="contacts"
-        options={{
-          title: "Contacts",
-          tabBarIcon: ({ color }) => <UsersIcon size={28} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color }) => <HomeIcon size={28} color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="notes"
         options={{
           title: "Notes",
@@ -72,6 +56,19 @@ export default function TabsLayout() {
         options={{
           title: "Settings",
           tabBarIcon: ({ color }) => <SettingsIcon size={28} color={color} />,
+        }}
+      />
+      {/* Hidden routes - accessible via navigation but not shown in tabs */}
+      <Tabs.Screen
+        name="contacts"
+        options={{
+          href: null, // Hides from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          href: null, // Hides from tab bar
         }}
       />
     </Tabs>
