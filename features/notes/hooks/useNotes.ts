@@ -5,8 +5,6 @@ import {
   deleteNote,
   getNote,
   getNotesByUser,
-  getPinnedNotes,
-  getUserTags,
   searchNotes,
   toggleNotePin,
   updateNote,
@@ -30,11 +28,25 @@ export function useNotes() {
     try {
       setLoading(true);
       setError(null);
-      const [allNotes, pinned, tags] = await Promise.all([
-        getNotesByUser(profile.$id),
-        getPinnedNotes(profile.$id),
-        getUserTags(profile.$id),
-      ]);
+
+      // Fetch all notes once, then derive pinned and tags from the same dataset
+      const allNotes = await getNotesByUser(profile.$id);
+
+      // Extract pinned notes from already loaded notes
+      const pinned = allNotes.filter((note) => note.isPinned);
+
+      // Extract tags from already loaded notes instead of making another API call
+      const tagSet = new Set<string>();
+      allNotes.forEach((note) => {
+        if (note.tags) {
+          note.tags.split(",").forEach((tag) => {
+            const trimmed = tag.trim();
+            if (trimmed) tagSet.add(trimmed);
+          });
+        }
+      });
+      const tags = Array.from(tagSet).sort();
+
       setNotes(allNotes);
       setPinnedNotes(pinned);
       setUserTags(tags);

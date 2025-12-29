@@ -26,6 +26,135 @@ interface ScoredContact {
 
 const FRESH_MIN = 1;
 const FRESH_MAX = 2;
+const BATCH_SIZE = 15; // Process contacts in batches of 15
+const ENGAGEMENT_EVENTS_TABLE_ID = process.env.EXPO_PUBLIC_APPWRITE_ENGAGEMENT_EVENTS_TABLE_ID!;
+
+/**
+ * Check if user has any engagement history to determine if we should use fast path
+ */
+const hasEngagementHistory = async (userId: string): Promise<boolean> => {
+  try {
+    const events = await tablesDB.listRows({
+      databaseId: DATABASE_ID,
+      tableId: ENGAGEMENT_EVENTS_TABLE_ID,
+      queries: [Query.equal("userId", userId), Query.limit(1)],
+    });
+    return events.rows.length > 0;
+  } catch (error) {
+    console.error("Failed to check engagement history:", error);
+    return false; // Default to fast path if check fails
+  }
+};
+
+/**
+ * Fast path: Build deck without RHS calculations for new users
+ * Simply shuffles contacts and prioritizes fresh contacts
+ */
+const buildDeckFastPath = async (
+  contacts: ProfileContact[],
+  maxCards: number
+): Promise<ScoredContact[]> => {
+  console.log("Using fast path - no engagement history detected");
+
+  // Separate fresh vs regular contacts
+  const freshContacts = contacts.filter((c) => isContactNew(c));
+  const regularContacts = contacts.filter((c) => !isContactNew(c));
+
+  // Shuffle both arrays for randomness
+  shuffleArray(freshContacts);
+  shuffleArray(regularContacts);
+
+  const deck: ScoredContact[] = [];
+
+  // Add fresh contacts (1-2)
+  const freshCount = Math.min(
+    Math.max(FRESH_MIN, Math.min(freshContacts.length, FRESH_MAX)),
+    freshContacts.length
+  );
+
+  deck.push(
+    ...freshContacts.slice(0, freshCount).map((contact) => ({
+      contact,
+      rhs: createDefaultRHS(true),
+      isFresh: true,
+    }))
+  );
+
+  // Fill remaining with regular contacts
+  const remaining = maxCards - deck.length;
+  deck.push(
+    ...regularContacts.slice(0, remaining).map((contact) => ({
+      contact,
+      rhs: createDefaultRHS(false),
+      isFresh: false,
+    }))
+  );
+
+  return deck;
+};
+
+/**
+ * Create a default "cold" RHS for contacts without engagement history
+ */
+const createDefaultRHS = (isFresh: boolean): RHSFactors => ({
+  recencyScore: 100, // Max score since never contacted
+  freshnessBoost: isFresh ? 30 : 0,
+  fatigueGuardPenalty: 0,
+  cadenceWeight: 40,
+  engagementQualityBonus: 0,
+  conversationDepthBonus: 0,
+  decayPenalty: 0,
+  totalScore: isFresh ? 70 : 40, // Fresh contacts score higher
+  daysSinceLastEngagement: null,
+  totalEngagements: 0,
+  positiveOutcomes: 0,
+  negativeOutcomes: 0,
+  averageEngagementFrequency: 0,
+  isOverdueByCadence: true,
+  daysOverdue: 30,
+  cadenceAdherenceScore: 40,
+  cadenceConsistencyScore: 0,
+  cadenceTrendScore: 0,
+  targetCadenceDays: 30,
+  actualAverageInterval: 0,
+});
+
+/**
+ * Fisher-Yates shuffle algorithm for randomizing contact order
+ */
+const shuffleArray = <T>(array: T[]): void => {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+};
+
+/**
+ * Process contacts in batches to avoid overwhelming Appwrite with parallel requests
+ */
+const batchProcessContacts = async (
+  contacts: ProfileContact[],
+  userId: string
+): Promise<ScoredContact[]> => {
+  const results: ScoredContact[] = [];
+
+  // Process in batches of BATCH_SIZE
+  for (let i = 0; i < contacts.length; i += BATCH_SIZE) {
+    const batch = contacts.slice(i, i + BATCH_SIZE);
+
+    const batchResults = await Promise.all(
+      batch.map(async (contact) => ({
+        contact,
+        rhs: await getCachedRHS(userId, contact),
+        isFresh: isContactNew(contact),
+      }))
+    );
+
+    results.push(...batchResults);
+  }
+
+  return results;
+};
 
 const getContactReason = (rhs: RHSFactors): string => {
   // Priority order: freshness > cadence > recency
@@ -116,13 +245,11 @@ export const buildDeck = async (
       );
 
       if (availableContacts.length > 0) {
-        const scored: ScoredContact[] = await Promise.all(
-          availableContacts.map(async (contact) => ({
-            contact,
-            rhs: await getCachedRHS(userId, contact),
-            isFresh: isContactNew(contact), // NEW: Use centralized function
-          }))
-        );
+        // Check if user has engagement history - use fast path if not
+        const hasHistory = await hasEngagementHistory(userId);
+        const scored = hasHistory
+          ? await batchProcessContacts(availableContacts, userId)
+          : await buildDeckFastPath(availableContacts, maxCards);
 
         const freshContacts = scored.filter((s) => s.isFresh);
         const regularContacts = scored.filter((s) => !s.isFresh);
@@ -255,13 +382,11 @@ export const buildDeck = async (
 
   if (contacts.length === 0) return [];
 
-  const scored: ScoredContact[] = await Promise.all(
-    contacts.map(async (contact) => ({
-      contact,
-      rhs: await getCachedRHS(userId, contact),
-      isFresh: isContactNew(contact), // NEW: Use centralized function
-    }))
-  );
+  // Check if user has engagement history - use fast path if not
+  const hasHistory = await hasEngagementHistory(userId);
+  const scored = hasHistory
+    ? await batchProcessContacts(contacts, userId)
+    : await buildDeckFastPath(contacts, maxCards);
 
   const freshContacts = scored.filter((s) => s.isFresh);
   const regularContacts = scored.filter((s) => !s.isFresh);
