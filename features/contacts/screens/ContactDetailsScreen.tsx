@@ -171,8 +171,7 @@ export default function ContactDetailsScreen() {
     }
 
     try {
-      // iOS requires a specific format - use open instead of /open for the body parameter
-      const smsUrl = `sms:${primaryPhone}?&body=${encodeURIComponent(draft)}`;
+      const smsUrl = `sms:${primaryPhone}?body=${encodeURIComponent(draft)}`;
 
       const canOpen = await Linking.canOpenURL(smsUrl);
       if (canOpen) {

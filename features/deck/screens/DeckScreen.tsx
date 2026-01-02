@@ -119,10 +119,7 @@ export default function DeckScreen() {
         case "sms":
           eventType = "sms_sent";
           if (primaryPhone) {
-            const smsUrl =
-              Platform.OS === "ios"
-                ? `sms:${primaryPhone}&body=${encodeURIComponent(message)}`
-                : `sms:${primaryPhone}?body=${encodeURIComponent(message)}`;
+            const smsUrl = `sms:${primaryPhone}?body=${encodeURIComponent(message)}`;
             await Linking.openURL(smsUrl);
           }
           break;
