@@ -13,6 +13,8 @@ import {
 } from "react-native";
 import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
 import { useUserProfile } from "../../auth/hooks/useUserProfile"; // Changed import
+import { emitEvent } from "@/features/shared/utils/eventEmitter";
+import type { ActionId } from "@/features/deck/types/contactScore.types";
 import { processOutcomeWithProgress } from "../api/aiProcessing.service";
 
 import {
@@ -85,6 +87,44 @@ export default function OutcomeSheet({
         contactIds,
         linkedCardId,
         linkedEngagementEventId,
+      });
+
+      // C6-C10: Emit outcome events based on engagement type and sentiment
+      // Map engagement type to outcome action
+      // TODO: In future, add explicit outcome type selection in UI (sent/vm/scheduled/replied/no_answer)
+      let outcomeActionId: ActionId = 'outcome_sent';
+
+      // Infer outcome from engagement type and sentiment
+      if (engagementType === 'call_made' || engagementType === 'facetime_made') {
+        if (sentiment === 'positive') {
+          outcomeActionId = 'outcome_replied'; // Call connected
+        } else if (sentiment === 'neutral') {
+          outcomeActionId = 'outcome_vm'; // Left voicemail
+        } else {
+          outcomeActionId = 'outcome_no_answer'; // No answer
+        }
+      } else if (engagementType === 'sms_sent' || engagementType === 'email_sent') {
+        if (sentiment === 'positive') {
+          outcomeActionId = 'outcome_replied'; // Got reply
+        } else {
+          outcomeActionId = 'outcome_sent'; // Message sent, no reply yet
+        }
+      }
+
+      // Emit outcome event for each contact
+      contactIds.forEach((contactId) => {
+        emitEvent({
+          userId: profile.$id,
+          contactId,
+          actionId: outcomeActionId,
+          linkedCardId,
+          metadata: {
+            sentiment,
+            outcomeText: noteText.trim(),
+            engagementType,
+            linkedEngagementEventId,
+          },
+        });
       });
 
       if (isPremium) {

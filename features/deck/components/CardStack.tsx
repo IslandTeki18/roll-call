@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Dimensions, View } from "react-native";
 import Animated, { FadeIn, FadeOut, Layout } from "react-native-reanimated";
+import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
+import { emitEvent } from "@/features/shared/utils/eventEmitter";
 import { DeckCard } from "../types/deck.types";
 import Card from "./Card";
 
@@ -19,6 +21,9 @@ export default function CardStack({
   onSwipeRight,
   onTap,
 }: CardStackProps) {
+  const { profile } = useUserProfile();
+  const lastViewedCardRef = useRef<string | null>(null);
+
   const pendingCards = cards.filter(
     (c) => c.status === "pending" || c.status === "active"
   );
@@ -26,6 +31,31 @@ export default function CardStack({
   // Take first 3 for stacking, reverse for visual z-index layering
   // This ensures highest priority card is on top
   const visibleCards = pendingCards.slice(0, 3).reverse();
+
+  // A1: card_view - Emit when top card changes
+  useEffect(() => {
+    if (visibleCards.length > 0 && profile) {
+      const topCard = visibleCards[visibleCards.length - 1];
+      const topCardId = topCard.$id;
+
+      // Only emit if this is a new card (not already viewed)
+      if (topCardId !== lastViewedCardRef.current && topCard.contact?.$id) {
+        lastViewedCardRef.current = topCardId;
+
+        emitEvent({
+          userId: profile.$id,
+          contactId: topCard.contact.$id,
+          actionId: 'card_view',
+          linkedCardId: topCardId,
+          metadata: {
+            cardPosition: pendingCards.findIndex((c) => c.$id === topCardId) + 1,
+            totalPending: pendingCards.length,
+            contactName: topCard.contact.displayName,
+          },
+        });
+      }
+    }
+  }, [visibleCards, pendingCards, profile]);
 
   return (
     <View className="flex-1 items-center justify-center" style={{ width }}>

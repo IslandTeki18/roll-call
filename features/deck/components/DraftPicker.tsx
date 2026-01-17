@@ -2,6 +2,9 @@ import {
   ContactRecommendation,
   getContactRecommendations,
 } from "@/features/messaging/api/recommendations.service";
+import { calculateEditDistance } from "@/features/deck/api/editDistance.service";
+import { emitEvent } from "@/features/shared/utils/eventEmitter";
+import type { ActionId } from "@/features/deck/types/contactScore.types";
 import {
   Lightbulb,
   Lock,
@@ -111,9 +114,70 @@ export default function DraftPicker({
   };
 
   const handleSend = () => {
-    if (customMessage.trim()) {
-      onSend(selectedChannel, customMessage.trim());
+    if (!customMessage.trim() || !profile || !card?.contact?.$id) return;
+
+    const finalMessage = customMessage.trim();
+
+    // B-category: Calculate customization level and emit appropriate event
+    let actionId: ActionId = 'draft_custom';
+    let customizationLevel: 'untouched' | 'light' | 'heavy' | 'custom' = 'custom';
+
+    if (selectedDraft) {
+      // User selected an AI draft, calculate edit distance
+      const editResult = calculateEditDistance(selectedDraft.text, finalMessage);
+      customizationLevel = editResult.customizationLevel;
+
+      // Map customization level to action ID
+      switch (editResult.customizationLevel) {
+        case 'untouched':
+          actionId = 'draft_ai_untouched';
+          break;
+        case 'light':
+          actionId = 'draft_ai_light';
+          break;
+        case 'heavy':
+          actionId = 'draft_ai_heavy';
+          break;
+      }
     }
+
+    // Emit draft customization event (B1-B4)
+    emitEvent({
+      userId: profile.$id,
+      contactId: card.contact.$id,
+      actionId,
+      linkedCardId: card.$id,
+      channel: selectedChannel,
+      customizationLevel,
+      metadata: {
+        originalDraft: selectedDraft?.text,
+        finalMessage,
+        tone: selectedDraft?.tone,
+        messageLength: finalMessage.length,
+        percentageChanged: selectedDraft
+          ? calculateEditDistance(selectedDraft.text, finalMessage).percentageChanged
+          : undefined,
+      },
+    });
+
+    // B6: pick_suggested_channel - Check if using recommended channel
+    const suggestedChannel = card.suggestedChannel;
+    if (suggestedChannel && selectedChannel === suggestedChannel) {
+      emitEvent({
+        userId: profile.$id,
+        contactId: card.contact.$id,
+        actionId: 'pick_suggested_channel',
+        linkedCardId: card.$id,
+        channel: selectedChannel,
+        metadata: {
+          suggestedChannel,
+          wasAccepted: true,
+        },
+      });
+    }
+
+    // Call parent handler to complete send
+    onSend(selectedChannel, finalMessage);
   };
 
   if (!card) return null;

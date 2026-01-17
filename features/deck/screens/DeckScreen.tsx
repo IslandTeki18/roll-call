@@ -10,6 +10,7 @@ import {
   createEngagementEvent,
   EngagementEventType,
 } from "@/features/messaging/api/engagement.service";
+import { emitEvent } from "@/features/shared/utils/eventEmitter";
 import { markCardDrafted, markCardSent } from "../api/deck.mutations";
 import CardStack from "../components/CardStack";
 import DeckCompleteModal from "../components/DeckCompleteModal";
@@ -54,24 +55,52 @@ export default function DeckScreen() {
 
   const handleCardTap = useCallback(
     (card: DeckCard) => {
+      // A5: open_more_context - User tapped card to expand
+      if (profile && card.contact?.$id) {
+        emitEvent({
+          userId: profile.$id,
+          contactId: card.contact.$id,
+          actionId: 'open_more_context',
+          linkedCardId: card.$id,
+          metadata: {
+            deckId: deck?.$id,
+            contactName: card.contact.displayName,
+          },
+        });
+      }
+
       setSelectedCard(card);
       generateDraftsForCard(card);
       markCardDrafted(card.$id as string);
       setDraftPickerVisible(true);
     },
-    [generateDraftsForCard]
+    [generateDraftsForCard, profile, deck]
   );
 
   const handleSwipeRight = useCallback(
     (cardId: string) => {
       const card = deck?.cards.find((c: DeckCard) => c.$id === cardId);
       if (card) {
+        // A2: swipe_ping - User swiped right to engage
+        if (profile && card.contact?.$id) {
+          emitEvent({
+            userId: profile.$id,
+            contactId: card.contact.$id,
+            actionId: 'swipe_ping',
+            linkedCardId: cardId,
+            metadata: {
+              deckId: deck?.$id,
+              contactName: card.contact.displayName,
+            },
+          });
+        }
+
         setSelectedCard(card);
         generateDraftsForCard(card);
         setDraftPickerVisible(true);
       }
     },
-    [deck, generateDraftsForCard]
+    [deck, generateDraftsForCard, profile]
   );
 
   const handleSwipeLeft = useCallback(
@@ -79,12 +108,27 @@ export default function DeckScreen() {
       if (!profile) return;
       const card = deck?.cards.find((c: DeckCard) => c.$id === cardId);
       if (card) {
+        // Keep legacy engagement event for parallel run
         await createEngagementEvent(
           profile.$id,
           "card_dismissed",
           [card.contact?.$id as string],
           cardId
         );
+
+        // A3: swipe_defer - User swiped left to skip
+        if (card.contact?.$id) {
+          emitEvent({
+            userId: profile.$id,
+            contactId: card.contact.$id,
+            actionId: 'swipe_defer',
+            linkedCardId: cardId,
+            metadata: {
+              deckId: deck?.$id,
+              contactName: card.contact.displayName,
+            },
+          });
+        }
       }
       await markCardSkipped(cardId);
     },
@@ -118,6 +162,17 @@ export default function DeckScreen() {
       switch (channel) {
         case "sms":
           eventType = "sms_sent";
+          // C1: composer_opened - SMS composer opened
+          emitEvent({
+            userId: profile.$id,
+            contactId: contact?.$id as string,
+            actionId: 'composer_opened',
+            linkedCardId: selectedCard.$id,
+            channel: 'sms',
+            metadata: {
+              messageLength: message.length,
+            },
+          });
           if (primaryPhone) {
             const smsUrl = `sms:${primaryPhone}?body=${encodeURIComponent(message)}`;
             await Linking.openURL(smsUrl);
@@ -125,18 +180,46 @@ export default function DeckScreen() {
           break;
         case "call":
           eventType = "call_made";
+          // C4: call_placed
+          emitEvent({
+            userId: profile.$id,
+            contactId: contact?.$id as string,
+            actionId: 'call_placed',
+            linkedCardId: selectedCard.$id,
+            channel: 'call',
+          });
           if (primaryPhone) {
             await Linking.openURL(`tel:${primaryPhone}`);
           }
           break;
         case "facetime":
           eventType = "facetime_made";
+          // C5: facetime_started
+          emitEvent({
+            userId: profile.$id,
+            contactId: contact?.$id as string,
+            actionId: 'facetime_started',
+            linkedCardId: selectedCard.$id,
+            channel: 'facetime',
+          });
           if (primaryPhone && Platform.OS === "ios") {
             await Linking.openURL(`facetime:${primaryPhone}`);
           }
           break;
         case "email":
           eventType = "email_sent";
+          // C2: send_email (premium)
+          emitEvent({
+            userId: profile.$id,
+            contactId: contact?.$id as string,
+            actionId: 'send_email',
+            linkedCardId: selectedCard.$id,
+            channel: 'email',
+            metadata: {
+              messageLength: message.length,
+              recipient: primaryEmail,
+            },
+          });
           if (primaryEmail) {
             await Linking.openURL(
               `mailto:${primaryEmail}?body=${encodeURIComponent(message)}`
@@ -145,12 +228,24 @@ export default function DeckScreen() {
           break;
         case "slack":
           eventType = "slack_sent";
+          // C3: send_slack (premium)
+          emitEvent({
+            userId: profile.$id,
+            contactId: contact?.$id as string,
+            actionId: 'send_slack',
+            linkedCardId: selectedCard.$id,
+            channel: 'slack',
+            metadata: {
+              messageLength: message.length,
+            },
+          });
           Alert.alert("Coming Soon", "Slack direct messaging coming soon");
           return;
         default:
           eventType = "sms_sent";
       }
 
+      // Keep legacy engagement event for parallel run
       const event = await createEngagementEvent(
         profile.$id,
         eventType,
