@@ -23,7 +23,9 @@ import {
   calculateScoreBreakdown,
   calculatePeakScore,
 } from '../lib/scoreBreakdown';
+import { calculateSystemEvents } from './systemEvents.service';
 import type { ContactScore, DEFAULT_CONTACT_SCORE_CONFIG } from '../types/contactScore.types';
+import type { ProfileContact } from '@/features/contacts/api/contacts.service';
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const CONTACT_SCORES_TABLE_ID = process.env.EXPO_PUBLIC_APPWRITE_CONTACT_SCORES_TABLE_ID!;
@@ -181,13 +183,16 @@ export async function calculateContactScore(
  * Recalculate and persist Contact Score in background (non-blocking)
  *
  * Called after action events are emitted to keep scores up-to-date.
+ * Also calculates and emits system events (H/K/L categories).
  *
  * @param userId - User ID
  * @param contactId - Contact ID
+ * @param contact - Optional contact object (for system event calculations)
  */
 export async function recalculateContactScoreBackground(
   userId: string,
-  contactId: string
+  contactId: string,
+  contact?: ProfileContact
 ): Promise<void> {
   try {
     // Invalidate cache to force fresh calculation
@@ -198,6 +203,22 @@ export async function recalculateContactScoreBackground(
 
     // Upsert to ContactScores table
     await upsertContactScore(userId, contactId, score);
+
+    // Calculate and emit system events (if contact object provided)
+    if (contact) {
+      const startDate = get90DaysAgo();
+      const endDate = new Date().toISOString();
+      const events = await getActionEventsByContactAndDateRange(
+        userId,
+        contactId,
+        startDate,
+        endDate,
+        1000
+      );
+
+      // Calculate system events (H/K/L categories)
+      await calculateSystemEvents(userId, contactId, contact, events);
+    }
   } catch (error) {
     console.error('Failed to recalculate contact score:', error);
     // Don't throw - this is background operation

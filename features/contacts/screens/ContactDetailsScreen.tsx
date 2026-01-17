@@ -1,6 +1,7 @@
 import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
 import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 import { generateDraft } from "@/features/messaging/api/drafts.service";
+import { emitPreferenceUpdateEvent } from "@/features/deck/api/profileEvents.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Calendar,
@@ -121,12 +122,19 @@ export default function ContactDetailsScreen() {
   };
 
   const handleCadenceChange = async (newCadence: number | null) => {
-    if (!contact) return;
+    if (!contact || !profile) return;
 
     setSavingCadence(true);
     try {
       await updateContactCadence(contact.$id, newCadence);
       setCadenceDays(newCadence);
+
+      // J2: set_pref - Emit preference update event
+      if (newCadence !== null) {
+        emitPreferenceUpdateEvent(profile.$id, contact.$id, {
+          cadenceDays: newCadence,
+        });
+      }
     } catch (error) {
       Alert.alert("Error", "Could not update cadence");
     } finally {

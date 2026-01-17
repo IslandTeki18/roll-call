@@ -3,6 +3,7 @@ import { Dimensions, View } from "react-native";
 import Animated, { FadeIn, FadeOut, Layout } from "react-native-reanimated";
 import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 import { emitEvent } from "@/features/shared/utils/eventEmitter";
+import { emitImpressionEvent } from "@/features/deck/api/systemEvents.service";
 import { DeckCard } from "../types/deck.types";
 import Card from "./Card";
 
@@ -23,6 +24,7 @@ export default function CardStack({
 }: CardStackProps) {
   const { profile } = useUserProfile();
   const lastViewedCardRef = useRef<string | null>(null);
+  const impressedCardsRef = useRef<Set<string>>(new Set());
 
   const pendingCards = cards.filter(
     (c) => c.status === "pending" || c.status === "active"
@@ -54,6 +56,29 @@ export default function CardStack({
           },
         });
       }
+    }
+  }, [visibleCards, pendingCards, profile]);
+
+  // L1: impression - Emit for all visible cards (passive exposure)
+  useEffect(() => {
+    if (visibleCards.length > 0 && profile) {
+      visibleCards.forEach((card, index) => {
+        const cardId = card.$id;
+        const contactId = card.contact?.$id;
+
+        // Only emit if this card hasn't been impressed yet
+        if (contactId && !impressedCardsRef.current.has(cardId)) {
+          impressedCardsRef.current.add(cardId);
+
+          // Emit impression event (non-blocking)
+          emitImpressionEvent(profile.$id, contactId, cardId, {
+            stackPosition: index + 1,
+            totalVisible: visibleCards.length,
+            totalPending: pendingCards.length,
+            contactName: card.contact.displayName,
+          });
+        }
+      });
     }
   }, [visibleCards, pendingCards, profile]);
 
