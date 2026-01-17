@@ -1,6 +1,14 @@
 import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
-import { Alert, Linking, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Linking,
+  Platform,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Search, X, Crown } from "lucide-react-native";
 import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
@@ -15,7 +23,6 @@ import { emitEvent } from "@/features/shared/utils/eventEmitter";
 import { markCardDrafted, markCardSent } from "../api/deck.mutations";
 import CardStack from "../components/CardStack";
 import DeckCompleteModal from "../components/DeckCompleteModal";
-import DeckProgress from "../components/DeckProgress";
 import DraftPicker from "../components/DraftPicker";
 import EmptyDeck from "../components/EmptyDeck";
 import { useDeck } from "../hooks/useDeck";
@@ -52,7 +59,7 @@ export default function DeckScreen() {
     deck?.cards.filter((c: DeckCard) => c.status === "pending") || [];
   const completedCards =
     deck?.cards.filter(
-      (c: DeckCard) => c.status === "completed" || c.status === "skipped"
+      (c: DeckCard) => c.status === "completed" || c.status === "skipped",
     ) || [];
   const allCompleted =
     deck && pendingCards.length === 0 && completedCards.length > 0;
@@ -66,7 +73,7 @@ export default function DeckScreen() {
     return deck.cards.filter(
       (card) =>
         card.contact?.displayName.toLowerCase().includes(query) ||
-        card.contact?.organization?.toLowerCase().includes(query)
+        card.contact?.organization?.toLowerCase().includes(query),
     );
   }, [deck, searchQuery]);
 
@@ -77,7 +84,7 @@ export default function DeckScreen() {
         emitEvent({
           userId: profile.$id,
           contactId: card.contact.$id,
-          actionId: 'open_more_context',
+          actionId: "open_more_context",
           linkedCardId: card.$id,
           metadata: {
             contactName: card.contact.displayName,
@@ -90,7 +97,7 @@ export default function DeckScreen() {
       markCardDrafted(card.$id as string);
       setDraftPickerVisible(true);
     },
-    [generateDraftsForCard, profile, deck]
+    [generateDraftsForCard, profile, deck],
   );
 
   const handleSwipeRight = useCallback(
@@ -102,7 +109,7 @@ export default function DeckScreen() {
           emitEvent({
             userId: profile.$id,
             contactId: card.contact.$id,
-            actionId: 'swipe_ping',
+            actionId: "swipe_ping",
             linkedCardId: cardId,
             metadata: {
               contactName: card.contact.displayName,
@@ -115,7 +122,7 @@ export default function DeckScreen() {
         setDraftPickerVisible(true);
       }
     },
-    [deck, generateDraftsForCard, profile]
+    [deck, generateDraftsForCard, profile],
   );
 
   const handleSwipeLeft = useCallback(
@@ -128,7 +135,7 @@ export default function DeckScreen() {
           profile.$id,
           "card_dismissed",
           [card.contact?.$id as string],
-          cardId
+          cardId,
         );
 
         // A3: swipe_defer - User swiped left to skip
@@ -136,7 +143,7 @@ export default function DeckScreen() {
           emitEvent({
             userId: profile.$id,
             contactId: card.contact.$id,
-            actionId: 'swipe_defer',
+            actionId: "swipe_defer",
             linkedCardId: cardId,
             metadata: {
               contactName: card.contact.displayName,
@@ -146,7 +153,7 @@ export default function DeckScreen() {
       }
       await markCardSkipped(cardId);
     },
-    [profile, deck, markCardSkipped]
+    [profile, deck, markCardSkipped],
   );
 
   const handleDraftPickerClose = useCallback(() => {
@@ -180,9 +187,9 @@ export default function DeckScreen() {
           emitEvent({
             userId: profile.$id,
             contactId: contact?.$id as string,
-            actionId: 'composer_opened',
+            actionId: "composer_opened",
             linkedCardId: selectedCard.$id,
-            channel: 'sms',
+            channel: "sms",
             metadata: {
               messageLength: message.length,
             },
@@ -198,9 +205,9 @@ export default function DeckScreen() {
           emitEvent({
             userId: profile.$id,
             contactId: contact?.$id as string,
-            actionId: 'call_placed',
+            actionId: "call_placed",
             linkedCardId: selectedCard.$id,
-            channel: 'call',
+            channel: "call",
           });
           if (primaryPhone) {
             await Linking.openURL(`tel:${primaryPhone}`);
@@ -212,9 +219,9 @@ export default function DeckScreen() {
           emitEvent({
             userId: profile.$id,
             contactId: contact?.$id as string,
-            actionId: 'facetime_started',
+            actionId: "facetime_started",
             linkedCardId: selectedCard.$id,
-            channel: 'facetime',
+            channel: "facetime",
           });
           if (primaryPhone && Platform.OS === "ios") {
             await Linking.openURL(`facetime:${primaryPhone}`);
@@ -226,9 +233,9 @@ export default function DeckScreen() {
           emitEvent({
             userId: profile.$id,
             contactId: contact?.$id as string,
-            actionId: 'send_email',
+            actionId: "send_email",
             linkedCardId: selectedCard.$id,
-            channel: 'email',
+            channel: "email",
             metadata: {
               messageLength: message.length,
               recipient: primaryEmail,
@@ -236,7 +243,7 @@ export default function DeckScreen() {
           });
           if (primaryEmail) {
             await Linking.openURL(
-              `mailto:${primaryEmail}?body=${encodeURIComponent(message)}`
+              `mailto:${primaryEmail}?body=${encodeURIComponent(message)}`,
             );
           }
           break;
@@ -246,9 +253,9 @@ export default function DeckScreen() {
           emitEvent({
             userId: profile.$id,
             contactId: contact?.$id as string,
-            actionId: 'send_slack',
+            actionId: "send_slack",
             linkedCardId: selectedCard.$id,
-            channel: 'slack',
+            channel: "slack",
             metadata: {
               messageLength: message.length,
             },
@@ -265,7 +272,7 @@ export default function DeckScreen() {
         eventType,
         [contact?.$id as string],
         selectedCard.$id,
-        { message, channel }
+        { message, channel },
       );
 
       await markCardSent(selectedCard.$id as string, event.$id);
@@ -274,7 +281,7 @@ export default function DeckScreen() {
       setDraftPickerVisible(false);
       setOutcomeSheetVisible(true);
     },
-    [selectedCard, profile, isPremium, requirePremium]
+    [selectedCard, profile, isPremium, requirePremium],
   );
 
   const handleOutcomeComplete = useCallback(async () => {
@@ -301,7 +308,7 @@ export default function DeckScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView className="flex-1 bg-black">
         <EmptyDeck reason="generating" />
       </SafeAreaView>
     );
@@ -309,9 +316,9 @@ export default function DeckScreen() {
 
   if (!deck || deck.cards.length === 0) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView className="flex-1 bg-black">
         <View className="px-6 pt-4">
-          <Text className="text-2xl font-bold">Daily Deck</Text>
+          <Text className="text-2xl font-bold text-white">Daily Deck</Text>
         </View>
         <EmptyDeck
           reason="no_contacts"
@@ -322,23 +329,23 @@ export default function DeckScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-black">
       {/* Search Bar Header */}
       <View className="px-6 pt-4 pb-2">
         <View className="flex-row items-center gap-3 mb-3">
           {/* Search Bar */}
-          <View className="flex-1 flex-row items-center bg-white rounded-xl px-4 py-3 border border-gray-200">
-            <Search size={20} color="#9CA3AF" />
+          <View className="flex-1 flex-row items-center bg-gray-900 rounded-xl px-4 py-3 border border-gray-800">
+            <Search size={20} color="#6B7280" />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Search your deck..."
-              placeholderTextColor="#9CA3AF"
-              className="flex-1 ml-2 text-gray-900"
+              placeholder="Search Contacts"
+              placeholderTextColor="#6B7280"
+              className="flex-1 ml-2 text-white"
             />
             {searchQuery && (
               <TouchableOpacity onPress={() => setSearchQuery("")}>
-                <X size={20} color="#9CA3AF" />
+                <X size={20} color="#6B7280" />
               </TouchableOpacity>
             )}
           </View>
@@ -346,22 +353,20 @@ export default function DeckScreen() {
           {/* Premium Button */}
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/settings")}
-            className="bg-purple-100 p-3 rounded-xl"
+            className="bg-gray-900 p-3 rounded-xl border border-gray-800"
           >
-            <Crown size={24} color="#7C3AED" />
+            <Crown size={24} color="#FCD34D" />
           </TouchableOpacity>
         </View>
 
         {quotaExhausted && (
-          <View className="bg-green-100 px-3 py-1 rounded-full self-start">
-            <Text className="text-green-700 text-xs font-semibold">
+          <View className="bg-green-900 px-3 py-1 rounded-full self-start">
+            <Text className="text-green-300 text-xs font-semibold">
               Today&apos;s Deck
             </Text>
           </View>
         )}
       </View>
-
-      <DeckProgress cards={deck.cards} maxCards={deck.maxCards} />
 
       {allCompleted ? (
         <EmptyDeck reason="all_completed" />
