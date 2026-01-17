@@ -11,6 +11,12 @@ import {
 } from "../api/deck.mutations";
 import { DeckCard, DeckState, Draft } from "../types/deck.types";
 import { getContactRecommendations } from "@/features/messaging/api/recommendations.service";
+import { contactPhotosService } from "@/features/contacts/api/contactPhotos.service";
+import {
+  generateContextText,
+  calculateDaysSinceEngagement,
+} from "../api/contextText.service";
+import { getLastEventForContact } from "@/features/messaging/api/engagement.service";
 
 export function useDeck() {
   const { profile } = useUserProfile();
@@ -21,12 +27,79 @@ export function useDeck() {
   const [draftsLoading, setDraftsLoading] = useState(false);
   const [draftsError, setDraftsError] = useState<string | null>(null);
   const [quotaExhausted, setQuotaExhausted] = useState(false);
+  const [photoCache, setPhotoCache] = useState<Map<string, string | null>>(
+    new Map()
+  );
+  const [contextTextMap, setContextTextMap] = useState<Map<string, string>>(
+    new Map()
+  );
 
   useEffect(() => {
     if (profile) {
       loadDeck();
     }
   }, [profile]);
+
+  // Load contact photos and generate context text when deck changes
+  useEffect(() => {
+    if (!deck || !profile) return;
+
+    const loadPhotosAndContext = async () => {
+      // Get all contacts from deck cards
+      const contacts = deck.cards
+        .map((c) => c.contact)
+        .filter((c): c is NonNullable<typeof c> => !!c);
+
+      if (contacts.length === 0) return;
+
+      // Load photos in parallel
+      const photos = await contactPhotosService.batchLoadPhotos(contacts);
+      setPhotoCache(photos);
+
+      // Generate context text for each card
+      const contextMap = new Map<string, string>();
+
+      await Promise.all(
+        deck.cards.map(async (card) => {
+          if (!card.contact?.$id || !card.$id) return;
+
+          try {
+            // Fetch last engagement event for this contact
+            const lastEngagement = await getLastEventForContact(
+              profile.$id,
+              card.contact.$id
+            );
+
+            const daysSince = lastEngagement
+              ? calculateDaysSinceEngagement(lastEngagement.timestamp)
+              : 0;
+
+            const contextText = generateContextText(
+              card,
+              lastEngagement,
+              daysSince
+            );
+
+            contextMap.set(card.$id, contextText);
+          } catch (error) {
+            console.error(
+              `Failed to generate context for card ${card.$id}:`,
+              error
+            );
+            // Fallback context
+            contextMap.set(
+              card.$id,
+              "Reach out to reconnect and strengthen your relationship"
+            );
+          }
+        })
+      );
+
+      setContextTextMap(contextMap);
+    };
+
+    loadPhotosAndContext();
+  }, [deck, profile]);
 
   const loadDeck = async () => {
     if (!profile) return;
@@ -250,6 +323,8 @@ export function useDeck() {
     draftsLoading,
     draftsError,
     quotaExhausted,
+    photoCache,
+    contextTextMap,
     generateDraftsForCard,
     markCardSent,
     markCardCompleted,

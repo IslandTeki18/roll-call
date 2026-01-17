@@ -1,14 +1,9 @@
 import {
-  AlertCircle,
   Check,
-  Clock,
-  MessageSquare,
-  Phone,
-  Sparkles,
-  Video,
+  Flame,
 } from "lucide-react-native";
 import React, { useEffect } from "react";
-import { Text, View } from "react-native";
+import { Text, View, ImageBackground } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   interpolate,
@@ -17,98 +12,70 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { ChannelType, DeckCard } from "../types/deck.types";
-import { isContactNew } from "@/features/contacts/api/contacts.service";
+import { LinearGradient } from "expo-linear-gradient";
+import { DeckCard } from "../types/deck.types";
 
 // Urgency tier definitions based on RHS score
 type UrgencyTier = "critical" | "high" | "medium" | "low";
 
 interface UrgencyConfig {
   tier: UrgencyTier;
-  label: string;
-  borderColor: string;
-  bgColor: string;
-  textColor: string;
-  badgeBgColor: string;
-  badgeTextColor: string;
-  iconColor: string;
+  shadowColor: string;
+  shadowRadius: number;
 }
 
 /**
- * Determines urgency tier and visual styling based on RHS score
+ * Determines urgency tier and shadow glow based on RHS score
  * Higher RHS = More urgent (relationship needs attention)
  */
 function getUrgencyConfig(rhsScore: number): UrgencyConfig {
   if (rhsScore >= 70) {
     return {
       tier: "critical",
-      label: "URGENT",
-      borderColor: "border-red-500",
-      bgColor: "bg-red-50",
-      textColor: "text-red-700",
-      badgeBgColor: "bg-red-500",
-      badgeTextColor: "text-white",
-      iconColor: "#DC2626",
+      shadowColor: "#DC2626", // Red
+      shadowRadius: 12,
     };
   }
 
   if (rhsScore >= 50) {
     return {
       tier: "high",
-      label: "HIGH",
-      borderColor: "border-orange-500",
-      bgColor: "bg-orange-50",
-      textColor: "text-orange-700",
-      badgeBgColor: "bg-orange-500",
-      badgeTextColor: "text-white",
-      iconColor: "#EA580C",
+      shadowColor: "#EA580C", // Orange
+      shadowRadius: 12,
     };
   }
 
   if (rhsScore >= 30) {
     return {
       tier: "medium",
-      label: "MEDIUM",
-      borderColor: "border-yellow-500",
-      bgColor: "bg-yellow-50",
-      textColor: "text-yellow-700",
-      badgeBgColor: "bg-yellow-500",
-      badgeTextColor: "text-white",
-      iconColor: "#CA8A04",
+      shadowColor: "#CA8A04", // Yellow
+      shadowRadius: 12,
     };
   }
 
   return {
     tier: "low",
-    label: "LOW",
-    borderColor: "border-green-500",
-    bgColor: "bg-green-50",
-    textColor: "text-green-700",
-    badgeBgColor: "bg-green-500",
-    badgeTextColor: "text-white",
-    iconColor: "#16A34A",
+    shadowColor: "#16A34A", // Green
+    shadowRadius: 12,
   };
 }
 
 interface CardProps {
   card: DeckCard;
+  photoUri: string | null;
+  contextText: string;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
   onTap: () => void;
 }
 
 const SWIPE_THRESHOLD = 120;
-
-const channelIcons: Record<ChannelType, typeof Phone> = {
-  sms: MessageSquare,
-  call: Phone,
-  facetime: Video,
-  email: MessageSquare,
-  slack: MessageSquare,
-};
+const CARD_HEIGHT = 500;
 
 export default function Card({
   card,
+  photoUri,
+  contextText,
   onSwipeLeft,
   onSwipeRight,
   onTap,
@@ -116,10 +83,7 @@ export default function Card({
   const translateX = useSharedValue(0);
   const isCompleted = card.status === "completed" || card.status === "skipped";
 
-  // NEW: Check if contact is still "new" based on engagement state
-  const showNewPill = card.contact ? isContactNew(card.contact) : false;
-
-  // Get urgency configuration based on RHS score
+  // Get urgency configuration for shadow glow
   const urgencyConfig = getUrgencyConfig(card.rhsScore);
 
   useEffect(() => {
@@ -167,102 +131,196 @@ export default function Card({
     opacity: interpolate(translateX.value, [-SWIPE_THRESHOLD, 0], [1, 0]),
   }));
 
-  const ChannelIcon = channelIcons[card.suggestedChannel];
+  // Generate initials for fallback
   const initials =
     `${card.contact?.firstName?.charAt(0) || ""}${
       card.contact?.lastName?.charAt(0) || ""
     }`.toUpperCase() || "?";
 
+  // Determine background source (photo or fallback gradient)
+  const hasPhoto = !!photoUri;
+
   return (
     <GestureDetector gesture={composedGesture}>
       <Animated.View
-        style={animatedStyle}
-        className={`bg-white rounded-2xl shadow-lg border-l-4 ${urgencyConfig.borderColor} ${urgencyConfig.bgColor} p-5 mx-4 ${
-          isCompleted ? "opacity-50" : ""
-        }`}
+        style={[
+          animatedStyle,
+          {
+            marginHorizontal: 16,
+            height: CARD_HEIGHT,
+            borderRadius: 24,
+            shadowColor: urgencyConfig.shadowColor,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: urgencyConfig.shadowRadius,
+            elevation: 8,
+          },
+          isCompleted && { opacity: 0.5 },
+        ]}
       >
+        {/* Swipe Indicators */}
         <Animated.View
           style={leftIndicatorStyle}
-          className="absolute top-4 left-4 bg-green-500 px-3 py-1 rounded-full z-10"
+          className="absolute top-4 left-4 bg-green-500 px-3 py-1 rounded-full z-30"
         >
           <Text className="text-white font-semibold text-sm">REACH OUT</Text>
         </Animated.View>
         <Animated.View
           style={rightIndicatorStyle}
-          className="absolute top-4 right-4 bg-orange-500 px-3 py-1 rounded-full z-10"
+          className="absolute top-4 right-4 bg-orange-500 px-3 py-1 rounded-full z-30"
         >
           <Text className="text-white font-semibold text-sm">SKIP</Text>
         </Animated.View>
 
+        {/* Completion Checkmark */}
         {isCompleted && (
-          <View className="absolute inset-0 items-center justify-center z-20">
-            <View className="bg-green-500 rounded-full p-3">
-              <Check size={32} color="white" />
+          <View className="absolute inset-0 items-center justify-center z-40 rounded-3xl overflow-hidden">
+            <View className="bg-green-500/80 rounded-full p-4">
+              <Check size={48} color="white" />
             </View>
           </View>
         )}
 
-        {/* Urgency Badge - Top Right Corner */}
-        <View className="absolute top-3 right-3 z-10">
-          <View
-            className={`${urgencyConfig.badgeBgColor} px-2 py-1 rounded-full flex-row items-center gap-1`}
+        {/* Photo Background or Gradient Fallback */}
+        {hasPhoto ? (
+          <ImageBackground
+            source={{ uri: photoUri }}
+            style={{ flex: 1, borderRadius: 24, overflow: "hidden" }}
+            imageStyle={{ borderRadius: 24 }}
           >
-            {urgencyConfig.tier === "critical" && (
-              <AlertCircle size={12} color={urgencyConfig.badgeTextColor} />
-            )}
+            <CardContent
+              card={card}
+              contextText={contextText}
+              initials={initials}
+              hasPhoto={hasPhoto}
+            />
+          </ImageBackground>
+        ) : (
+          <LinearGradient
+            colors={["#3B82F6", "#8B5CF6", "#EC4899"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ flex: 1, borderRadius: 24 }}
+          >
+            <CardContent
+              card={card}
+              contextText={contextText}
+              initials={initials}
+              hasPhoto={hasPhoto}
+            />
+          </LinearGradient>
+        )}
+      </Animated.View>
+    </GestureDetector>
+  );
+}
+
+/**
+ * Card content with gradient overlay and text
+ */
+function CardContent({
+  card,
+  contextText,
+  initials,
+  hasPhoto,
+}: {
+  card: DeckCard;
+  contextText: string;
+  initials: string;
+  hasPhoto: boolean;
+}) {
+  return (
+    <LinearGradient
+      colors={[
+        "rgba(0,0,0,0.6)",
+        "rgba(0,0,0,0.3)",
+        "rgba(0,0,0,0.1)",
+        "rgba(0,0,0,0.4)",
+      ]}
+      locations={[0, 0.3, 0.6, 1]}
+      style={{ flex: 1, padding: 24, justifyContent: "space-between" }}
+    >
+      {/* Top Section: Name and Organization */}
+      <View>
+        {/* Contact Name */}
+        <Text
+          className="text-white font-bold text-4xl mb-2"
+          style={{
+            textShadowColor: "rgba(0,0,0,0.8)",
+            textShadowOffset: { width: 0, height: 2 },
+            textShadowRadius: 8,
+          }}
+        >
+          {card.contact?.displayName || "Unknown Contact"}
+        </Text>
+
+        {/* Organization Pill */}
+        {card.contact?.organization && (
+          <View className="bg-white/20 self-start px-3 py-1.5 rounded-full backdrop-blur-sm">
             <Text
-              className={`${urgencyConfig.badgeTextColor} text-xs font-bold`}
+              className="text-white text-sm font-medium"
+              style={{
+                textShadowColor: "rgba(0,0,0,0.5)",
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 4,
+              }}
             >
-              {urgencyConfig.label}
+              {card.contact.organization}
+            </Text>
+          </View>
+        )}
+
+        {/* Initials (only show if no photo) */}
+        {!hasPhoto && (
+          <View className="mt-8 w-32 h-32 rounded-full bg-white/20 items-center justify-center self-center">
+            <Text className="text-white text-5xl font-bold">{initials}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Bottom Section: RHS Badge and Context */}
+      <View>
+        {/* RHS Badge (Bottom-Right) */}
+        <View className="flex-row justify-end mb-3">
+          <View className="bg-white/20 flex-row items-center gap-2 px-3 py-2 rounded-full backdrop-blur-sm">
+            <Flame size={24} color="#FFFFFF" />
+            <Text
+              className="text-white text-lg font-bold"
+              style={{
+                textShadowColor: "rgba(0,0,0,0.5)",
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 4,
+              }}
+            >
+              {Math.round(card.rhsScore)}
             </Text>
           </View>
         </View>
 
-        <View className="flex-row items-center mb-4">
-          <View className="w-14 h-14 rounded-full bg-blue-100 items-center justify-center mr-3">
-            <Text className="text-blue-600 text-xl font-bold">{initials}</Text>
-          </View>
-          <View className="flex-1">
-            <View className="flex-row items-center gap-2 flex-wrap">
-              <Text className="text-lg font-semibold">
-                {card.contact?.displayName}
-              </Text>
-              {/* NEW: Show pill only if contact passes isContactNew check */}
-              {showNewPill && (
-                <View className="bg-purple-100 px-2 py-0.5 rounded-full flex-row items-center gap-1">
-                  <Sparkles size={12} color="#7C3AED" />
-                  <Text className="text-purple-700 text-xs font-semibold">
-                    NEW
-                  </Text>
-                </View>
-              )}
-              {/* RHS Score Badge */}
-              <View className="bg-gray-200 px-2 py-0.5 rounded-full">
-                <Text className="text-gray-700 text-xs font-semibold">
-                  RHS: {Math.round(card.rhsScore)}
-                </Text>
-              </View>
-            </View>
-            {card.contact?.organization && (
-              <Text className="text-gray-500 text-sm">
-                {card.contact?.organization}
-              </Text>
-            )}
-          </View>
-          <View className="bg-gray-100 p-2 rounded-full">
-            <ChannelIcon size={20} color="#6B7280" />
-          </View>
-        </View>
+        {/* Context Text */}
+        <Text
+          className="text-white text-base leading-5"
+          style={{
+            textShadowColor: "rgba(0,0,0,0.8)",
+            textShadowOffset: { width: 0, height: 2 },
+            textShadowRadius: 8,
+          }}
+        >
+          {contextText}
+        </Text>
 
-        <View className="flex-row items-center gap-2 mb-4 bg-amber-50 px-3 py-2 rounded-lg">
-          <Clock size={16} color="#D97706" />
-          <Text className="text-amber-800 text-sm flex-1">{card.reason}</Text>
-        </View>
-
-        <Text className="text-center text-gray-400 text-xs">
+        {/* Instruction Text */}
+        <Text
+          className="text-white/60 text-xs text-center mt-4"
+          style={{
+            textShadowColor: "rgba(0,0,0,0.5)",
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 4,
+          }}
+        >
           Tap to draft • Swipe right to reach out • Swipe left to skip
         </Text>
-      </Animated.View>
-    </GestureDetector>
+      </View>
+    </LinearGradient>
   );
 }

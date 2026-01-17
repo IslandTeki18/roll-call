@@ -1,7 +1,8 @@
 import { useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
-import { Alert, Linking, Platform, Text, View } from "react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import { Alert, Linking, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Search, X, Crown } from "lucide-react-native";
 import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
 import { useUserProfile } from "../../auth/hooks/useUserProfile";
 import OutcomeSheet from "../../outcomes/components/OutcomeSheet";
@@ -30,6 +31,8 @@ export default function DeckScreen() {
     drafts,
     draftsLoading,
     quotaExhausted,
+    photoCache,
+    contextTextMap,
     generateDraftsForCard,
     markCardCompleted,
     markCardSkipped,
@@ -43,6 +46,7 @@ export default function DeckScreen() {
   >();
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
   const [cardStackKey, setCardStackKey] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const pendingCards =
     deck?.cards.filter((c: DeckCard) => c.status === "pending") || [];
@@ -52,6 +56,19 @@ export default function DeckScreen() {
     ) || [];
   const allCompleted =
     deck && pendingCards.length === 0 && completedCards.length > 0;
+
+  // Filter cards based on search query
+  const filteredCards = useMemo(() => {
+    if (!deck) return [];
+    if (!searchQuery.trim()) return deck.cards;
+
+    const query = searchQuery.toLowerCase();
+    return deck.cards.filter(
+      (card) =>
+        card.contact?.displayName.toLowerCase().includes(query) ||
+        card.contact?.organization?.toLowerCase().includes(query)
+    );
+  }, [deck, searchQuery]);
 
   const handleCardTap = useCallback(
     (card: DeckCard) => {
@@ -63,7 +80,6 @@ export default function DeckScreen() {
           actionId: 'open_more_context',
           linkedCardId: card.$id,
           metadata: {
-            deckId: deck?.$id,
             contactName: card.contact.displayName,
           },
         });
@@ -89,7 +105,6 @@ export default function DeckScreen() {
             actionId: 'swipe_ping',
             linkedCardId: cardId,
             metadata: {
-              deckId: deck?.$id,
               contactName: card.contact.displayName,
             },
           });
@@ -124,7 +139,6 @@ export default function DeckScreen() {
             actionId: 'swipe_defer',
             linkedCardId: cardId,
             metadata: {
-              deckId: deck?.$id,
               contactName: card.contact.displayName,
             },
           });
@@ -309,17 +323,42 @@ export default function DeckScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
+      {/* Search Bar Header */}
       <View className="px-6 pt-4 pb-2">
-        <View className="flex-row items-center justify-between">
-          <Text className="text-2xl font-bold">Daily Deck</Text>
-          {quotaExhausted && (
-            <View className="bg-green-100 px-3 py-1 rounded-full">
-              <Text className="text-green-700 text-xs font-semibold">
-                Today&apos;s Deck
-              </Text>
-            </View>
-          )}
+        <View className="flex-row items-center gap-3 mb-3">
+          {/* Search Bar */}
+          <View className="flex-1 flex-row items-center bg-white rounded-xl px-4 py-3 border border-gray-200">
+            <Search size={20} color="#9CA3AF" />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search your deck..."
+              placeholderTextColor="#9CA3AF"
+              className="flex-1 ml-2 text-gray-900"
+            />
+            {searchQuery && (
+              <TouchableOpacity onPress={() => setSearchQuery("")}>
+                <X size={20} color="#9CA3AF" />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Premium Button */}
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/settings")}
+            className="bg-purple-100 p-3 rounded-xl"
+          >
+            <Crown size={24} color="#7C3AED" />
+          </TouchableOpacity>
         </View>
+
+        {quotaExhausted && (
+          <View className="bg-green-100 px-3 py-1 rounded-full self-start">
+            <Text className="text-green-700 text-xs font-semibold">
+              Today&apos;s Deck
+            </Text>
+          </View>
+        )}
       </View>
 
       <DeckProgress cards={deck.cards} maxCards={deck.maxCards} />
@@ -329,7 +368,9 @@ export default function DeckScreen() {
       ) : (
         <CardStack
           key={cardStackKey}
-          cards={deck.cards}
+          cards={filteredCards}
+          photoCache={photoCache}
+          contextTextMap={contextTextMap}
           onSwipeLeft={handleSwipeLeft}
           onSwipeRight={handleSwipeRight}
           onTap={handleCardTap}

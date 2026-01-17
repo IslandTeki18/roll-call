@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
-import { Dimensions, View } from "react-native";
-import Animated, { FadeIn, FadeOut, Layout } from "react-native-reanimated";
+import { Dimensions, View, Text } from "react-native";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 import { emitEvent } from "@/features/shared/utils/eventEmitter";
 import { emitImpressionEvent } from "@/features/deck/api/systemEvents.service";
@@ -9,6 +9,8 @@ import Card from "./Card";
 
 interface CardStackProps {
   cards: DeckCard[];
+  photoCache: Map<string, string | null>;
+  contextTextMap: Map<string, string>;
   onSwipeLeft: (cardId: string) => void;
   onSwipeRight: (cardId: string) => void;
   onTap: (card: DeckCard) => void;
@@ -18,6 +20,8 @@ const { width } = Dimensions.get("window");
 
 export default function CardStack({
   cards,
+  photoCache,
+  contextTextMap,
   onSwipeLeft,
   onSwipeRight,
   onTap,
@@ -29,19 +33,17 @@ export default function CardStack({
   const pendingCards = cards.filter(
     (c) => c.status === "pending" || c.status === "active"
   );
-  // Cards are already sorted by RHS priority (highest first)
-  // Take first 3 for stacking, reverse for visual z-index layering
-  // This ensures highest priority card is on top
-  const visibleCards = pendingCards.slice(0, 3).reverse();
+  // Display only the top card (highest RHS priority)
+  const visibleCards = pendingCards.slice(0, 1);
 
   // A1: card_view - Emit when top card changes
   useEffect(() => {
     if (visibleCards.length > 0 && profile) {
-      const topCard = visibleCards[visibleCards.length - 1];
+      const topCard = visibleCards[0]; // Single card, no need for array index
       const topCardId = topCard.$id;
 
       // Only emit if this is a new card (not already viewed)
-      if (topCardId !== lastViewedCardRef.current && topCard.contact?.$id) {
+      if (topCardId && topCardId !== lastViewedCardRef.current && topCard.contact?.$id) {
         lastViewedCardRef.current = topCardId;
 
         emitEvent({
@@ -59,57 +61,61 @@ export default function CardStack({
     }
   }, [visibleCards, pendingCards, profile]);
 
-  // L1: impression - Emit for all visible cards (passive exposure)
+  // L1: impression - Emit for visible card (passive exposure)
   useEffect(() => {
     if (visibleCards.length > 0 && profile) {
-      visibleCards.forEach((card, index) => {
-        const cardId = card.$id;
-        const contactId = card.contact?.$id;
+      const card = visibleCards[0];
+      const cardId = card.$id;
+      const contactId = card.contact?.$id;
 
-        // Only emit if this card hasn't been impressed yet
-        if (contactId && !impressedCardsRef.current.has(cardId)) {
-          impressedCardsRef.current.add(cardId);
+      // Only emit if this card hasn't been impressed yet
+      if (cardId && contactId && card.contact && !impressedCardsRef.current.has(cardId)) {
+        impressedCardsRef.current.add(cardId);
 
-          // Emit impression event (non-blocking)
-          emitImpressionEvent(profile.$id, contactId, cardId, {
-            stackPosition: index + 1,
-            totalVisible: visibleCards.length,
-            totalPending: pendingCards.length,
-            contactName: card.contact.displayName,
-          });
-        }
-      });
+        // Emit impression event (non-blocking)
+        emitImpressionEvent(profile.$id, contactId, cardId, {
+          stackPosition: 1, // Always position 1 (only one card visible)
+          totalVisible: 1,
+          totalPending: pendingCards.length,
+          contactName: card.contact.displayName,
+        });
+      }
     }
   }, [visibleCards, pendingCards, profile]);
 
+  // Get the top card (if any)
+  const topCard = visibleCards[0];
+
+  if (!topCard) {
+    return (
+      <View className="flex-1 items-center justify-center" style={{ width }}>
+        <View className="items-center">
+          <Text className="text-gray-500 text-lg">No cards available</Text>
+        </View>
+      </View>
+    );
+  }
+
+  const contactId = topCard.contact?.$id || "";
+  const photoUri = photoCache.get(contactId) || null;
+  const contextText = contextTextMap.get(topCard.$id || "") || "";
+
   return (
     <View className="flex-1 items-center justify-center" style={{ width }}>
-      {visibleCards.map((card, index) => {
-        const isTop = index === visibleCards.length - 1;
-        const scale = 1 - (visibleCards.length - 1 - index) * 0.05;
-        const translateY = (visibleCards.length - 1 - index) * 8;
-        return (
-          <Animated.View
-            key={`card-${card.contact?.$id}`}
-            entering={FadeIn.duration(200)}
-            exiting={FadeOut.duration(200)}
-            layout={Layout.springify()}
-            style={{
-              position: "absolute",
-              transform: [{ scale }, { translateY }],
-              zIndex: index,
-            }}
-            pointerEvents={isTop ? "auto" : "none"}
-          >
-            <Card
-              card={card}
-              onSwipeLeft={() => onSwipeLeft(card.$id as string)}
-              onSwipeRight={() => onSwipeRight(card.$id as string)}
-              onTap={() => onTap(card)}
-            />
-          </Animated.View>
-        );
-      })}
+      <Animated.View
+        key={`card-${topCard.$id}`}
+        entering={FadeIn.duration(300)}
+        exiting={FadeOut.duration(300)}
+      >
+        <Card
+          card={topCard}
+          photoUri={photoUri}
+          contextText={contextText}
+          onSwipeLeft={() => onSwipeLeft(topCard.$id as string)}
+          onSwipeRight={() => onSwipeRight(topCard.$id as string)}
+          onTap={() => onTap(topCard)}
+        />
+      </Animated.View>
     </View>
   );
 }

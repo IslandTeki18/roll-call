@@ -4,8 +4,8 @@ import { View, Text } from "react-native";
 import { useAuth } from "@clerk/clerk-expo";
 import {
   FileTextIcon,
-  SettingsIcon,
-  Contact,
+  Home,
+  User,
 } from "lucide-react-native";
 import { useDeckCleanup } from "@/features/deck/hooks/useDeckCleanup";
 
@@ -37,14 +37,6 @@ export default function TabsLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }}>
       <Tabs.Screen
-        name="deck"
-        options={{
-          title: "Deck",
-          tabBarIcon: ({ color }) => <Contact size={28} color={color} />,
-          headerShown: false,
-        }}
-      />
-      <Tabs.Screen
         name="notes"
         options={{
           title: "Notes",
@@ -54,8 +46,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
-          tabBarIcon: ({ color }) => <SettingsIcon size={28} color={color} />,
+          title: "Profile",
+          tabBarIcon: ({ color }) => <User size={28} color={color} />,
         }}
       />
       {/* Hidden routes - accessible via navigation but not shown in tabs */}
@@ -68,7 +60,9 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          href: null, // Hides from tab bar
+          title: "Home",
+          tabBarIcon: ({ color }) => <Home size={28} color={color} />,
+          headerShown: false,
         }}
       />
     </Tabs>
