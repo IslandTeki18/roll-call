@@ -4,6 +4,7 @@ import {
   loadContacts,
   ProfileContact,
 } from "@/features/contacts/api/contacts.service";
+import { emitEvent, emitEventBatch } from "@/features/shared/utils/eventEmitter";
 import {
   ChevronLeft,
   Link2,
@@ -14,7 +15,7 @@ import {
   Tag,
   Trash2,
 } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -69,6 +70,7 @@ export default function NoteEditor({
   const [contactPickerVisible, setContactPickerVisible] = useState(false);
   const [linkedContacts, setLinkedContacts] = useState<ProfileContact[]>([]);
   const [analyzing, setAnalyzing] = useState(false); // Track AI analysis state
+  const previousTagsRef = useRef<string[]>(tags); // Track previous tags for D4 event
 
   // Handle pre-selected contact on mount
   useEffect(() => {
@@ -88,8 +90,79 @@ export default function NoteEditor({
     }
   }, [profile, contactIds]);
 
+  // D4: note_tag - Track when new tags are added
+  useEffect(() => {
+    if (profile && noteId && contactIds.length > 0) {
+      const newTags = tags.filter((tag) => !previousTagsRef.current.includes(tag));
+
+      if (newTags.length > 0) {
+        newTags.forEach((tag) => {
+          emitEvent({
+            userId: profile.$id,
+            contactId: contactIds[0],
+            actionId: 'note_tag',
+            metadata: {
+              noteId,
+              tag,
+              totalTags: tags.length,
+            },
+          });
+        });
+      }
+
+      previousTagsRef.current = tags;
+    }
+  }, [tags, profile, noteId, contactIds]);
+
   const handleSave = async () => {
+    const isNewNote = !noteId;
     const saved = await save();
+
+    if (saved && profile && contactIds.length > 0) {
+      const primaryContactId = contactIds[0];
+
+      if (isNewNote) {
+        // D1: note_manual - Create manual note
+        emitEvent({
+          userId: profile.$id,
+          contactId: primaryContactId,
+          actionId: 'note_manual',
+          metadata: {
+            noteLength: rawText.length,
+            linkedContacts: contactIds,
+            tagCount: tags.length,
+          },
+        });
+
+        // D2: note_group - Multi-contact note
+        if (contactIds.length > 1) {
+          emitEventBatch(
+            contactIds.map((contactId) => ({
+              userId: profile.$id,
+              contactId,
+              actionId: 'note_group' as const,
+              isMultiContact: true,
+              metadata: {
+                noteId: note?.$id,
+                contactCount: contactIds.length,
+              },
+            }))
+          );
+        }
+      } else {
+        // D6: note_edit - Edit existing note
+        emitEvent({
+          userId: profile.$id,
+          contactId: primaryContactId,
+          actionId: 'note_edit',
+          metadata: {
+            noteId: noteId,
+            noteLength: rawText.length,
+          },
+        });
+      }
+    }
+
     if (saved && !noteId) {
       onBack();
     }
@@ -180,7 +253,23 @@ export default function NoteEditor({
             )}
 
             <TouchableOpacity
-              onPress={() => updatePinned(!isPinned)}
+              onPress={() => {
+                const newPinnedState = !isPinned;
+                updatePinned(newPinnedState);
+
+                // D3: note_pin - Pin/unpin note
+                if (profile && noteId && contactIds.length > 0) {
+                  emitEvent({
+                    userId: profile.$id,
+                    contactId: contactIds[0],
+                    actionId: newPinnedState ? 'note_pin' : 'note_pin', // Same event for both pin/unpin
+                    metadata: {
+                      noteId,
+                      isPinned: newPinnedState,
+                    },
+                  });
+                }
+              }}
               className="p-2"
             >
               {isPinned ? (

@@ -21,6 +21,7 @@ import {
 } from '../types/contactScore.types';
 import { calculateFinalPoints, type ChannelType } from './multipliers.service';
 import type { CustomizationLevel } from './editDistance.service';
+import { recalculateContactScoreBackground } from './contactScore.service';
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const ACTION_EVENTS_TABLE_ID = process.env.EXPO_PUBLIC_APPWRITE_ACTION_EVENTS_TABLE_ID!;
@@ -104,10 +105,10 @@ export async function emitActionEvent(
       data,
     });
 
-    // TODO: Trigger background score recalculation (Phase 4)
-    // recalculateContactScoreBackground(userId, contactId).catch(err =>
-    //   console.error('Score recalculation failed:', err)
-    // );
+    // Trigger background score recalculation (non-blocking)
+    recalculateContactScoreBackground(userId, contactId).catch((err) =>
+      console.error('Score recalculation failed:', err)
+    );
 
     return event as unknown as ActionEvent;
   } catch (error) {
