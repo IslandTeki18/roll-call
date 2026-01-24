@@ -22,6 +22,7 @@ interface CardProps {
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
   onTap: () => void;
+  isInteractive?: boolean;
 }
 
 const SWIPE_THRESHOLD = 120;
@@ -34,6 +35,7 @@ export default function Card({
   onSwipeLeft,
   onSwipeRight,
   onTap,
+  isInteractive = true,
 }: CardProps) {
   const translateX = useSharedValue(0);
   const isCompleted = card.status === "completed" || card.status === "skipped";
@@ -44,7 +46,7 @@ export default function Card({
   }, []);
 
   const panGesture = Gesture.Pan()
-    .enabled(!isCompleted)
+    .enabled(!isCompleted && isInteractive)
     .onUpdate((event) => {
       translateX.value = event.translationX;
     })
@@ -62,7 +64,7 @@ export default function Card({
     });
 
   const tapGesture = Gesture.Tap()
-    .enabled(!isCompleted)
+    .enabled(!isCompleted && isInteractive)
     .onEnd(() => {
       runOnJS(onTap)();
     });
@@ -92,6 +94,49 @@ export default function Card({
 
   // Determine background source (photo or fallback gradient)
   const hasPhoto = !!photoUri;
+
+  // If not interactive, render as plain View
+  if (!isInteractive) {
+    return (
+      <View
+        className="w-full"
+        style={{
+          height: 300,
+          borderRadius: 24,
+        }}
+      >
+        {/* Photo Background or Gradient Fallback */}
+        {hasPhoto ? (
+          <ImageBackground
+            source={{ uri: photoUri }}
+            style={{ flex: 1, borderRadius: 24, overflow: "hidden" }}
+            imageStyle={{ borderRadius: 24 }}
+          >
+            <CardContent
+              card={card}
+              contextText={contextText}
+              initials={initials}
+              hasPhoto={hasPhoto}
+            />
+          </ImageBackground>
+        ) : (
+          <LinearGradient
+            colors={["#3B82F6", "#8B5CF6", "#EC4899"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ flex: 1, borderRadius: 24 }}
+          >
+            <CardContent
+              card={card}
+              contextText={contextText}
+              initials={initials}
+              hasPhoto={hasPhoto}
+            />
+          </LinearGradient>
+        )}
+      </View>
+    );
+  }
 
   return (
     <GestureDetector gesture={composedGesture}>

@@ -381,6 +381,8 @@ export default function DeckScreen() {
         loading={draftsLoading}
         onSelectDraft={() => {}}
         onSend={handleSend}
+        photoCache={photoCache}
+        contextTextMap={contextTextMap}
       />
 
       <OutcomeSheet

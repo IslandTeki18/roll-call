@@ -162,14 +162,6 @@ export function useDeck() {
             tone: "casual",
             channel: card.suggestedChannel,
           },
-          {
-            id: "2",
-            text: `Hi ${
-              (card.contact?.firstName as string) || "there"
-            }, hope you're doing well. I was thinking of you and wanted to reconnect. Let me know if you have time for a quick call.`,
-            tone: "professional",
-            channel: card.suggestedChannel,
-          },
         ]);
         setDraftsLoading(false);
         return;
@@ -186,30 +178,17 @@ export function useDeck() {
           ? `Context: ${recommendations.conversationContext}. `
           : "";
 
-        const [casualDraft, professionalDraft] = await Promise.all([
-          generateDraft(
-            profile.$id,
-            card.contact?.$id as string,
-            `${contextString}Write a casual, friendly message`
-          ),
-          generateDraft(
-            profile.$id,
-            card.contact?.$id as string,
-            `${contextString}Write a professional follow-up message`
-          ),
-        ]);
+        const draft = await generateDraft(
+          profile.$id,
+          card.contact?.$id as string,
+          `${contextString}Write a friendly, contextual message`
+        );
 
         setDrafts([
           {
             id: "1",
-            text: casualDraft,
+            text: draft,
             tone: "casual",
-            channel: card.suggestedChannel,
-          },
-          {
-            id: "2",
-            text: professionalDraft,
-            tone: "professional",
             channel: card.suggestedChannel,
           },
         ]);
@@ -223,14 +202,6 @@ export function useDeck() {
               (card.contact?.firstName as string) || "there"
             }! It's been a while - would love to catch up soon. How have you been?`,
             tone: "casual",
-            channel: card.suggestedChannel,
-          },
-          {
-            id: "2",
-            text: `Hi ${
-              (card.contact?.firstName as string) || "there"
-            }, hope you're doing well. I was thinking of you and wanted to reconnect. Let me know if you have time for a quick call.`,
-            tone: "professional",
             channel: card.suggestedChannel,
           },
         ]);

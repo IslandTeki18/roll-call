@@ -28,6 +28,8 @@ export type ActionId =
   | 'draft_custom'
   | 'attach_artifact'
   | 'choose_cta'
+  | 'generate_ai_draft' // Tapped "Generate with AI" button
+  | 'copy_suggested_draft' // Tapped suggested box to copy
 
   // C) Send & Immediate Outcomes
   | 'composer_opened' // SMS/iMessage composer opened
@@ -121,6 +123,8 @@ export const BASE_POINTS: Record<ActionId, number> = {
   draft_custom: 7,
   attach_artifact: 2,
   choose_cta: 2,
+  generate_ai_draft: 1,
+  copy_suggested_draft: 2,
 
   // C) Send & Immediate Outcomes
   composer_opened: 1,

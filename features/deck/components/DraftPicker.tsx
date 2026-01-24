@@ -1,24 +1,12 @@
-import {
-  ContactRecommendation,
-  getContactRecommendations,
-} from "@/features/messaging/api/recommendations.service";
 import { calculateEditDistance } from "@/features/deck/api/editDistance.service";
 import { emitEvent } from "@/features/shared/utils/eventEmitter";
 import type { ActionId } from "@/features/deck/types/contactScore.types";
-import {
-  Lightbulb,
-  Lock,
-  Mail,
-  MessageSquare,
-  Phone,
-  Send,
-  Sparkles,
-  Video,
-  X,
-} from "lucide-react-native";
+import { generateDraft } from "@/features/messaging/api/drafts.service";
+import { getContactRecommendations } from "@/features/messaging/api/recommendations.service";
+import { Send, X } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -31,6 +19,10 @@ import {
 import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
 import { useUserProfile } from "../../auth/hooks/useUserProfile";
 import { ChannelType, DeckCard, Draft } from "../types/deck.types";
+import Card from "./Card";
+import CompactChannelSelector from "./CompactChannelSelector";
+import GenerateAIButton from "./GenerateAIButton";
+import SuggestedDraft from "./SuggestedDraft";
 
 interface DraftPickerProps {
   visible: boolean;
@@ -40,18 +32,9 @@ interface DraftPickerProps {
   loading: boolean;
   onSelectDraft: (draft: Draft) => void;
   onSend: (channel: ChannelType, message: string) => void;
+  photoCache: Map<string, string | null>;
+  contextTextMap: Map<string, string>;
 }
-
-const channelConfig: Record<
-  ChannelType,
-  { icon: typeof Phone; label: string; color: string }
-> = {
-  sms: { icon: MessageSquare, label: "Message", color: "#10B981" },
-  call: { icon: Phone, label: "Call", color: "#3B82F6" },
-  facetime: { icon: Video, label: "FaceTime", color: "#6366F1" },
-  email: { icon: Mail, label: "Email", color: "#8B5CF6" },
-  slack: { icon: MessageSquare, label: "Slack", color: "#E11D48" },
-};
 
 export default function DraftPicker({
   visible,
@@ -61,56 +44,115 @@ export default function DraftPicker({
   loading,
   onSelectDraft,
   onSend,
+  photoCache,
+  contextTextMap,
 }: DraftPickerProps) {
   const { profile } = useUserProfile();
+  const { isPremium, requirePremium } = usePremiumGate();
+
   const [selectedDraft, setSelectedDraft] = useState<Draft | null>(null);
   const [customMessage, setCustomMessage] = useState("");
   const [selectedChannel, setSelectedChannel] = useState<ChannelType>("sms");
-  const { isPremium, requirePremium } = usePremiumGate();
+  const [generatingDraft, setGeneratingDraft] = useState(false);
+  const [suggestedDraft, setSuggestedDraft] = useState<string | null>(null);
+  const [copyFeedbackVisible, setCopyFeedbackVisible] = useState(false);
 
-  // NEW: Recommendations state
-  const [recommendations, setRecommendations] =
-    useState<ContactRecommendation | null>(null);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
-
-  const freeChannels: ChannelType[] = ["sms", "call"];
-  const premiumChannels: ChannelType[] = ["email", "slack"];
-
+  // Auto-generation logic: Premium users get suggested draft immediately
   React.useEffect(() => {
     if (!visible) {
+      // Reset state when modal closes
       setSelectedDraft(null);
       setCustomMessage("");
-      setRecommendations(null);
-    } else if (card) {
-      setSelectedChannel(card.suggestedChannel);
-      // NEW: Load recommendations when card is opened
-      loadRecommendations();
+      setSuggestedDraft(null);
+      setCopyFeedbackVisible(false);
+      setGeneratingDraft(false);
+    } else if (card && isPremium && drafts.length > 0) {
+      // Auto-set first draft as suggestion for premium users
+      setSuggestedDraft(drafts[0].text);
+      setSelectedDraft(drafts[0]);
     }
-  }, [visible, card]);
+  }, [visible, card, isPremium, drafts]);
 
-  // NEW: Load contact recommendations
-  const loadRecommendations = async () => {
-    if (!profile || !card) return;
+  // Set selected channel from card
+  React.useEffect(() => {
+    if (card) {
+      setSelectedChannel(card.suggestedChannel);
+    }
+  }, [card]);
 
-    setLoadingRecommendations(true);
+  const handleGenerateAI = async () => {
+    if (!isPremium) {
+      requirePremium("AI-powered drafts");
+      return;
+    }
+
+    if (!profile || !card?.contact?.$id) return;
+
+    setGeneratingDraft(true);
     try {
-      const recs = await getContactRecommendations(
+      const recommendations = await getContactRecommendations(
         profile.$id,
-        card.contact?.$id as string,
+        card.contact.$id,
         card.contact
       );
-      setRecommendations(recs);
+
+      const contextString = recommendations.conversationContext
+        ? `Context: ${recommendations.conversationContext}. `
+        : "";
+
+      const draft = await generateDraft(
+        profile.$id,
+        card.contact.$id,
+        `${contextString}Write a friendly, contextual message`
+      );
+
+      setSuggestedDraft(draft);
+      setSelectedDraft({
+        id: "1",
+        text: draft,
+        tone: "casual",
+        channel: selectedChannel,
+      });
+
+      // Emit analytics event
+      emitEvent({
+        userId: profile.$id,
+        contactId: card.contact.$id,
+        actionId: "generate_ai_draft",
+        linkedCardId: card.$id,
+        metadata: {
+          contactName: card.contact.displayName,
+        },
+      });
     } catch (error) {
-      console.error("Failed to load recommendations:", error);
+      console.error("Failed to generate draft:", error);
+      Alert.alert("Error", "Failed to generate AI draft. Please try again.");
     } finally {
-      setLoadingRecommendations(false);
+      setGeneratingDraft(false);
     }
   };
 
-  const handleSelectDraft = (draft: Draft) => {
-    setSelectedDraft(draft);
-    setCustomMessage(draft.text);
-    onSelectDraft(draft);
+  const handleCopySuggestion = () => {
+    if (!suggestedDraft || !profile || !card?.contact?.$id) return;
+
+    setCustomMessage(suggestedDraft);
+    setCopyFeedbackVisible(true);
+
+    // Emit analytics event
+    emitEvent({
+      userId: profile.$id,
+      contactId: card.contact.$id,
+      actionId: "copy_suggested_draft",
+      linkedCardId: card.$id,
+      metadata: {
+        draftLength: suggestedDraft.length,
+      },
+    });
+
+    // Hide feedback after 1.5s
+    setTimeout(() => {
+      setCopyFeedbackVisible(false);
+    }, 1500);
   };
 
   const handleSend = () => {
@@ -119,8 +161,9 @@ export default function DraftPicker({
     const finalMessage = customMessage.trim();
 
     // B-category: Calculate customization level and emit appropriate event
-    let actionId: ActionId = 'draft_custom';
-    let customizationLevel: 'untouched' | 'light' | 'heavy' | 'custom' = 'custom';
+    let actionId: ActionId = "draft_custom";
+    let customizationLevel: "untouched" | "light" | "heavy" | "custom" =
+      "custom";
 
     if (selectedDraft) {
       // User selected an AI draft, calculate edit distance
@@ -129,14 +172,14 @@ export default function DraftPicker({
 
       // Map customization level to action ID
       switch (editResult.customizationLevel) {
-        case 'untouched':
-          actionId = 'draft_ai_untouched';
+        case "untouched":
+          actionId = "draft_ai_untouched";
           break;
-        case 'light':
-          actionId = 'draft_ai_light';
+        case "light":
+          actionId = "draft_ai_light";
           break;
-        case 'heavy':
-          actionId = 'draft_ai_heavy';
+        case "heavy":
+          actionId = "draft_ai_heavy";
           break;
       }
     }
@@ -155,7 +198,8 @@ export default function DraftPicker({
         tone: selectedDraft?.tone,
         messageLength: finalMessage.length,
         percentageChanged: selectedDraft
-          ? calculateEditDistance(selectedDraft.text, finalMessage).percentageChanged
+          ? calculateEditDistance(selectedDraft.text, finalMessage)
+              .percentageChanged
           : undefined,
       },
     });
@@ -166,7 +210,7 @@ export default function DraftPicker({
       emitEvent({
         userId: profile.$id,
         contactId: card.contact.$id,
-        actionId: 'pick_suggested_channel',
+        actionId: "pick_suggested_channel",
         linkedCardId: card.$id,
         channel: selectedChannel,
         metadata: {
@@ -182,10 +226,8 @@ export default function DraftPicker({
 
   if (!card) return null;
 
-  const initials =
-    `${card.contact?.firstName?.charAt(0) || ""}${
-      card.contact?.lastName?.charAt(0) || ""
-    }`.toUpperCase() || "?";
+  const photoUri = photoCache.get(card.contact?.$id || "") || null;
+  const contextText = contextTextMap.get(card.$id || "") || "Reach out to reconnect";
 
   return (
     <Modal
@@ -198,271 +240,94 @@ export default function DraftPicker({
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
-        <View className="flex-1 justify-end">
+        <View className="flex-1">
+          {/* Backdrop */}
           <TouchableOpacity
-            className="flex-1 bg-black/50"
+            className="absolute inset-0 bg-black/50"
             activeOpacity={1}
             onPress={onClose}
           />
 
-          <View className="bg-gray-900 rounded-t-3xl shadow-2xl max-h-[85vh]">
+          {/* Content Container */}
+          <View className="bg-gray-900 rounded-t-3xl shadow-2xl mt-8 flex-1">
             <ScrollView keyboardShouldPersistTaps="handled">
               {/* Header */}
               <View className="flex-row items-center justify-between px-6 pt-6 pb-4 border-b border-gray-700">
-                <View className="flex-row items-center flex-1">
-                  <View className="w-12 h-12 rounded-full bg-blue-900 items-center justify-center mr-3">
-                    <Text className="text-blue-300 text-lg font-bold">
-                      {initials}
-                    </Text>
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-lg font-bold text-white">
-                      {card.contact?.displayName}
-                    </Text>
-                    <Text className="text-sm text-gray-400">{card.reason}</Text>
-                  </View>
-                </View>
+                <Text className="text-lg font-bold text-white">
+                  Reach Out
+                </Text>
                 <TouchableOpacity onPress={onClose} className="p-2 -mr-2">
                   <X size={24} color="#9CA3AF" />
                 </TouchableOpacity>
               </View>
 
               <View className="px-6 py-6">
-                {/* NEW: Recommendations banner */}
-                {loadingRecommendations && (
-                  <View className="mb-4 p-3 bg-blue-50 rounded-lg flex-row items-center gap-2">
-                    <ActivityIndicator size="small" color="#3B82F6" />
-                    <Text className="text-sm text-blue-700">
-                      Analyzing conversation history...
-                    </Text>
-                  </View>
-                )}
-
-                {recommendations && !loadingRecommendations && (
-                  <View className="mb-4 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl border border-purple-200">
-                    <View className="flex-row items-center gap-2 mb-2">
-                      <Lightbulb size={18} color="#7C3AED" />
-                      <Text className="text-sm font-semibold text-purple-900">
-                        Smart Insights
-                      </Text>
-                    </View>
-
-                    <Text className="text-sm text-gray-700 mb-2">
-                      {recommendations.reasoning}
-                    </Text>
-
-                    {recommendations.recentTopics.length > 0 && (
-                      <View className="flex-row flex-wrap gap-1 mt-2">
-                        {recommendations.recentTopics.map((topic, idx) => (
-                          <View
-                            key={idx}
-                            className="bg-purple-100 px-2 py-1 rounded-full"
-                          >
-                            <Text className="text-xs text-purple-700">
-                              {topic}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-                    )}
-
-                    {recommendations.conversationContext && (
-                      <Text className="text-xs text-gray-600 mt-2 italic">
-                        💬 {recommendations.conversationContext}
-                      </Text>
-                    )}
-                  </View>
-                )}
-
-                {/* Channel selector */}
+                {/* Card Display - Static, Non-Interactive */}
                 <View className="mb-6">
-                  <Text className="text-sm font-semibold text-gray-300 mb-3">
-                    Send via
-                  </Text>
-                  <View className="flex-row gap-2">
-                    {freeChannels.map((channel) => {
-                      const config = channelConfig[channel];
-                      const Icon = config.icon;
-                      const isSelected = selectedChannel === channel;
-                      return (
-                        <TouchableOpacity
-                          key={channel}
-                          onPress={() => setSelectedChannel(channel)}
-                          className={`flex-1 items-center py-3 rounded-xl border-2 ${
-                            isSelected
-                              ? "border-blue-500 bg-blue-900"
-                              : "border-gray-700"
-                          }`}
-                        >
-                          <Icon
-                            size={24}
-                            color={isSelected ? config.color : "#9CA3AF"}
-                          />
-                          <Text
-                            className={`text-xs font-medium mt-1 ${
-                              isSelected ? "text-white" : "text-gray-400"
-                            }`}
-                          >
-                            {config.label}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                    {premiumChannels.map((channel) => {
-                      const config = channelConfig[channel];
-                      const Icon = config.icon;
-                      const isSelected = selectedChannel === channel;
-
-                      if (isPremium) {
-                        return (
-                          <TouchableOpacity
-                            key={channel}
-                            onPress={() => setSelectedChannel(channel)}
-                            className={`flex-1 items-center py-3 rounded-xl border-2 ${
-                              isSelected
-                                ? "border-blue-500 bg-blue-900"
-                                : "border-gray-700"
-                            }`}
-                          >
-                            <Icon
-                              size={24}
-                              color={isSelected ? config.color : "#9CA3AF"}
-                            />
-                            <Text
-                              className={`text-xs font-medium mt-1 ${
-                                isSelected ? "text-white" : "text-gray-400"
-                              }`}
-                            >
-                              {config.label}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      }
-
-                      return (
-                        <TouchableOpacity
-                          key={channel}
-                          onPress={() =>
-                            requirePremium(`${config.label} sends`)
-                          }
-                          className="flex-1 items-center py-3 rounded-xl border-2 border-dashed border-gray-700"
-                        >
-                          <View className="relative">
-                            <Icon size={24} color="#D1D5DB" />
-                            <View className="absolute -bottom-1 -right-1 bg-gray-200 rounded-full p-0.5">
-                              <Lock size={10} color="#9CA3AF" />
-                            </View>
-                          </View>
-                          <Text className="text-xs text-gray-400 mt-1">
-                            {config.label}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </View>
-
-                {/* Draft options */}
-                <View className="mb-6">
-                  <View className="flex-row items-center justify-between mb-3">
-                    <Text className="text-sm font-semibold text-gray-300">
-                      Pick a draft
-                    </Text>
-                    {isPremium ? (
-                      <View className="flex-row items-center gap-1 bg-purple-100 px-2 py-1 rounded-full">
-                        <Sparkles size={12} color="#7C3AED" />
-                        <Text className="text-xs text-purple-700 font-medium">
-                          AI Generated
-                        </Text>
-                      </View>
-                    ) : (
-                      <Text className="text-xs text-gray-400">Templates</Text>
-                    )}
-                  </View>
-                  {loading ? (
-                    <View className="py-8 items-center">
-                      <ActivityIndicator size="large" color="#3B82F6" />
-                      <Text className="text-gray-500 mt-2">
-                        {isPremium
-                          ? "Generating drafts..."
-                          : "Loading drafts..."}
-                      </Text>
-                    </View>
-                  ) : (
-                    <View className="gap-3">
-                      {drafts.map((draft) => (
-                        <TouchableOpacity
-                          key={draft.id}
-                          onPress={() => handleSelectDraft(draft)}
-                          className={`p-4 rounded-xl border-2 ${
-                            selectedDraft?.id === draft.id
-                              ? "border-blue-500 bg-blue-900"
-                              : "border-gray-700 bg-gray-800"
-                          }`}
-                        >
-                          <View className="flex-row items-center justify-between mb-2">
-                            <Text
-                              className={`text-xs font-semibold uppercase ${
-                                selectedDraft?.id === draft.id
-                                  ? "text-blue-400"
-                                  : "text-gray-400"
-                              }`}
-                            >
-                              {draft.tone}
-                            </Text>
-                          </View>
-                          <Text className="text-gray-300 text-sm leading-5">
-                            {draft.text}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                      {!isPremium && (
-                        <TouchableOpacity
-                          onPress={() => requirePremium("AI-powered drafts")}
-                          className="p-4 rounded-xl border-2 border-dashed border-purple-200 bg-purple-50/50 flex-row items-center justify-center gap-2"
-                        >
-                          <Sparkles size={16} color="#7C3AED" />
-                          <Text className="text-sm text-purple-700 font-medium">
-                            Unlock AI-powered drafts
-                          </Text>
-                          <Lock size={14} color="#7C3AED" />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  )}
-                </View>
-
-                {/* Custom message */}
-                <View className="mb-6">
-                  <Text className="text-sm font-semibold text-gray-300 mb-3">
-                    Or customize
-                  </Text>
-                  <TextInput
-                    value={customMessage}
-                    onChangeText={setCustomMessage}
-                    placeholder="Write your own message..."
-                    placeholderTextColor="#6B7280"
-                    multiline
-                    className="bg-gray-800 px-4 py-4 rounded-xl text-base min-h-[100px] text-white border border-gray-700"
-                    style={{ textAlignVertical: "top" }}
+                  <Card
+                    card={card}
+                    photoUri={photoUri}
+                    contextText={contextText}
+                    onSwipeLeft={() => {}}
+                    onSwipeRight={() => {}}
+                    onTap={() => {}}
+                    isInteractive={false}
                   />
                 </View>
 
-                {/* Send button */}
-                <TouchableOpacity
-                  onPress={handleSend}
-                  disabled={!customMessage.trim()}
-                  className={`flex-row items-center justify-center gap-2 py-4 rounded-xl ${
-                    customMessage.trim()
-                      ? "bg-blue-600 active:bg-blue-700"
-                      : "bg-gray-300"
-                  }`}
-                >
-                  <Send size={20} color="white" />
-                  <Text className="text-white font-semibold text-base">
-                    Send {channelConfig[selectedChannel].label}
+                {/* Generate AI Button */}
+                <View className="mb-6">
+                  <GenerateAIButton
+                    onPress={handleGenerateAI}
+                    loading={generatingDraft || loading}
+                    isPremium={isPremium}
+                  />
+                </View>
+
+                {/* Suggested Draft (if available) */}
+                {suggestedDraft && !generatingDraft && (
+                  <SuggestedDraft
+                    draftText={suggestedDraft}
+                    onCopy={handleCopySuggestion}
+                    showFeedback={copyFeedbackVisible}
+                  />
+                )}
+
+                {/* Channel Selector */}
+                <CompactChannelSelector
+                  selectedChannel={selectedChannel}
+                  onSelectChannel={setSelectedChannel}
+                  isPremium={isPremium}
+                  onPremiumRequired={requirePremium}
+                />
+
+                {/* Your Message */}
+                <View className="mb-6">
+                  <Text className="text-sm font-semibold text-gray-300 mb-3">
+                    Your Message
                   </Text>
-                </TouchableOpacity>
+                  <View className="relative">
+                    <TextInput
+                      value={customMessage}
+                      onChangeText={setCustomMessage}
+                      placeholder="Write your message..."
+                      placeholderTextColor="#6B7280"
+                      multiline
+                      className="bg-gray-800 px-4 py-4 pr-16 rounded-xl text-base min-h-[120px] text-white border border-gray-700"
+                      style={{ textAlignVertical: "top" }}
+                    />
+                    {/* Send Button - Absolute positioned bottom-right */}
+                    <TouchableOpacity
+                      onPress={handleSend}
+                      disabled={!customMessage.trim()}
+                      className={`absolute bottom-3 right-3 p-3 rounded-full ${
+                        customMessage.trim() ? "bg-blue-600" : "bg-gray-600"
+                      }`}
+                    >
+                      <Send size={20} color="white" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
               </View>
             </ScrollView>
           </View>
