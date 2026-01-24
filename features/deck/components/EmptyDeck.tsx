@@ -16,11 +16,11 @@ export default function EmptyDeck({
   if (reason === "generating") {
     return (
       <View className="flex-1 items-center justify-center px-6">
-        <RefreshCw size={48} color="#3B82F6" className="animate-spin" />
-        <Text className="text-lg font-semibold text-gray-900 mt-4">
+        <RefreshCw size={48} color="#60A5FA" className="animate-spin" />
+        <Text className="text-lg font-semibold text-white mt-4">
           Building your deck...
         </Text>
-        <Text className="text-gray-500 text-center mt-2">
+        <Text className="text-gray-400 text-center mt-2">
           We&apos;re picking the best contacts for you to reach out to today.
         </Text>
       </View>
@@ -30,13 +30,13 @@ export default function EmptyDeck({
   if (reason === "no_contacts") {
     return (
       <View className="flex-1 items-center justify-center px-6">
-        <View className="bg-gray-100 rounded-full p-6 mb-4">
-          <Coffee size={48} color="#6B7280" />
+        <View className="bg-gray-700 rounded-full p-6 mb-4">
+          <Coffee size={48} color="#9CA3AF" />
         </View>
-        <Text className="text-lg font-semibold text-gray-900 mt-4">
+        <Text className="text-lg font-semibold text-white mt-4">
           No contacts yet
         </Text>
-        <Text className="text-gray-500 text-center mt-2">
+        <Text className="text-gray-400 text-center mt-2">
           Import your contacts to start building meaningful connections.
         </Text>
         {onImportContacts && (
@@ -54,22 +54,22 @@ export default function EmptyDeck({
   // all_completed
   return (
     <View className="flex-1 items-center justify-center px-6">
-      <View className="bg-green-100 rounded-full p-6 mb-4">
-        <Coffee size={48} color="#10B981" />
+      <View className="bg-green-900 rounded-full p-6 mb-4">
+        <Coffee size={48} color="#34D399" />
       </View>
-      <Text className="text-lg font-semibold text-gray-900 mt-4">
+      <Text className="text-lg font-semibold text-white mt-4">
         You&apos;re all done!
       </Text>
-      <Text className="text-gray-500 text-center mt-2">
+      <Text className="text-gray-400 text-center mt-2">
         Come back tomorrow for a fresh deck of connections.
       </Text>
       {onRefresh && (
         <TouchableOpacity
           onPress={onRefresh}
-          className="mt-6 flex-row items-center gap-2 px-6 py-3 border border-gray-300 rounded-xl active:bg-gray-50"
+          className="mt-6 flex-row items-center gap-2 px-6 py-3 border border-gray-700 rounded-xl active:bg-gray-700"
         >
-          <RefreshCw size={18} color="#6B7280" />
-          <Text className="text-gray-700 font-medium">Refresh</Text>
+          <RefreshCw size={18} color="#9CA3AF" />
+          <Text className="text-gray-300 font-medium">Refresh</Text>
         </TouchableOpacity>
       )}
     </View>

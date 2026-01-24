@@ -59,10 +59,10 @@ export default function SignIn() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 justify-center">
+    <View className="flex-1 bg-gray-800 px-6 justify-center">
       <View className="mb-12">
-        <Text className="text-4xl font-bold mb-2">Welcome back</Text>
-        <Text className="text-gray-600 text-lg">Sign in to continue</Text>
+        <Text className="text-4xl font-bold mb-2 text-white">Welcome back</Text>
+        <Text className="text-gray-300 text-lg">Sign in to continue</Text>
       </View>
 
       {error && (
@@ -73,34 +73,36 @@ export default function SignIn() {
 
       <View className="gap-4 mb-6">
         <View>
-          <Text className="text-sm font-medium mb-2 text-gray-700">Email</Text>
+          <Text className="text-sm font-medium mb-2 text-gray-300">Email</Text>
           <TextInput
             autoCapitalize="none"
             value={emailAddress}
             placeholder="you@example.com"
+            placeholderTextColor="#6B7280"
             onChangeText={(text) => {
               setEmailAddress(text);
               setError(null);
             }}
-            className="bg-gray-50 px-4 py-4 rounded-xl text-base"
+            className="bg-gray-900 px-4 py-4 rounded-xl text-base text-white"
             keyboardType="email-address"
             editable={!loading}
           />
         </View>
 
         <View>
-          <Text className="text-sm font-medium mb-2 text-gray-700">
+          <Text className="text-sm font-medium mb-2 text-gray-300">
             Password
           </Text>
           <TextInput
             value={password}
             placeholder="••••••••"
+            placeholderTextColor="#6B7280"
             secureTextEntry={true}
             onChangeText={(text) => {
               setPassword(text);
               setError(null);
             }}
-            className="bg-gray-50 px-4 py-4 rounded-xl text-base"
+            className="bg-gray-900 px-4 py-4 rounded-xl text-base text-white"
             editable={!loading}
           />
         </View>
@@ -119,7 +121,7 @@ export default function SignIn() {
       </TouchableOpacity>
 
       <View className="flex-row justify-center items-center gap-1">
-        <Text className="text-gray-600">Don&apos;t have an account?</Text>
+        <Text className="text-gray-400">Don&apos;t have an account?</Text>
         <Link href="/(auth)/sign-up" asChild>
           <TouchableOpacity disabled={loading}>
             <Text className="text-blue-600 font-semibold">Sign up</Text>

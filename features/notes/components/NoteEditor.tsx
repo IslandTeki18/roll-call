@@ -211,7 +211,7 @@ export default function NoteEditor({
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView className="flex-1 bg-gray-800">
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#3B82F6" />
         </View>
@@ -229,16 +229,16 @@ export default function NoteEditor({
     !note?.processingStatus;
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-gray-800" edges={["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
         {/* Header */}
-        <View className="bg-white px-4 py-3 border-b border-gray-200 flex-row items-center justify-between">
+        <View className="bg-gray-900 px-4 py-3 border-b border-gray-700 flex-row items-center justify-between">
           <TouchableOpacity onPress={onBack} className="flex-row items-center">
-            <ChevronLeft size={24} color="#000" />
-            <Text className="text-base ml-1">Back</Text>
+            <ChevronLeft size={24} color="#FFF" />
+            <Text className="text-base ml-1 text-white">Back</Text>
           </TouchableOpacity>
 
           <View className="flex-row items-center gap-3">
@@ -306,14 +306,14 @@ export default function NoteEditor({
           )}
 
           {/* Main text input */}
-          <View className="bg-white m-4 rounded-xl border border-gray-200">
+          <View className="bg-gray-900 m-4 rounded-xl border border-gray-700">
             <TextInput
               value={rawText}
               onChangeText={updateRawText}
               placeholder="Write your note..."
               placeholderTextColor="#9CA3AF"
               multiline
-              className="p-4 text-base text-gray-900 min-h-[200px]"
+              className="p-4 text-base text-white min-h-[200px]"
               style={{ textAlignVertical: "top" }}
             />
           </View>
@@ -362,12 +362,12 @@ export default function NoteEditor({
               onPress={() => setContactPickerVisible(true)}
               className="flex-row items-center gap-2 mb-2"
             >
-              <Link2 size={16} color="#6B7280" />
-              <Text className="text-sm font-semibold text-gray-700">
+              <Link2 size={16} color="#9CA3AF" />
+              <Text className="text-sm font-semibold text-gray-300">
                 Linked Contacts
               </Text>
-              <View className="bg-gray-200 px-2 py-0.5 rounded-full">
-                <Text className="text-xs text-gray-600">
+              <View className="bg-gray-700 px-2 py-0.5 rounded-full">
+                <Text className="text-xs text-gray-300">
                   {contactIds.length}
                 </Text>
               </View>
@@ -379,32 +379,32 @@ export default function NoteEditor({
                   {linkedContacts.map((contact) => (
                     <View
                       key={contact.$id}
-                      className="bg-gray-100 px-3 py-2 rounded-lg flex-row items-center"
+                      className="bg-gray-700 px-3 py-2 rounded-lg flex-row items-center"
                     >
                       <View className="w-6 h-6 rounded-full bg-blue-200 items-center justify-center mr-2">
                         <Text className="text-blue-700 text-xs font-semibold">
                           {contact.firstName?.charAt(0) || "?"}
                         </Text>
                       </View>
-                      <Text className="text-sm text-gray-700">
+                      <Text className="text-sm text-gray-300">
                         {contact.displayName}
                       </Text>
                     </View>
                   ))}
                   <TouchableOpacity
                     onPress={() => setContactPickerVisible(true)}
-                    className="bg-blue-50 px-3 py-2 rounded-lg"
+                    className="bg-blue-900 px-3 py-2 rounded-lg"
                   >
-                    <Text className="text-sm text-blue-600">+ Add</Text>
+                    <Text className="text-sm text-blue-300">+ Add</Text>
                   </TouchableOpacity>
                 </View>
               </ScrollView>
             ) : (
               <TouchableOpacity
                 onPress={() => setContactPickerVisible(true)}
-                className="bg-gray-100 p-3 rounded-lg items-center"
+                className="bg-gray-700 p-3 rounded-lg items-center"
               >
-                <Text className="text-gray-500 text-sm">
+                <Text className="text-gray-400 text-sm">
                   Tap to link contacts
                 </Text>
               </TouchableOpacity>
@@ -414,8 +414,8 @@ export default function NoteEditor({
           {/* Tags */}
           <View className="mx-4 mb-4">
             <View className="flex-row items-center gap-2 mb-2">
-              <Tag size={16} color="#6B7280" />
-              <Text className="text-sm font-semibold text-gray-700">Tags</Text>
+              <Tag size={16} color="#9CA3AF" />
+              <Text className="text-sm font-semibold text-gray-300">Tags</Text>
             </View>
             <TagInput
               tags={tags}

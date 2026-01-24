@@ -14,28 +14,28 @@ export default function ContactCard({ contact, onPress }: ContactCardProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm active:bg-gray-50"
+      className="p-4 bg-gray-900 rounded-xl border border-gray-700 active:bg-gray-800"
     >
-      <Text className="font-semibold text-lg mb-2">{contact.displayName}</Text>
+      <Text className="font-semibold text-lg mb-2 text-white">{contact.displayName}</Text>
 
       {contact.organization && (
         <View className="flex-row items-center gap-2 mb-1">
-          <Building size={16} color="#6B7280" />
-          <Text className="text-gray-600 text-sm">{contact.organization}</Text>
+          <Building size={16} color="#9CA3AF" />
+          <Text className="text-gray-400 text-sm">{contact.organization}</Text>
         </View>
       )}
 
       {primaryPhone && (
         <View className="flex-row items-center gap-2 mb-1">
-          <Phone size={16} color="#6B7280" />
-          <Text className="text-gray-600 text-sm">{primaryPhone}</Text>
+          <Phone size={16} color="#9CA3AF" />
+          <Text className="text-gray-400 text-sm">{primaryPhone}</Text>
         </View>
       )}
 
       {primaryEmail && (
         <View className="flex-row items-center gap-2">
-          <Mail size={16} color="#6B7280" />
-          <Text className="text-gray-600 text-sm">{primaryEmail}</Text>
+          <Mail size={16} color="#9CA3AF" />
+          <Text className="text-gray-400 text-sm">{primaryEmail}</Text>
         </View>
       )}
     </TouchableOpacity>

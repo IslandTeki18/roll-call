@@ -105,11 +105,11 @@ export default function NotesListScreen() {
   const unpinnedNotes = displayNotes.filter((n) => !n.isPinned);
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1 bg-gray-800">
       {/* Header */}
       <View className="px-4 pt-2 pb-4">
         <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-2xl font-bold">Notes</Text>
+          <Text className="text-2xl font-bold text-white">Notes</Text>
           <TouchableOpacity
             onPress={handleNewNote}
             className="bg-blue-600 p-3 rounded-full"
@@ -119,14 +119,14 @@ export default function NotesListScreen() {
         </View>
 
         {/* Search */}
-        <View className="flex-row items-center bg-white rounded-xl px-4 py-3 border border-gray-200">
+        <View className="flex-row items-center bg-gray-900 rounded-xl px-4 py-3 border border-gray-700">
           <Search size={18} color="#9CA3AF" />
           <TextInput
             value={searchQuery}
             onChangeText={handleSearch}
             placeholder="Search notes..."
             placeholderTextColor="#9CA3AF"
-            className="flex-1 ml-2 text-base text-gray-900"
+            className="flex-1 ml-2 text-base text-white"
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => handleSearch("")}>
@@ -150,7 +150,7 @@ export default function NotesListScreen() {
         </View>
       ) : displayNotes.length === 0 ? (
         <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-gray-500 text-center mb-4">
+          <Text className="text-gray-400 text-center mb-4">
             {searchQuery ? "No notes found" : "No notes yet"}
           </Text>
           {!searchQuery && (

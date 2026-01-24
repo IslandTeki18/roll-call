@@ -113,19 +113,19 @@ export default function ContactListScreen() {
     contacts.length >= deviceContactCount && deviceContactCount > 0;
 
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1 bg-gray-800">
       <ScrollView className="h-screen">
         <View className="px-4 py-6">
-          <Text className="text-2xl font-bold mb-4">Contacts</Text>
+          <Text className="text-2xl font-bold mb-4 text-white">Contacts</Text>
 
-          <View className="flex-row items-center bg-white rounded-xl px-4 py-3 border border-gray-200 mb-4">
+          <View className="flex-row items-center bg-gray-900 rounded-xl px-4 py-3 border border-gray-700 mb-4">
             <Search size={18} color="#9CA3AF" />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder="Search contacts..."
-              placeholderTextColor="#9CA3AF"
-              className="flex-1 ml-2 text-base text-gray-900"
+              placeholderTextColor="#6B7280"
+              className="flex-1 ml-2 text-base text-white"
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery("")}>
@@ -150,7 +150,7 @@ export default function ContactListScreen() {
           )}
 
           <View className="mb-4">
-            <Text className="text-xs font-semibold text-gray-500 uppercase mb-2">
+            <Text className="text-xs font-semibold text-gray-400 uppercase mb-2">
               External Sources
             </Text>
             <View className="flex-row gap-2">
@@ -165,19 +165,19 @@ export default function ContactListScreen() {
                 }
                 className={`flex-1 p-3 rounded-lg border flex-row items-center justify-center gap-2 ${
                   isPremium
-                    ? "border-gray-200 bg-white"
-                    : "border-dashed border-gray-300 bg-gray-50"
+                    ? "border-gray-700 bg-gray-900"
+                    : "border-dashed border-gray-700 bg-gray-800"
                 }`}
               >
-                <Mail size={18} color={isPremium ? "#EA4335" : "#9CA3AF"} />
+                <Mail size={18} color={isPremium ? "#EA4335" : "#6B7280"} />
                 <Text
                   className={`text-sm font-medium ${
-                    isPremium ? "text-gray-700" : "text-gray-400"
+                    isPremium ? "text-gray-300" : "text-gray-500"
                   }`}
                 >
                   Google
                 </Text>
-                {!isPremium && <Lock size={12} color="#9CA3AF" />}
+                {!isPremium && <Lock size={12} color="#6B7280" />}
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -191,19 +191,19 @@ export default function ContactListScreen() {
                 }
                 className={`flex-1 p-3 rounded-lg border flex-row items-center justify-center gap-2 ${
                   isPremium
-                    ? "border-gray-200 bg-white"
-                    : "border-dashed border-gray-300 bg-gray-50"
+                    ? "border-gray-700 bg-gray-900"
+                    : "border-dashed border-gray-700 bg-gray-800"
                 }`}
               >
-                <Mail size={18} color={isPremium ? "#0078D4" : "#9CA3AF"} />
+                <Mail size={18} color={isPremium ? "#0078D4" : "#6B7280"} />
                 <Text
                   className={`text-sm font-medium ${
-                    isPremium ? "text-gray-700" : "text-gray-400"
+                    isPremium ? "text-gray-300" : "text-gray-500"
                   }`}
                 >
                   Outlook
                 </Text>
-                {!isPremium && <Lock size={12} color="#9CA3AF" />}
+                {!isPremium && <Lock size={12} color="#6B7280" />}
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -217,30 +217,30 @@ export default function ContactListScreen() {
                 }
                 className={`flex-1 p-3 rounded-lg border flex-row items-center justify-center gap-2 ${
                   isPremium
-                    ? "border-gray-200 bg-white"
-                    : "border-dashed border-gray-300 bg-gray-50"
+                    ? "border-gray-700 bg-gray-900"
+                    : "border-dashed border-gray-700 bg-gray-800"
                 }`}
               >
                 <MessageSquare
                   size={18}
-                  color={isPremium ? "#4A154B" : "#9CA3AF"}
+                  color={isPremium ? "#4A154B" : "#6B7280"}
                 />
                 <Text
                   className={`text-sm font-medium ${
-                    isPremium ? "text-gray-700" : "text-gray-400"
+                    isPremium ? "text-gray-300" : "text-gray-500"
                   }`}
                 >
                   Slack
                 </Text>
-                {!isPremium && <Lock size={12} color="#9CA3AF" />}
+                {!isPremium && <Lock size={12} color="#6B7280" />}
               </TouchableOpacity>
             </View>
           </View>
 
           {loading ? (
-            <Text className="text-gray-600">Loading...</Text>
+            <Text className="text-gray-400">Loading...</Text>
           ) : filteredContacts.length === 0 ? (
-            <Text className="text-gray-600">
+            <Text className="text-gray-400">
               {searchQuery ? "No contacts found" : "No contacts yet"}
             </Text>
           ) : (

@@ -308,7 +308,7 @@ export default function DeckScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-black">
+      <SafeAreaView className="flex-1 bg-gray-800">
         <EmptyDeck reason="generating" />
       </SafeAreaView>
     );
@@ -316,7 +316,7 @@ export default function DeckScreen() {
 
   if (!deck || deck.cards.length === 0) {
     return (
-      <SafeAreaView className="flex-1 bg-black">
+      <SafeAreaView className="flex-1 bg-gray-800">
         <View className="px-6 pt-4">
           <Text className="text-2xl font-bold text-white">Daily Deck</Text>
         </View>
@@ -329,7 +329,7 @@ export default function DeckScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-black">
+    <SafeAreaView className="flex-1 bg-gray-800">
       {/* Search Bar Header */}
       <View className="px-6 pt-4 pb-2">
         <View className="flex-row items-center gap-3 mb-3">

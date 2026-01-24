@@ -200,16 +200,16 @@ export default function OutcomeSheet({
             onPress={onClose}
           />
 
-          <View className="bg-white rounded-t-3xl shadow-2xl">
+          <View className="bg-gray-900 rounded-t-3xl shadow-2xl">
             <ScrollView
               className="max-h-[85vh]"
               keyboardShouldPersistTaps="handled"
             >
               {/* Header */}
-              <View className="flex-row items-center justify-between px-6 pt-6 pb-4 border-b border-gray-200">
+              <View className="flex-row items-center justify-between px-6 pt-6 pb-4 border-b border-gray-700">
                 <View className="flex-1">
-                  <Text className="text-xl font-bold mb-1">How did it go?</Text>
-                  <Text className="text-sm text-gray-600">
+                  <Text className="text-xl font-bold mb-1 text-white">How did it go?</Text>
+                  <Text className="text-sm text-gray-400">
                     {engagementType
                       ? `${engagementType.replace("_", " ")} with `
                       : ""}
@@ -221,14 +221,14 @@ export default function OutcomeSheet({
                   className="p-2 -mr-2"
                   disabled={saving || processing}
                 >
-                  <X size={24} color="#6B7280" />
+                  <X size={24} color="#9CA3AF" />
                 </TouchableOpacity>
               </View>
 
               <View className="px-6 py-6">
                 {/* Sentiment Selection */}
                 <View className="mb-6">
-                  <Text className="text-sm font-semibold text-gray-700 mb-3">
+                  <Text className="text-sm font-semibold text-gray-300 mb-3">
                     Overall feeling
                   </Text>
                   <View className="flex-row gap-3">
@@ -243,21 +243,21 @@ export default function OutcomeSheet({
                           className={`flex-1 items-center py-4 rounded-xl border-2 ${
                             isSelected
                               ? `border-[${option.color}]`
-                              : "border-gray-200"
+                              : "border-gray-700"
                           }`}
                           style={{
                             backgroundColor: isSelected
                               ? option.bgColor
-                              : "white",
+                              : "#1F2937",
                           }}
                         >
                           <Icon
                             size={28}
-                            color={isSelected ? option.color : "#9CA3AF"}
+                            color={isSelected ? option.color : "#6B7280"}
                           />
                           <Text
                             className={`text-xs font-medium mt-2 ${
-                              isSelected ? "text-gray-900" : "text-gray-500"
+                              isSelected ? "text-gray-900" : "text-gray-400"
                             }`}
                           >
                             {option.label}
@@ -271,16 +271,16 @@ export default function OutcomeSheet({
                 {/* Note Input */}
                 <View className="mb-4">
                   <View className="flex-row items-center justify-between mb-3">
-                    <Text className="text-sm font-semibold text-gray-700">
+                    <Text className="text-sm font-semibold text-gray-300">
                       Quick reflection
                     </Text>
                     <Text
                       className={`text-xs font-medium ${
                         remainingChars < 20
-                          ? "text-red-500"
+                          ? "text-red-400"
                           : remainingChars < 40
-                          ? "text-yellow-600"
-                          : "text-gray-500"
+                          ? "text-yellow-500"
+                          : "text-gray-400"
                       }`}
                     >
                       {remainingChars} / {maxChars}
@@ -295,11 +295,11 @@ export default function OutcomeSheet({
                       }
                     }}
                     placeholder="What happened? Any commitments or next steps?"
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor="#6B7280"
                     multiline
                     maxLength={maxChars}
                     editable={!saving && !processing}
-                    className="bg-gray-50 px-4 py-4 rounded-xl text-base min-h-[120px] text-gray-900"
+                    className="bg-gray-800 px-4 py-4 rounded-xl text-base min-h-[120px] text-white border border-gray-700"
                     style={{ textAlignVertical: "top" }}
                   />
                 </View>
@@ -327,9 +327,9 @@ export default function OutcomeSheet({
                   <TouchableOpacity
                     onPress={handleSkip}
                     disabled={saving || processing}
-                    className="flex-1 py-4 rounded-xl border border-gray-300 active:bg-gray-50"
+                    className="flex-1 py-4 rounded-xl border border-gray-700 active:bg-gray-800"
                   >
-                    <Text className="text-center font-semibold text-gray-700">
+                    <Text className="text-center font-semibold text-gray-300">
                       Skip
                     </Text>
                   </TouchableOpacity>

@@ -262,7 +262,7 @@ export default function ContactDetailsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-gray-800">
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#3B82F6" />
         </View>
@@ -272,9 +272,9 @@ export default function ContactDetailsScreen() {
 
   if (!contact) {
     return (
-      <SafeAreaView className="flex-1 bg-white">
+      <SafeAreaView className="flex-1 bg-gray-800">
         <View className="flex-1 justify-center items-center">
-          <Text className="text-gray-600">Contact not found</Text>
+          <Text className="text-gray-400">Contact not found</Text>
           <TouchableOpacity onPress={() => router.back()} className="mt-4">
             <Text className="text-blue-600 font-semibold">Go Back</Text>
           </TouchableOpacity>
@@ -287,11 +287,11 @@ export default function ContactDetailsScreen() {
   const emails = contact.emails.split(",").filter(Boolean);
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
-      <View className="bg-white px-4 py-3 border-b border-gray-200">
+    <SafeAreaView className="flex-1 bg-gray-800">
+      <View className="bg-gray-900 px-4 py-3 border-b border-gray-700">
         <View className="flex-row items-center justify-between">
           <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
-            <ChevronLeft size={24} color="#000" />
+            <ChevronLeft size={24} color="#FFF" />
           </TouchableOpacity>
           <View className="flex-row gap-2">
             <TouchableOpacity className="p-2">
@@ -305,28 +305,28 @@ export default function ContactDetailsScreen() {
       </View>
 
       <ScrollView className="flex-1">
-        <View className="bg-white pt-8 pb-6 px-6 items-center border-b border-gray-200">
-          <View className="w-24 h-24 rounded-full bg-blue-100 items-center justify-center mb-4">
-            <Text className="text-blue-600 text-3xl font-bold">
+        <View className="bg-gray-900 pt-8 pb-6 px-6 items-center border-b border-gray-700">
+          <View className="w-24 h-24 rounded-full bg-blue-900 items-center justify-center mb-4">
+            <Text className="text-blue-300 text-3xl font-bold">
               {contact.firstName.charAt(0).toUpperCase()}
               {contact.lastName.charAt(0).toUpperCase()}
             </Text>
           </View>
-          <Text className="text-3xl font-bold mb-1">{contact.displayName}</Text>
+          <Text className="text-3xl font-bold mb-1 text-white">{contact.displayName}</Text>
           {contact.jobTitle && (
-            <Text className="text-gray-600 text-base mb-1">
+            <Text className="text-gray-300 text-base mb-1">
               {contact.jobTitle}
             </Text>
           )}
           {contact.organization && (
-            <Text className="text-gray-500 text-sm">
+            <Text className="text-gray-400 text-sm">
               {contact.organization}
             </Text>
           )}
         </View>
 
-        <View className="bg-white mt-2 px-6 py-4">
-          <Text className="text-xs font-semibold text-gray-500 uppercase mb-3">
+        <View className="bg-gray-900 mt-2 px-6 py-4">
+          <Text className="text-xs font-semibold text-gray-400 uppercase mb-3">
             Quick Actions
           </Text>
           <View className="flex-row justify-around">
@@ -402,16 +402,16 @@ export default function ContactDetailsScreen() {
 
         {/* AI Draft Editor - shown after generation */}
         {showDraftEditor && (
-          <View className="bg-white mt-2 px-6 py-4">
+          <View className="bg-gray-900 mt-2 px-6 py-4">
             <View className="flex-row items-center justify-between mb-3">
               <View className="flex-row items-center gap-2">
-                <Sparkles size={18} color="#7C3AED" />
-                <Text className="text-xs font-semibold text-gray-500 uppercase">
+                <Sparkles size={18} color="#A78BFA" />
+                <Text className="text-xs font-semibold text-gray-400 uppercase">
                   AI Generated Draft
                 </Text>
               </View>
               <TouchableOpacity onPress={handleCancelDraft}>
-                <X size={20} color="#6B7280" />
+                <X size={20} color="#9CA3AF" />
               </TouchableOpacity>
             </View>
 
@@ -419,7 +419,8 @@ export default function ContactDetailsScreen() {
               value={draft}
               onChangeText={setDraft}
               multiline
-              className="bg-gray-50 p-4 rounded-xl text-base text-gray-900 min-h-[120px] mb-4 border border-gray-200"
+              placeholderTextColor="#6B7280"
+              className="bg-gray-800 p-4 rounded-xl text-base text-white min-h-[120px] mb-4 border border-gray-700"
               style={{ textAlignVertical: "top" }}
               placeholder="Edit your message..."
             />
@@ -427,9 +428,9 @@ export default function ContactDetailsScreen() {
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={handleCancelDraft}
-                className="flex-1 py-3 rounded-xl border border-gray-300 active:bg-gray-50"
+                className="flex-1 py-3 rounded-xl border border-gray-700 active:bg-gray-800"
               >
-                <Text className="text-center font-semibold text-gray-700">
+                <Text className="text-center font-semibold text-gray-300">
                   Cancel
                 </Text>
               </TouchableOpacity>
@@ -439,7 +440,7 @@ export default function ContactDetailsScreen() {
                 className={`flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2 ${
                   draft.trim()
                     ? "bg-blue-600 active:bg-blue-700"
-                    : "bg-gray-300"
+                    : "bg-gray-700"
                 }`}
               >
                 <Send size={18} color="white" />
@@ -453,20 +454,20 @@ export default function ContactDetailsScreen() {
 
         {/* Loading state for draft generation */}
         {generatingDraft && (
-          <View className="bg-white mt-2 px-6 py-4">
+          <View className="bg-gray-900 mt-2 px-6 py-4">
             <View className="flex-row items-center justify-center gap-3 py-4">
-              <ActivityIndicator size="small" color="#7C3AED" />
-              <Text className="text-gray-600">Generating AI draft...</Text>
+              <ActivityIndicator size="small" color="#A78BFA" />
+              <Text className="text-gray-300">Generating AI draft...</Text>
             </View>
           </View>
         )}
 
         {/* Notes Section */}
-        <View className="bg-white mt-2 px-6 py-4">
+        <View className="bg-gray-900 mt-2 px-6 py-4">
           <View className="flex-row items-center justify-between mb-3">
             <View className="flex-row items-center gap-2">
-              <FileText size={18} color="#6B7280" />
-              <Text className="text-xs font-semibold text-gray-500 uppercase">
+              <FileText size={18} color="#9CA3AF" />
+              <Text className="text-xs font-semibold text-gray-400 uppercase">
                 Notes
               </Text>
             </View>
@@ -481,17 +482,17 @@ export default function ContactDetailsScreen() {
 
           {loadingNotes ? (
             <View className="py-4">
-              <Text className="text-gray-500 text-center text-sm">
+              <Text className="text-gray-400 text-center text-sm">
                 Loading notes...
               </Text>
             </View>
           ) : contactNotes.length === 0 ? (
-            <View className="py-4 bg-gray-50 rounded-lg items-center">
-              <Text className="text-gray-500 text-sm mb-2">
+            <View className="py-4 bg-gray-800 rounded-lg items-center">
+              <Text className="text-gray-400 text-sm mb-2">
                 No notes for this contact yet
               </Text>
               <TouchableOpacity onPress={handleCreateNote}>
-                <Text className="text-blue-600 text-sm font-medium">
+                <Text className="text-blue-500 text-sm font-medium">
                   Create your first note
                 </Text>
               </TouchableOpacity>
@@ -525,19 +526,19 @@ export default function ContactDetailsScreen() {
         </View>
 
         {phoneNumbers.length > 0 && (
-          <View className="bg-white mt-2 px-6 py-4">
-            <Text className="text-xs font-semibold text-gray-500 uppercase mb-3">
+          <View className="bg-gray-900 mt-2 px-6 py-4">
+            <Text className="text-xs font-semibold text-gray-400 uppercase mb-3">
               Phone Numbers
             </Text>
             {phoneNumbers.map((phone, idx) => (
               <TouchableOpacity
                 key={idx}
                 onPress={() => handleCall(phone)}
-                className="flex-row items-center py-3 border-b border-gray-100 last:border-b-0"
+                className="flex-row items-center py-3 border-b border-gray-700 last:border-b-0"
               >
-                <Phone size={20} color="#6B7280" />
-                <Text className="ml-3 text-base flex-1">{phone}</Text>
-                <Text className="text-sm text-gray-500">
+                <Phone size={20} color="#9CA3AF" />
+                <Text className="ml-3 text-base flex-1 text-white">{phone}</Text>
+                <Text className="text-sm text-gray-400">
                   {idx === 0 ? "Primary" : "Other"}
                 </Text>
               </TouchableOpacity>
@@ -546,19 +547,19 @@ export default function ContactDetailsScreen() {
         )}
 
         {emails.length > 0 && (
-          <View className="bg-white mt-2 px-6 py-4">
-            <Text className="text-xs font-semibold text-gray-500 uppercase mb-3">
+          <View className="bg-gray-900 mt-2 px-6 py-4">
+            <Text className="text-xs font-semibold text-gray-400 uppercase mb-3">
               Email Addresses
             </Text>
             {emails.map((email, idx) => (
               <TouchableOpacity
                 key={idx}
                 onPress={() => handleEmail(email)}
-                className="flex-row items-center py-3 border-b border-gray-100 last:border-b-0"
+                className="flex-row items-center py-3 border-b border-gray-700 last:border-b-0"
               >
-                <Mail size={20} color="#6B7280" />
-                <Text className="ml-3 text-base flex-1">{email}</Text>
-                <Text className="text-sm text-gray-500">
+                <Mail size={20} color="#9CA3AF" />
+                <Text className="ml-3 text-base flex-1 text-white">{email}</Text>
+                <Text className="text-sm text-gray-400">
                   {idx === 0 ? "Primary" : "Other"}
                 </Text>
               </TouchableOpacity>
@@ -567,51 +568,51 @@ export default function ContactDetailsScreen() {
         )}
 
         {contact.notes && (
-          <View className="bg-white mt-2 px-6 py-4">
-            <Text className="text-xs font-semibold text-gray-500 uppercase mb-3">
+          <View className="bg-gray-900 mt-2 px-6 py-4">
+            <Text className="text-xs font-semibold text-gray-400 uppercase mb-3">
               Notes
             </Text>
-            <Text className="text-base text-gray-700 leading-6">
+            <Text className="text-base text-gray-300 leading-6">
               {contact.notes}
             </Text>
           </View>
         )}
 
-        <View className="bg-white mt-2 px-6 py-4">
-          <Text className="text-xs font-semibold text-gray-500 uppercase mb-3">
+        <View className="bg-gray-900 mt-2 px-6 py-4">
+          <Text className="text-xs font-semibold text-gray-400 uppercase mb-3">
             Details
           </Text>
 
-          <View className="flex-row items-center py-3 border-b border-gray-100">
-            <Tag size={20} color="#6B7280" />
+          <View className="flex-row items-center py-3 border-b border-gray-700">
+            <Tag size={20} color="#9CA3AF" />
             <View className="ml-3 flex-1">
-              <Text className="text-sm text-gray-500 mb-1">Source</Text>
-              <Text className="text-base capitalize">{contact.sourceType}</Text>
+              <Text className="text-sm text-gray-400 mb-1">Source</Text>
+              <Text className="text-base capitalize text-white">{contact.sourceType}</Text>
             </View>
           </View>
 
-          <View className="flex-row items-center py-3 border-b border-gray-100">
-            <Calendar size={20} color="#6B7280" />
+          <View className="flex-row items-center py-3 border-b border-gray-700">
+            <Calendar size={20} color="#9CA3AF" />
             <View className="ml-3 flex-1">
-              <Text className="text-sm text-gray-500 mb-1">First Seen</Text>
-              <Text className="text-base">
+              <Text className="text-sm text-gray-400 mb-1">First Seen</Text>
+              <Text className="text-base text-white">
                 {new Date(contact.firstSeenAt).toLocaleDateString()}
               </Text>
             </View>
           </View>
 
           <View className="flex-row items-center py-3">
-            <Calendar size={20} color="#6B7280" />
+            <Calendar size={20} color="#9CA3AF" />
             <View className="ml-3 flex-1">
-              <Text className="text-sm text-gray-500 mb-1">Last Updated</Text>
-              <Text className="text-base">
+              <Text className="text-sm text-gray-400 mb-1">Last Updated</Text>
+              <Text className="text-base text-white">
                 {new Date(contact.lastImportedAt).toLocaleDateString()}
               </Text>
             </View>
           </View>
         </View>
 
-        <View className="bg-white mt-2 px-6 py-4">
+        <View className="bg-gray-900 mt-2 px-6 py-4">
           <CadenceSelector
             value={cadenceDays}
             onChange={handleCadenceChange}

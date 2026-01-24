@@ -11,35 +11,35 @@ export default function Settings() {
   const router = useRouter();
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-800">
       <ScrollView>
         <View className="p-4">
-          <Text className="text-2xl font-bold mb-6">Settings</Text>
+          <Text className="text-2xl font-bold mb-6 text-white">Settings</Text>
 
           {/* Account Section */}
           <View className="mb-6">
-            <Text className="text-sm font-semibold text-gray-500 uppercase mb-3 px-1">
+            <Text className="text-sm font-semibold text-gray-400 uppercase mb-3 px-1">
               Account
             </Text>
-            <View className="bg-white rounded-xl p-4 mb-2">
-              <Text className="text-sm text-gray-500 mb-1">Email</Text>
-              <Text className="text-base">{profile?.email}</Text>
+            <View className="bg-gray-900 rounded-xl p-4 mb-2">
+              <Text className="text-sm text-gray-400 mb-1">Email</Text>
+              <Text className="text-base text-white">{profile?.email}</Text>
             </View>
           </View>
 
           {/* Navigation Section */}
           <View className="mb-6">
-            <Text className="text-sm font-semibold text-gray-500 uppercase mb-3 px-1">
+            <Text className="text-sm font-semibold text-gray-400 uppercase mb-3 px-1">
               Navigation
             </Text>
-            <View className="bg-white rounded-xl overflow-hidden">
+            <View className="bg-gray-900 rounded-xl overflow-hidden">
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)")}
-                className="p-4 flex-row items-center justify-between border-b border-gray-100"
+                className="p-4 flex-row items-center justify-between border-b border-gray-700"
               >
                 <View className="flex-row items-center gap-3">
                   <HomeIcon size={20} color="#3B82F6" />
-                  <Text className="text-base font-medium">Home</Text>
+                  <Text className="text-base font-medium text-white">Home</Text>
                 </View>
                 <ChevronRight size={20} color="#9CA3AF" />
               </TouchableOpacity>
@@ -49,7 +49,7 @@ export default function Settings() {
               >
                 <View className="flex-row items-center gap-3">
                   <UsersIcon size={20} color="#10B981" />
-                  <Text className="text-base font-medium">Contacts</Text>
+                  <Text className="text-base font-medium text-white">Contacts</Text>
                 </View>
                 <ChevronRight size={20} color="#9CA3AF" />
               </TouchableOpacity>
@@ -58,16 +58,16 @@ export default function Settings() {
 
           {/* Premium Features Section */}
           <View className="mb-6">
-            <Text className="text-sm font-semibold text-gray-500 uppercase mb-3 px-1">
+            <Text className="text-sm font-semibold text-gray-400 uppercase mb-3 px-1">
               Premium Features
             </Text>
-            <View className="bg-white rounded-xl overflow-hidden">
+            <View className="bg-gray-900 rounded-xl overflow-hidden">
               <TouchableOpacity
                 onPress={() => router.push("/reports")}
                 className="p-4 flex-row items-center justify-between"
               >
                 <View className="flex-row items-center gap-3">
-                  <Text className="text-base font-medium">Reports</Text>
+                  <Text className="text-base font-medium text-white">Reports</Text>
                   {!profile?.isPremiumUser && (
                     <Lock size={16} color="#9CA3AF" />
                   )}

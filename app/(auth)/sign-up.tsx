@@ -56,23 +56,24 @@ export default function SignUp() {
 
   if (pendingVerification) {
     return (
-      <View className="flex-1 bg-white px-6 justify-center">
+      <View className="flex-1 bg-gray-800 px-6 justify-center">
         <View className="mb-12">
-          <Text className="text-4xl font-bold mb-2">Check your email</Text>
-          <Text className="text-gray-600 text-lg">
+          <Text className="text-4xl font-bold mb-2 text-white">Check your email</Text>
+          <Text className="text-gray-300 text-lg">
             We sent a verification code to {emailAddress}
           </Text>
         </View>
 
         <View className="mb-6">
-          <Text className="text-sm font-medium mb-2 text-gray-700">
+          <Text className="text-sm font-medium mb-2 text-gray-300">
             Verification Code
           </Text>
           <TextInput
             value={code}
             placeholder="123456"
+            placeholderTextColor="#6B7280"
             onChangeText={setCode}
-            className="bg-gray-50 px-4 py-4 rounded-xl text-base text-center tracking-widest"
+            className="bg-gray-900 px-4 py-4 rounded-xl text-base text-center tracking-widest text-white"
             keyboardType="number-pad"
             maxLength={6}
           />
@@ -91,35 +92,37 @@ export default function SignUp() {
   }
 
   return (
-    <View className="flex-1 bg-white px-6 justify-center">
+    <View className="flex-1 bg-gray-800 px-6 justify-center">
       <View className="mb-12">
-        <Text className="text-4xl font-bold mb-2">Create account</Text>
-        <Text className="text-gray-600 text-lg">Get started with RollCall</Text>
+        <Text className="text-4xl font-bold mb-2 text-white">Create account</Text>
+        <Text className="text-gray-300 text-lg">Get started with RollCall</Text>
       </View>
 
       <View className="gap-4 mb-6">
         <View>
-          <Text className="text-sm font-medium mb-2 text-gray-700">Email</Text>
+          <Text className="text-sm font-medium mb-2 text-gray-300">Email</Text>
           <TextInput
             autoCapitalize="none"
             value={emailAddress}
             placeholder="you@example.com"
+            placeholderTextColor="#6B7280"
             onChangeText={setEmailAddress}
-            className="bg-gray-50 px-4 py-4 rounded-xl text-base"
+            className="bg-gray-900 px-4 py-4 rounded-xl text-base text-white"
             keyboardType="email-address"
           />
         </View>
 
         <View>
-          <Text className="text-sm font-medium mb-2 text-gray-700">
+          <Text className="text-sm font-medium mb-2 text-gray-300">
             Password
           </Text>
           <TextInput
             value={password}
             placeholder="••••••••"
+            placeholderTextColor="#6B7280"
             secureTextEntry={true}
             onChangeText={setPassword}
-            className="bg-gray-50 px-4 py-4 rounded-xl text-base"
+            className="bg-gray-900 px-4 py-4 rounded-xl text-base text-white"
           />
         </View>
       </View>
@@ -134,7 +137,7 @@ export default function SignUp() {
       </TouchableOpacity>
 
       <View className="flex-row justify-center items-center gap-1">
-        <Text className="text-gray-600">Already have an account?</Text>
+        <Text className="text-gray-400">Already have an account?</Text>
         <Link href="/(auth)/sign-in" asChild>
           <TouchableOpacity>
             <Text className="text-blue-600 font-semibold">Sign in</Text>

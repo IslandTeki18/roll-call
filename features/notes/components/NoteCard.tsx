@@ -42,27 +42,27 @@ export default function NoteCard({
     <TouchableOpacity
       onPress={onPress}
       onLongPress={onLongPress}
-      className="bg-white p-4 rounded-xl border border-gray-200 mb-3"
+      className="bg-gray-900 p-4 rounded-xl border border-gray-700 mb-3"
     >
       {/* Header row */}
       <View className="flex-row items-center justify-between mb-2">
         <View className="flex-row items-center gap-2">
-          {note.isPinned && <Pin size={14} color="#3B82F6" fill="#3B82F6" />}
-          {hasAISummary && <Sparkles size={14} color="#7C3AED" />}
+          {note.isPinned && <Pin size={14} color="#60A5FA" fill="#60A5FA" />}
+          {hasAISummary && <Sparkles size={14} color="#A78BFA" />}
           {contactCount > 0 && (
             <View className="flex-row items-center gap-1">
               <Link2 size={12} color="#9CA3AF" />
-              <Text className="text-xs text-gray-500">{contactCount}</Text>
+              <Text className="text-xs text-gray-400">{contactCount}</Text>
             </View>
           )}
         </View>
-        <Text className="text-xs text-gray-400">
+        <Text className="text-xs text-gray-500">
           {formatDate(note.$updatedAt)}
         </Text>
       </View>
 
       {/* Content */}
-      <Text className="text-gray-800 text-sm leading-5 mb-2">
+      <Text className="text-gray-300 text-sm leading-5 mb-2">
         {truncatedText}
       </Text>
 
@@ -70,12 +70,12 @@ export default function NoteCard({
       {tags.length > 0 && (
         <View className="flex-row flex-wrap gap-1">
           {tags.slice(0, 3).map((tag) => (
-            <View key={tag} className="bg-gray-100 px-2 py-0.5 rounded-full">
-              <Text className="text-xs text-gray-600">#{tag}</Text>
+            <View key={tag} className="bg-gray-700 px-2 py-0.5 rounded-full">
+              <Text className="text-xs text-gray-300">#{tag}</Text>
             </View>
           ))}
           {tags.length > 3 && (
-            <Text className="text-xs text-gray-400">+{tags.length - 3}</Text>
+            <Text className="text-xs text-gray-500">+{tags.length - 3}</Text>
           )}
         </View>
       )}

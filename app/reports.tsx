@@ -101,15 +101,15 @@ export default function Reports() {
 
   if (!isPremium) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView className="flex-1 bg-gray-800">
         <View className="flex-1 items-center justify-center px-6">
-          <View className="bg-gray-200 rounded-full p-6 mb-4">
-            <Lock size={48} color="#6B7280" />
+          <View className="bg-gray-700 rounded-full p-6 mb-4">
+            <Lock size={48} color="#9CA3AF" />
           </View>
-          <Text className="text-xl font-bold text-gray-900 mb-2">
+          <Text className="text-xl font-bold text-white mb-2">
             Premium Feature
           </Text>
-          <Text className="text-gray-600 text-center mb-6">
+          <Text className="text-gray-300 text-center mb-6">
             Unlock Reports to see your relationship health overview, overdue
             contacts, and streak tracking.
           </Text>
@@ -126,70 +126,70 @@ export default function Reports() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-50">
+      <SafeAreaView className="flex-1 bg-gray-800">
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#3B82F6" />
-          <Text className="text-gray-600 mt-4">Loading your reports...</Text>
+          <Text className="text-gray-300 mt-4">Loading your reports...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-800">
       <ScrollView className="flex-1">
         <View className="p-6">
-          <Text className="text-3xl font-bold text-gray-900 mb-2">Reports</Text>
-          <Text className="text-gray-600 mb-6">
+          <Text className="text-3xl font-bold text-white mb-2">Reports</Text>
+          <Text className="text-gray-300 mb-6">
             Track your relationship health and engagement patterns
           </Text>
 
           {/* Quick Stats */}
           <View className="mb-6">
-            <Text className="text-lg font-semibold text-gray-900 mb-3">Quick Stats</Text>
+            <Text className="text-lg font-semibold text-white mb-3">Quick Stats</Text>
             <View className="flex-row flex-wrap gap-3">
               {/* Total Contacts */}
-              <View className="bg-white rounded-xl p-4 flex-1 min-w-[45%] shadow-sm">
+              <View className="bg-gray-900 rounded-xl p-4 flex-1 min-w-[45%]">
                 <View className="flex-row items-center mb-2">
-                  <View className="bg-blue-100 rounded-full p-2 mr-2">
-                    <Users size={20} color="#3B82F6" />
+                  <View className="bg-blue-900 rounded-full p-2 mr-2">
+                    <Users size={20} color="#60A5FA" />
                   </View>
-                  <Text className="text-gray-600 text-sm">Total Contacts</Text>
+                  <Text className="text-gray-400 text-sm">Total Contacts</Text>
                 </View>
-                <Text className="text-2xl font-bold text-gray-900">{stats.totalContacts}</Text>
+                <Text className="text-2xl font-bold text-white">{stats.totalContacts}</Text>
               </View>
 
               {/* This Week */}
-              <View className="bg-white rounded-xl p-4 flex-1 min-w-[45%] shadow-sm">
+              <View className="bg-gray-900 rounded-xl p-4 flex-1 min-w-[45%]">
                 <View className="flex-row items-center mb-2">
-                  <View className="bg-green-100 rounded-full p-2 mr-2">
-                    <MessageCircle size={20} color="#10B981" />
+                  <View className="bg-green-900 rounded-full p-2 mr-2">
+                    <MessageCircle size={20} color="#34D399" />
                   </View>
-                  <Text className="text-gray-600 text-sm">This Week</Text>
+                  <Text className="text-gray-400 text-sm">This Week</Text>
                 </View>
-                <Text className="text-2xl font-bold text-gray-900">{stats.engagementsThisWeek}</Text>
+                <Text className="text-2xl font-bold text-white">{stats.engagementsThisWeek}</Text>
               </View>
 
               {/* This Month */}
-              <View className="bg-white rounded-xl p-4 flex-1 min-w-[45%] shadow-sm">
+              <View className="bg-gray-900 rounded-xl p-4 flex-1 min-w-[45%]">
                 <View className="flex-row items-center mb-2">
-                  <View className="bg-purple-100 rounded-full p-2 mr-2">
-                    <Calendar size={20} color="#8B5CF6" />
+                  <View className="bg-purple-900 rounded-full p-2 mr-2">
+                    <Calendar size={20} color="#A78BFA" />
                   </View>
-                  <Text className="text-gray-600 text-sm">This Month</Text>
+                  <Text className="text-gray-400 text-sm">This Month</Text>
                 </View>
-                <Text className="text-2xl font-bold text-gray-900">{stats.engagementsThisMonth}</Text>
+                <Text className="text-2xl font-bold text-white">{stats.engagementsThisMonth}</Text>
               </View>
 
               {/* Average RHS */}
-              <View className="bg-white rounded-xl p-4 flex-1 min-w-[45%] shadow-sm">
+              <View className="bg-gray-900 rounded-xl p-4 flex-1 min-w-[45%]">
                 <View className="flex-row items-center mb-2">
-                  <View className="bg-orange-100 rounded-full p-2 mr-2">
-                    <TrendingUp size={20} color="#F97316" />
+                  <View className="bg-orange-900 rounded-full p-2 mr-2">
+                    <TrendingUp size={20} color="#FB923C" />
                   </View>
-                  <Text className="text-gray-600 text-sm">Avg RHS</Text>
+                  <Text className="text-gray-400 text-sm">Avg RHS</Text>
                 </View>
-                <Text className="text-2xl font-bold text-gray-900">
+                <Text className="text-2xl font-bold text-white">
                   {stats.averageRHS.toFixed(1)}
                 </Text>
                 <Text className="text-xs text-gray-500 mt-1">
@@ -201,29 +201,29 @@ export default function Reports() {
 
           {/* Coming Soon Features */}
           <View className="mb-6">
-            <Text className="text-lg font-semibold text-gray-900 mb-3">Analytics</Text>
+            <Text className="text-lg font-semibold text-white mb-3">Analytics</Text>
 
             {/* Engagement Heatmap */}
             <TouchableOpacity
               onPress={() => handleComingSoon("Engagement Heatmap")}
-              className="bg-white rounded-xl p-4 mb-3 shadow-sm active:bg-gray-50"
+              className="bg-gray-900 rounded-xl p-4 mb-3 active:bg-gray-700"
             >
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center flex-1">
-                  <View className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg p-3 mr-3">
-                    <Calendar size={24} color="#3B82F6" />
+                  <View className="bg-blue-900 rounded-lg p-3 mr-3">
+                    <Calendar size={24} color="#60A5FA" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-base font-semibold text-gray-900">
+                    <Text className="text-base font-semibold text-white">
                       Engagement Heatmap
                     </Text>
-                    <Text className="text-sm text-gray-600">
+                    <Text className="text-sm text-gray-400">
                       Visualize your engagement patterns
                     </Text>
                   </View>
                 </View>
-                <View className="bg-yellow-100 px-3 py-1 rounded-full">
-                  <Text className="text-xs font-semibold text-yellow-700">Soon</Text>
+                <View className="bg-yellow-900 px-3 py-1 rounded-full">
+                  <Text className="text-xs font-semibold text-yellow-300">Soon</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -231,24 +231,24 @@ export default function Reports() {
             {/* Cooling Contacts List */}
             <TouchableOpacity
               onPress={() => handleComingSoon("Cooling Contacts")}
-              className="bg-white rounded-xl p-4 mb-3 shadow-sm active:bg-gray-50"
+              className="bg-gray-900 rounded-xl p-4 mb-3 active:bg-gray-700"
             >
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center flex-1">
-                  <View className="bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg p-3 mr-3">
-                    <Clock size={24} color="#F97316" />
+                  <View className="bg-orange-900 rounded-lg p-3 mr-3">
+                    <Clock size={24} color="#FB923C" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-base font-semibold text-gray-900">
+                    <Text className="text-base font-semibold text-white">
                       Cooling Contacts
                     </Text>
-                    <Text className="text-sm text-gray-600">
+                    <Text className="text-sm text-gray-400">
                       Relationships that need attention
                     </Text>
                   </View>
                 </View>
-                <View className="bg-yellow-100 px-3 py-1 rounded-full">
-                  <Text className="text-xs font-semibold text-yellow-700">Soon</Text>
+                <View className="bg-yellow-900 px-3 py-1 rounded-full">
+                  <Text className="text-xs font-semibold text-yellow-300">Soon</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -256,24 +256,24 @@ export default function Reports() {
             {/* Streak Tracking */}
             <TouchableOpacity
               onPress={() => handleComingSoon("Streak Tracking")}
-              className="bg-white rounded-xl p-4 mb-3 shadow-sm active:bg-gray-50"
+              className="bg-gray-900 rounded-xl p-4 mb-3 active:bg-gray-700"
             >
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center flex-1">
-                  <View className="bg-gradient-to-br from-green-100 to-green-200 rounded-lg p-3 mr-3">
-                    <TrendingUp size={24} color="#10B981" />
+                  <View className="bg-green-900 rounded-lg p-3 mr-3">
+                    <TrendingUp size={24} color="#34D399" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-base font-semibold text-gray-900">
+                    <Text className="text-base font-semibold text-white">
                       Streak Tracking
                     </Text>
-                    <Text className="text-sm text-gray-600">
+                    <Text className="text-sm text-gray-400">
                       Monitor your consistency
                     </Text>
                   </View>
                 </View>
-                <View className="bg-yellow-100 px-3 py-1 rounded-full">
-                  <Text className="text-xs font-semibold text-yellow-700">Soon</Text>
+                <View className="bg-yellow-900 px-3 py-1 rounded-full">
+                  <Text className="text-xs font-semibold text-yellow-300">Soon</Text>
                 </View>
               </View>
             </TouchableOpacity>
@@ -281,24 +281,24 @@ export default function Reports() {
             {/* RHS Trends */}
             <TouchableOpacity
               onPress={() => handleComingSoon("RHS Trends")}
-              className="bg-white rounded-xl p-4 shadow-sm active:bg-gray-50"
+              className="bg-gray-900 rounded-xl p-4 active:bg-gray-700"
             >
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center flex-1">
-                  <View className="bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg p-3 mr-3">
-                    <TrendingUp size={24} color="#8B5CF6" />
+                  <View className="bg-purple-900 rounded-lg p-3 mr-3">
+                    <TrendingUp size={24} color="#A78BFA" />
                   </View>
                   <View className="flex-1">
-                    <Text className="text-base font-semibold text-gray-900">
+                    <Text className="text-base font-semibold text-white">
                       RHS Trends Over Time
                     </Text>
-                    <Text className="text-sm text-gray-600">
+                    <Text className="text-sm text-gray-400">
                       Track relationship health changes
                     </Text>
                   </View>
                 </View>
-                <View className="bg-yellow-100 px-3 py-1 rounded-full">
-                  <Text className="text-xs font-semibold text-yellow-700">Soon</Text>
+                <View className="bg-yellow-900 px-3 py-1 rounded-full">
+                  <Text className="text-xs font-semibold text-yellow-300">Soon</Text>
                 </View>
               </View>
             </TouchableOpacity>

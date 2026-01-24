@@ -205,25 +205,25 @@ export default function DraftPicker({
             onPress={onClose}
           />
 
-          <View className="bg-white rounded-t-3xl shadow-2xl max-h-[85vh]">
+          <View className="bg-gray-900 rounded-t-3xl shadow-2xl max-h-[85vh]">
             <ScrollView keyboardShouldPersistTaps="handled">
               {/* Header */}
-              <View className="flex-row items-center justify-between px-6 pt-6 pb-4 border-b border-gray-200">
+              <View className="flex-row items-center justify-between px-6 pt-6 pb-4 border-b border-gray-700">
                 <View className="flex-row items-center flex-1">
-                  <View className="w-12 h-12 rounded-full bg-blue-100 items-center justify-center mr-3">
-                    <Text className="text-blue-600 text-lg font-bold">
+                  <View className="w-12 h-12 rounded-full bg-blue-900 items-center justify-center mr-3">
+                    <Text className="text-blue-300 text-lg font-bold">
                       {initials}
                     </Text>
                   </View>
                   <View className="flex-1">
-                    <Text className="text-lg font-bold">
+                    <Text className="text-lg font-bold text-white">
                       {card.contact?.displayName}
                     </Text>
-                    <Text className="text-sm text-gray-500">{card.reason}</Text>
+                    <Text className="text-sm text-gray-400">{card.reason}</Text>
                   </View>
                 </View>
                 <TouchableOpacity onPress={onClose} className="p-2 -mr-2">
-                  <X size={24} color="#6B7280" />
+                  <X size={24} color="#9CA3AF" />
                 </TouchableOpacity>
               </View>
 
@@ -276,7 +276,7 @@ export default function DraftPicker({
 
                 {/* Channel selector */}
                 <View className="mb-6">
-                  <Text className="text-sm font-semibold text-gray-700 mb-3">
+                  <Text className="text-sm font-semibold text-gray-300 mb-3">
                     Send via
                   </Text>
                   <View className="flex-row gap-2">
@@ -290,8 +290,8 @@ export default function DraftPicker({
                           onPress={() => setSelectedChannel(channel)}
                           className={`flex-1 items-center py-3 rounded-xl border-2 ${
                             isSelected
-                              ? "border-blue-500 bg-blue-50"
-                              : "border-gray-200"
+                              ? "border-blue-500 bg-blue-900"
+                              : "border-gray-700"
                           }`}
                         >
                           <Icon
@@ -300,7 +300,7 @@ export default function DraftPicker({
                           />
                           <Text
                             className={`text-xs font-medium mt-1 ${
-                              isSelected ? "text-gray-900" : "text-gray-500"
+                              isSelected ? "text-white" : "text-gray-400"
                             }`}
                           >
                             {config.label}
@@ -320,8 +320,8 @@ export default function DraftPicker({
                             onPress={() => setSelectedChannel(channel)}
                             className={`flex-1 items-center py-3 rounded-xl border-2 ${
                               isSelected
-                                ? "border-blue-500 bg-blue-50"
-                                : "border-gray-200"
+                                ? "border-blue-500 bg-blue-900"
+                                : "border-gray-700"
                             }`}
                           >
                             <Icon
@@ -330,7 +330,7 @@ export default function DraftPicker({
                             />
                             <Text
                               className={`text-xs font-medium mt-1 ${
-                                isSelected ? "text-gray-900" : "text-gray-500"
+                                isSelected ? "text-white" : "text-gray-400"
                               }`}
                             >
                               {config.label}
@@ -345,7 +345,7 @@ export default function DraftPicker({
                           onPress={() =>
                             requirePremium(`${config.label} sends`)
                           }
-                          className="flex-1 items-center py-3 rounded-xl border-2 border-dashed border-gray-300"
+                          className="flex-1 items-center py-3 rounded-xl border-2 border-dashed border-gray-700"
                         >
                           <View className="relative">
                             <Icon size={24} color="#D1D5DB" />
@@ -365,7 +365,7 @@ export default function DraftPicker({
                 {/* Draft options */}
                 <View className="mb-6">
                   <View className="flex-row items-center justify-between mb-3">
-                    <Text className="text-sm font-semibold text-gray-700">
+                    <Text className="text-sm font-semibold text-gray-300">
                       Pick a draft
                     </Text>
                     {isPremium ? (
@@ -396,22 +396,22 @@ export default function DraftPicker({
                           onPress={() => handleSelectDraft(draft)}
                           className={`p-4 rounded-xl border-2 ${
                             selectedDraft?.id === draft.id
-                              ? "border-blue-500 bg-blue-50"
-                              : "border-gray-200 bg-gray-50"
+                              ? "border-blue-500 bg-blue-900"
+                              : "border-gray-700 bg-gray-800"
                           }`}
                         >
                           <View className="flex-row items-center justify-between mb-2">
                             <Text
                               className={`text-xs font-semibold uppercase ${
                                 selectedDraft?.id === draft.id
-                                  ? "text-blue-600"
-                                  : "text-gray-500"
+                                  ? "text-blue-400"
+                                  : "text-gray-400"
                               }`}
                             >
                               {draft.tone}
                             </Text>
                           </View>
-                          <Text className="text-gray-800 text-sm leading-5">
+                          <Text className="text-gray-300 text-sm leading-5">
                             {draft.text}
                           </Text>
                         </TouchableOpacity>
@@ -434,16 +434,16 @@ export default function DraftPicker({
 
                 {/* Custom message */}
                 <View className="mb-6">
-                  <Text className="text-sm font-semibold text-gray-700 mb-3">
+                  <Text className="text-sm font-semibold text-gray-300 mb-3">
                     Or customize
                   </Text>
                   <TextInput
                     value={customMessage}
                     onChangeText={setCustomMessage}
                     placeholder="Write your own message..."
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor="#6B7280"
                     multiline
-                    className="bg-gray-50 px-4 py-4 rounded-xl text-base min-h-[100px] text-gray-900 border border-gray-200"
+                    className="bg-gray-800 px-4 py-4 rounded-xl text-base min-h-[100px] text-white border border-gray-700"
                     style={{ textAlignVertical: "top" }}
                   />
                 </View>
