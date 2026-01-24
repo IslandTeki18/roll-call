@@ -36,8 +36,14 @@ import {
  */
 export function emitEvent(params: EmitActionEventParams): void {
   emitActionEvent(params).catch((err) => {
-    console.error('Event emission failed:', err);
+    console.error('═══ Event Emission Failed ═══');
+    console.error('Error:', err);
+    console.error('Error message:', err?.message);
+    console.error('Error code:', err?.code);
+    console.error('Error type:', err?.type);
+    console.error('Full error object:', JSON.stringify(err, null, 2));
     console.error('Failed event params:', params);
+    console.error('════════════════════════════');
   });
 }
 

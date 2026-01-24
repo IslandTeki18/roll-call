@@ -328,7 +328,6 @@ export interface ActionEvent {
 
   // Metadata
   metadata: string; // JSON string for action-specific data
-  createdAt: string; // ISO timestamp
 }
 
 // ============================================================================
@@ -353,9 +352,6 @@ export interface ContactScore {
   totalActions: number; // Count of all actions in 90d window
   positiveActions: number; // Actions with positive points
   negativeActions: number; // Actions with negative points
-
-  createdAt: string; // ISO timestamp
-  updatedAt: string; // ISO timestamp
 }
 
 // ============================================================================

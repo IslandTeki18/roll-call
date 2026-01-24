@@ -93,11 +93,10 @@ export async function emitActionEvent(
     isMultiContact,
     linkedCardId: linkedCardId || '',
     metadata: JSON.stringify(metadata),
-    createdAt: timestamp,
   };
 
   try {
-    // Insert to Appwrite
+
     const event = await tablesDB.createRow({
       databaseId: DATABASE_ID,
       tableId: ACTION_EVENTS_TABLE_ID,
@@ -112,8 +111,11 @@ export async function emitActionEvent(
 
     return event as unknown as ActionEvent;
   } catch (error) {
-    console.error('Failed to emit action event:', error);
-    console.error('Event data:', data);
+    console.error('❌ Failed to emit action event');
+    console.error('Error details:', error);
+    console.error('Database ID:', DATABASE_ID);
+    console.error('Table ID:', ACTION_EVENTS_TABLE_ID);
+    console.error('Event data being sent:', JSON.stringify(data, null, 2));
     throw error;
   }
 }

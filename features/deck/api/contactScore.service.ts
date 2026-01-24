@@ -169,8 +169,6 @@ export async function calculateContactScore(
     totalActions: events.length,
     positiveActions,
     negativeActions,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
   };
 
   // Cache the result
@@ -252,7 +250,6 @@ async function upsertContactScore(
       totalActions: score.totalActions,
       positiveActions: score.positiveActions,
       negativeActions: score.negativeActions,
-      updatedAt: new Date().toISOString(),
     };
 
     if (existing) {
@@ -269,10 +266,7 @@ async function upsertContactScore(
         databaseId: DATABASE_ID,
         tableId: CONTACT_SCORES_TABLE_ID,
         rowId: ID.unique(),
-        data: {
-          ...data,
-          createdAt: new Date().toISOString(),
-        },
+        data,
       });
     }
   } catch (error) {

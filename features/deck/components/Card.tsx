@@ -96,6 +96,7 @@ export default function Card({
   return (
     <GestureDetector gesture={composedGesture}>
       <Animated.View
+        className="w-[90vw]"
         style={[
           animatedStyle,
           {
