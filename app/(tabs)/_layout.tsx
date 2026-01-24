@@ -8,6 +8,7 @@ import {
   User,
 } from "lucide-react-native";
 import { useDeckCleanup } from "@/features/deck/hooks/useDeckCleanup";
+import { CustomTabBar } from "@/features/shared/components/CustomTabBar";
 
 export default function TabsLayout() {
   const { isSignedIn } = useAuth();
@@ -35,7 +36,10 @@ export default function TabsLayout() {
   }
 
   return (
-    <Tabs screenOptions={{ headerShown: false }}>
+    <Tabs
+      screenOptions={{ headerShown: false }}
+      tabBar={(props) => <CustomTabBar {...props} />}
+    >
       <Tabs.Screen
         name="notes"
         options={{
