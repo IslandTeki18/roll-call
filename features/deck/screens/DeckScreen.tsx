@@ -358,14 +358,6 @@ export default function DeckScreen() {
             <Crown size={24} color="#FCD34D" />
           </TouchableOpacity>
         </View>
-
-        {quotaExhausted && (
-          <View className="bg-green-900 px-3 py-1 rounded-full self-start">
-            <Text className="text-green-300 text-xs font-semibold">
-              Today&apos;s Deck
-            </Text>
-          </View>
-        )}
       </View>
 
       {allCompleted ? (

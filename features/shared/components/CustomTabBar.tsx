@@ -2,14 +2,16 @@ import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { Home, FileText } from 'lucide-react-native';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { useRouter, useSegments } from 'expo-router';
 
-export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
+export function CustomTabBar() {
   const insets = useSafeAreaInsets();
   const { user } = useUser();
+  const router = useRouter();
+  const segments = useSegments();
 
-  // Determine current active route
-  const currentRoute = state.routes[state.index].name;
+  // Determine active route from segments
+  const currentRoute = segments[1] || 'index';
   const isHomeActive = currentRoute === 'index';
   const isNotesActive = currentRoute === 'notes';
   const isSettingsActive = currentRoute === 'settings';
@@ -17,19 +19,19 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   // Navigation handlers
   const navigateToHome = () => {
     if (!isHomeActive) {
-      navigation.navigate('index');
+      router.replace('/(tabs)');
     }
   };
 
   const navigateToNotes = () => {
     if (!isNotesActive) {
-      navigation.navigate('notes');
+      router.replace('/(tabs)/notes');
     }
   };
 
   const navigateToSettings = () => {
     if (!isSettingsActive) {
-      navigation.navigate('settings');
+      router.replace('/(tabs)/settings');
     }
   };
 

@@ -15,51 +15,6 @@ import Animated, {
 import { LinearGradient } from "expo-linear-gradient";
 import { DeckCard } from "../types/deck.types";
 
-// Urgency tier definitions based on RHS score
-type UrgencyTier = "critical" | "high" | "medium" | "low";
-
-interface UrgencyConfig {
-  tier: UrgencyTier;
-  shadowColor: string;
-  shadowRadius: number;
-}
-
-/**
- * Determines urgency tier and shadow glow based on RHS score
- * Higher RHS = More urgent (relationship needs attention)
- */
-function getUrgencyConfig(rhsScore: number): UrgencyConfig {
-  if (rhsScore >= 70) {
-    return {
-      tier: "critical",
-      shadowColor: "#DC2626", // Red
-      shadowRadius: 12,
-    };
-  }
-
-  if (rhsScore >= 50) {
-    return {
-      tier: "high",
-      shadowColor: "#EA580C", // Orange
-      shadowRadius: 12,
-    };
-  }
-
-  if (rhsScore >= 30) {
-    return {
-      tier: "medium",
-      shadowColor: "#CA8A04", // Yellow
-      shadowRadius: 12,
-    };
-  }
-
-  return {
-    tier: "low",
-    shadowColor: "#16A34A", // Green
-    shadowRadius: 12,
-  };
-}
-
 interface CardProps {
   card: DeckCard;
   photoUri: string | null;
@@ -70,7 +25,7 @@ interface CardProps {
 }
 
 const SWIPE_THRESHOLD = 120;
-const CARD_HEIGHT = 500;
+const CARD_HEIGHT = 600;
 
 export default function Card({
   card,
@@ -83,8 +38,6 @@ export default function Card({
   const translateX = useSharedValue(0);
   const isCompleted = card.status === "completed" || card.status === "skipped";
 
-  // Get urgency configuration for shadow glow
-  const urgencyConfig = getUrgencyConfig(card.rhsScore);
 
   useEffect(() => {
     translateX.value = 0;
@@ -146,13 +99,9 @@ export default function Card({
         style={[
           animatedStyle,
           {
-            marginHorizontal: 16,
+            marginBottom: 80,
             height: CARD_HEIGHT,
             borderRadius: 24,
-            shadowColor: urgencyConfig.shadowColor,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: urgencyConfig.shadowRadius,
             elevation: 8,
           },
           isCompleted && { opacity: 0.5 },
@@ -232,94 +181,81 @@ function CardContent({
   return (
     <LinearGradient
       colors={[
-        "rgba(0,0,0,0.6)",
-        "rgba(0,0,0,0.3)",
-        "rgba(0,0,0,0.1)",
+        "rgba(0,0,0,0.0)",
+        "rgba(0,0,0,0.0)",
         "rgba(0,0,0,0.4)",
+        "rgba(0,0,0,0.8)",
       ]}
-      locations={[0, 0.3, 0.6, 1]}
-      style={{ flex: 1, padding: 24, justifyContent: "space-between" }}
+      locations={[0, 0.4, 0.7, 1]}
+      style={{ flex: 1, padding: 28, justifyContent: "flex-end" }}
     >
-      {/* Top Section: Name and Organization */}
+      {/* Initials (only show if no photo) - centered in card */}
+      {!hasPhoto && (
+        <View className="absolute inset-0 items-center justify-center">
+          <View className="w-40 h-40 rounded-full bg-white/20 items-center justify-center">
+            <Text className="text-white text-6xl font-bold">{initials}</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Bottom Section: All content */}
       <View>
         {/* Contact Name */}
         <Text
-          className="text-white font-bold text-4xl mb-2"
+          className="text-white font-black text-5xl mb-1 uppercase"
           style={{
             textShadowColor: "rgba(0,0,0,0.8)",
             textShadowOffset: { width: 0, height: 2 },
-            textShadowRadius: 8,
+            textShadowRadius: 10,
+            letterSpacing: 1,
           }}
         >
           {card.contact?.displayName || "Unknown Contact"}
         </Text>
 
-        {/* Organization Pill */}
+        {/* Organization Tag */}
         {card.contact?.organization && (
-          <View className="bg-white/20 self-start px-3 py-1.5 rounded-full backdrop-blur-sm">
-            <Text
-              className="text-white text-sm font-medium"
-              style={{
-                textShadowColor: "rgba(0,0,0,0.5)",
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 4,
-              }}
-            >
-              {card.contact.organization}
-            </Text>
-          </View>
+          <Text
+            className="text-white/90 text-base mb-3 font-medium"
+            style={{
+              textShadowColor: "rgba(0,0,0,0.6)",
+              textShadowOffset: { width: 0, height: 1 },
+              textShadowRadius: 6,
+            }}
+          >
+            {card.contact.organization}
+          </Text>
         )}
 
-        {/* Initials (only show if no photo) */}
-        {!hasPhoto && (
-          <View className="mt-8 w-32 h-32 rounded-full bg-white/20 items-center justify-center self-center">
-            <Text className="text-white text-5xl font-bold">{initials}</Text>
-          </View>
-        )}
-      </View>
+        {/* RHS Badge and Context in row */}
+        <View className="flex-row items-end justify-between">
+          {/* Context Text */}
+          <Text
+            className="text-white/95 text-sm leading-5 flex-1 mr-3"
+            style={{
+              textShadowColor: "rgba(0,0,0,0.8)",
+              textShadowOffset: { width: 0, height: 2 },
+              textShadowRadius: 8,
+            }}
+          >
+            {contextText}
+          </Text>
 
-      {/* Bottom Section: RHS Badge and Context */}
-      <View>
-        {/* RHS Badge (Bottom-Right) */}
-        <View className="flex-row justify-end mb-3">
-          <View className="bg-white/20 flex-row items-center gap-2 px-3 py-2 rounded-full backdrop-blur-sm">
-            <Flame size={24} color="#FFFFFF" />
+          {/* RHS Badge */}
+          <View className="flex-row items-center gap-1">
+            <Flame size={20} color="#FFFFFF" />
             <Text
-              className="text-white text-lg font-bold"
+              className="text-white text-2xl font-bold"
               style={{
-                textShadowColor: "rgba(0,0,0,0.5)",
+                textShadowColor: "rgba(0,0,0,0.6)",
                 textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 4,
+                textShadowRadius: 6,
               }}
             >
               {Math.round(card.rhsScore)}
             </Text>
           </View>
         </View>
-
-        {/* Context Text */}
-        <Text
-          className="text-white text-base leading-5"
-          style={{
-            textShadowColor: "rgba(0,0,0,0.8)",
-            textShadowOffset: { width: 0, height: 2 },
-            textShadowRadius: 8,
-          }}
-        >
-          {contextText}
-        </Text>
-
-        {/* Instruction Text */}
-        <Text
-          className="text-white/60 text-xs text-center mt-4"
-          style={{
-            textShadowColor: "rgba(0,0,0,0.5)",
-            textShadowOffset: { width: 0, height: 1 },
-            textShadowRadius: 4,
-          }}
-        >
-          Tap to draft • Swipe right to reach out • Swipe left to skip
-        </Text>
       </View>
     </LinearGradient>
   );

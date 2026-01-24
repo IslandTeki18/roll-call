@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Lock, HomeIcon, UsersIcon, ChevronRight } from "lucide-react-native";
+import { HomeIcon, UsersIcon, ChevronRight } from "lucide-react-native";
 import React from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -50,27 +50,6 @@ export default function Settings() {
                 <View className="flex-row items-center gap-3">
                   <UsersIcon size={20} color="#10B981" />
                   <Text className="text-base font-medium text-white">Contacts</Text>
-                </View>
-                <ChevronRight size={20} color="#9CA3AF" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Premium Features Section */}
-          <View className="mb-6">
-            <Text className="text-sm font-semibold text-gray-400 uppercase mb-3 px-1">
-              Premium Features
-            </Text>
-            <View className="bg-gray-900 rounded-xl overflow-hidden">
-              <TouchableOpacity
-                onPress={() => router.push("/reports")}
-                className="p-4 flex-row items-center justify-between"
-              >
-                <View className="flex-row items-center gap-3">
-                  <Text className="text-base font-medium text-white">Reports</Text>
-                  {!profile?.isPremiumUser && (
-                    <Lock size={16} color="#9CA3AF" />
-                  )}
                 </View>
                 <ChevronRight size={20} color="#9CA3AF" />
               </TouchableOpacity>

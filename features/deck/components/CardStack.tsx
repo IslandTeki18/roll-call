@@ -88,7 +88,7 @@ export default function CardStack({
 
   if (!topCard) {
     return (
-      <View className="flex-1 items-center justify-center" style={{ width }}>
+      <View className="flex-1 items-center justify-center">
         <View className="items-center">
           <Text className="text-gray-500 text-lg">No cards available</Text>
         </View>
@@ -101,7 +101,7 @@ export default function CardStack({
   const contextText = contextTextMap.get(topCard.$id || "") || "";
 
   return (
-    <View className="flex-1 items-center justify-center" style={{ width }}>
+    <View className="flex-1 items-center justify-center">
       <Animated.View
         key={`card-${topCard.$id}`}
         entering={FadeIn.duration(300)}
