@@ -15,9 +15,13 @@ import NoteCard from "../components/NoteCard";
 import NoteEditor from "../components/NoteEditor";
 import { useNotes } from "../hooks/useNotes";
 import { Note } from "../types/notes.types";
+import { getContactById } from "@/features/contacts/api/contacts.service";
+import { calculateRHS } from "@/features/deck/api/rhs.service";
+import { useUser } from "@clerk/clerk-expo";
 
 export default function NotesListScreen() {
   const params = useLocalSearchParams();
+  const { user } = useUser();
   const {
     notes,
     pinnedNotes,
@@ -36,6 +40,9 @@ export default function NotesListScreen() {
   const [preSelectedContactId, setPreSelectedContactId] = useState<
     string | undefined
   >();
+  const [noteMetadata, setNoteMetadata] = useState<
+    Map<string, { contactName: string; rhsScore: number }>
+  >(new Map());
 
   // Handle params for note creation with pre-selected contact or note editing
   useEffect(() => {
@@ -61,8 +68,56 @@ export default function NotesListScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     await loadNotes();
+    await fetchNoteMetadata(notes);
     setRefreshing(false);
   };
+
+  // Fetch contact data and RHS scores for notes
+  const fetchNoteMetadata = async (notesToProcess: Note[]) => {
+    if (!user) return;
+
+    const metadata = new Map<string, { contactName: string; rhsScore: number }>();
+
+    for (const note of notesToProcess) {
+      // Get first contact ID from the note
+      const contactIds = note.contactIds?.split(",").filter(Boolean) || [];
+      const firstContactId = contactIds[0];
+
+      if (!firstContactId) {
+        metadata.set(note.$id, { contactName: "Unknown Contact", rhsScore: 0 });
+        continue;
+      }
+
+      try {
+        // Fetch contact data
+        const contact = await getContactById(firstContactId);
+        if (!contact) {
+          metadata.set(note.$id, { contactName: "Unknown Contact", rhsScore: 0 });
+          continue;
+        }
+
+        // Calculate RHS score
+        const rhsFactors = await calculateRHS(user.id, contact);
+
+        metadata.set(note.$id, {
+          contactName: contact.displayName || `${contact.firstName} ${contact.lastName}`.trim(),
+          rhsScore: rhsFactors.totalScore,
+        });
+      } catch (error) {
+        console.error("Failed to fetch metadata for note:", note.$id, error);
+        metadata.set(note.$id, { contactName: "Unknown Contact", rhsScore: 0 });
+      }
+    }
+
+    setNoteMetadata(metadata);
+  };
+
+  // Fetch metadata when notes change
+  useEffect(() => {
+    if (notes.length > 0 && user) {
+      fetchNoteMetadata(notes);
+    }
+  }, [notes, user]);
 
   const handleNotePress = (note: Note) => {
     setEditingNoteId(note.$id);
@@ -108,25 +163,15 @@ export default function NotesListScreen() {
     <SafeAreaView className="flex-1 bg-gray-800">
       {/* Header */}
       <View className="px-4 pt-2 pb-4">
-        <View className="flex-row items-center justify-between mb-4">
-          <Text className="text-2xl font-bold text-white">Notes</Text>
-          <TouchableOpacity
-            onPress={handleNewNote}
-            className="bg-blue-600 p-3 rounded-full"
-          >
-            <Plus size={20} color="white" />
-          </TouchableOpacity>
-        </View>
-
         {/* Search */}
-        <View className="flex-row items-center bg-gray-900 rounded-xl px-4 py-3 border border-gray-700">
+        <View className="flex-row items-center bg-gray-900 px-4 py-3 border border-gray-700 rounded-full">
           <Search size={18} color="#9CA3AF" />
           <TextInput
             value={searchQuery}
             onChangeText={handleSearch}
             placeholder="Search notes..."
             placeholderTextColor="#9CA3AF"
-            className="flex-1 ml-2 text-base text-white"
+            className="flex-1 ml-2 text-base text-white "
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => handleSearch("")}>
@@ -175,13 +220,18 @@ export default function NotesListScreen() {
               <Text className="text-xs font-semibold text-gray-500 uppercase mb-2">
                 Pinned
               </Text>
-              {pinnedNotes.map((note) => (
-                <NoteCard
-                  key={note.$id}
-                  note={note}
-                  onPress={() => handleNotePress(note)}
-                />
-              ))}
+              {pinnedNotes.map((note) => {
+                const meta = noteMetadata.get(note.$id);
+                return (
+                  <NoteCard
+                    key={note.$id}
+                    note={note}
+                    contactName={meta?.contactName}
+                    rhsScore={meta?.rhsScore}
+                    onPress={() => handleNotePress(note)}
+                  />
+                );
+              })}
             </View>
           )}
 
@@ -192,13 +242,18 @@ export default function NotesListScreen() {
                 All Notes
               </Text>
             )}
-            {unpinnedNotes.map((note) => (
-              <NoteCard
-                key={note.$id}
-                note={note}
-                onPress={() => handleNotePress(note)}
-              />
-            ))}
+            {unpinnedNotes.map((note) => {
+              const meta = noteMetadata.get(note.$id);
+              return (
+                <NoteCard
+                  key={note.$id}
+                  note={note}
+                  contactName={meta?.contactName}
+                  rhsScore={meta?.rhsScore}
+                  onPress={() => handleNotePress(note)}
+                />
+              );
+            })}
           </View>
 
           <View className="h-8" />

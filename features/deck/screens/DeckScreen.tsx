@@ -37,7 +37,6 @@ export default function DeckScreen() {
     loading,
     drafts,
     draftsLoading,
-    quotaExhausted,
     photoCache,
     contextTextMap,
     generateDraftsForCard,
@@ -334,7 +333,7 @@ export default function DeckScreen() {
       <View className="px-6 pt-4 pb-2">
         <View className="flex-row items-center gap-3 mb-3">
           {/* Search Bar */}
-          <View className="flex-1 flex-row items-center bg-gray-900 rounded-xl px-4 py-3 border border-gray-800">
+          <View className="flex-1 flex-row items-center bg-gray-900 rounded-full px-4 py-3 border border-gray-800">
             <Search size={20} color="#6B7280" />
             <TextInput
               value={searchQuery}
@@ -353,9 +352,9 @@ export default function DeckScreen() {
           {/* Premium Button */}
           <TouchableOpacity
             onPress={() => router.push("/(tabs)/settings")}
-            className="bg-gray-900 p-3 rounded-xl border border-gray-800"
+            className="bg-transparent p-3 rounded-full"
           >
-            <Crown size={24} color="#FCD34D" />
+            <Crown size={24} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>

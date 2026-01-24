@@ -2,6 +2,7 @@ import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
 import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
 import { generateDraft } from "@/features/messaging/api/drafts.service";
 import { emitPreferenceUpdateEvent } from "@/features/deck/api/profileEvents.service";
+import { calculateRHS } from "@/features/deck/api/rhs.service";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Calendar,
@@ -76,6 +77,7 @@ export default function ContactDetailsScreen() {
   const [savingCadence, setSavingCadence] = useState(false);
   const [contactNotes, setContactNotes] = useState<Note[]>([]);
   const [loadingNotes, setLoadingNotes] = useState(false);
+  const [rhsScore, setRhsScore] = useState<number>(0);
 
   useEffect(() => {
     loadContact();
@@ -84,8 +86,21 @@ export default function ContactDetailsScreen() {
   useEffect(() => {
     if (contact && profile) {
       loadContactNotes();
+      loadRhsScore();
     }
   }, [contact, profile]);
+
+  const loadRhsScore = async () => {
+    if (!profile || !contact) return;
+
+    try {
+      const rhsFactors = await calculateRHS(profile.$id, contact);
+      setRhsScore(rhsFactors.totalScore);
+    } catch (error) {
+      console.error("Failed to load RHS score:", error);
+      setRhsScore(0);
+    }
+  };
 
   const loadContact = async () => {
     if (!params.id) return;
@@ -503,6 +518,8 @@ export default function ContactDetailsScreen() {
                 <NoteCard
                   key={note.$id}
                   note={note}
+                  contactName={contact.displayName}
+                  rhsScore={rhsScore}
                   onPress={() => handleNotePress(note)}
                 />
               ))}
