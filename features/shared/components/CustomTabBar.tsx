@@ -44,14 +44,14 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
     >
       <View className="flex-row items-center gap-4">
         {/* Home/Notes toggle pill */}
-        <View className="flex-1 bg-gray-900 rounded-full flex-row items-center px-3 py-3 shadow-lg">
+        <View className="flex-1 bg-gray-900 rounded-full flex-row items-center px-3 py-2 shadow-lg">
           {/* Home button */}
           <TouchableOpacity
             onPress={navigateToHome}
             activeOpacity={0.7}
             accessibilityLabel="Navigate to Home"
             accessibilityRole="button"
-            className={`flex-1 py-4 rounded-full items-center ${
+            className={`flex-1 py-3 rounded-full items-center ${
               isHomeActive ? 'bg-blue-600' : 'bg-transparent'
             }`}
           >
@@ -68,7 +68,7 @@ export function CustomTabBar({ state, navigation }: BottomTabBarProps) {
             activeOpacity={0.7}
             accessibilityLabel="Navigate to Notes"
             accessibilityRole="button"
-            className={`flex-1 py-4 rounded-full items-center ${
+            className={`flex-1 py-3 rounded-full items-center ${
               isNotesActive ? 'bg-blue-600' : 'bg-transparent'
             }`}
           >
