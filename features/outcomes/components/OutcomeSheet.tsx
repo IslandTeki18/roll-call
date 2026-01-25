@@ -1,3 +1,5 @@
+import type { ActionId } from "@/features/deck/types/contactScore.types";
+import { emitEvent } from "@/features/shared/utils/eventEmitter";
 import { Frown, Lock, Meh, Smile, Sparkles, X } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -13,8 +15,6 @@ import {
 } from "react-native";
 import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
 import { useUserProfile } from "../../auth/hooks/useUserProfile"; // Changed import
-import { emitEvent } from "@/features/shared/utils/eventEmitter";
-import type { ActionId } from "@/features/deck/types/contactScore.types";
 import { processOutcomeWithProgress } from "../api/aiProcessing.service";
 
 import {
@@ -92,22 +92,28 @@ export default function OutcomeSheet({
       // C6-C10: Emit outcome events based on engagement type and sentiment
       // Map engagement type to outcome action
       // TODO: In future, add explicit outcome type selection in UI (sent/vm/scheduled/replied/no_answer)
-      let outcomeActionId: ActionId = 'outcome_sent';
+      let outcomeActionId: ActionId = "outcome_sent";
 
       // Infer outcome from engagement type and sentiment
-      if (engagementType === 'call_made' || engagementType === 'facetime_made') {
-        if (sentiment === 'positive') {
-          outcomeActionId = 'outcome_replied'; // Call connected
-        } else if (sentiment === 'neutral') {
-          outcomeActionId = 'outcome_vm'; // Left voicemail
+      if (
+        engagementType === "call_made" ||
+        engagementType === "facetime_made"
+      ) {
+        if (sentiment === "positive") {
+          outcomeActionId = "outcome_replied"; // Call connected
+        } else if (sentiment === "neutral") {
+          outcomeActionId = "outcome_vm"; // Left voicemail
         } else {
-          outcomeActionId = 'outcome_no_answer'; // No answer
+          outcomeActionId = "outcome_no_answer"; // No answer
         }
-      } else if (engagementType === 'sms_sent' || engagementType === 'email_sent') {
-        if (sentiment === 'positive') {
-          outcomeActionId = 'outcome_replied'; // Got reply
+      } else if (
+        engagementType === "sms_sent" ||
+        engagementType === "email_sent"
+      ) {
+        if (sentiment === "positive") {
+          outcomeActionId = "outcome_replied"; // Got reply
         } else {
-          outcomeActionId = 'outcome_sent'; // Message sent, no reply yet
+          outcomeActionId = "outcome_sent"; // Message sent, no reply yet
         }
       }
 
@@ -141,7 +147,7 @@ export default function OutcomeSheet({
     } catch (err) {
       console.error("Failed to save outcome:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to save outcome note"
+        err instanceof Error ? err.message : "Failed to save outcome note",
       );
     } finally {
       setSaving(false);
@@ -200,7 +206,7 @@ export default function OutcomeSheet({
             onPress={onClose}
           />
 
-          <View className="bg-gray-900 rounded-t-3xl shadow-2xl">
+          <View className="bg-slate-900 rounded-t-3xl shadow-2xl">
             <ScrollView
               className="max-h-[85vh]"
               keyboardShouldPersistTaps="handled"
@@ -208,7 +214,9 @@ export default function OutcomeSheet({
               {/* Header */}
               <View className="flex-row items-center justify-between px-6 pt-6 pb-4 border-b border-gray-700">
                 <View className="flex-1">
-                  <Text className="text-xl font-bold mb-1 text-white">How did it go?</Text>
+                  <Text className="text-xl font-bold mb-1 text-white">
+                    How did it go?
+                  </Text>
                   <Text className="text-sm text-gray-400">
                     {engagementType
                       ? `${engagementType.replace("_", " ")} with `
@@ -279,8 +287,8 @@ export default function OutcomeSheet({
                         remainingChars < 20
                           ? "text-red-400"
                           : remainingChars < 40
-                          ? "text-yellow-500"
-                          : "text-gray-400"
+                            ? "text-yellow-500"
+                            : "text-gray-400"
                       }`}
                     >
                       {remainingChars} / {maxChars}
@@ -299,7 +307,7 @@ export default function OutcomeSheet({
                     multiline
                     maxLength={maxChars}
                     editable={!saving && !processing}
-                    className="bg-gray-800 px-4 py-4 rounded-xl text-base min-h-[120px] text-white border border-gray-700"
+                    className="bg-slate-900 px-4 py-4 rounded-xl text-base min-h-[120px] text-white border border-gray-700"
                     style={{ textAlignVertical: "top" }}
                   />
                 </View>
@@ -327,7 +335,7 @@ export default function OutcomeSheet({
                   <TouchableOpacity
                     onPress={handleSkip}
                     disabled={saving || processing}
-                    className="flex-1 py-4 rounded-xl border border-gray-700 active:bg-gray-800"
+                    className="flex-1 py-4 rounded-xl border border-gray-700 active:bg-slate-900"
                   >
                     <Text className="text-center font-semibold text-gray-300">
                       Skip

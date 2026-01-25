@@ -1,4 +1,5 @@
 import { useRouter } from "expo-router";
+import { Crown, Search, X } from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   Alert,
@@ -10,7 +11,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Search, X, Crown } from "lucide-react-native";
 import { usePremiumGate } from "../../auth/hooks/usePremiumGate";
 import { useUserProfile } from "../../auth/hooks/useUserProfile";
 import OutcomeSheet from "../../outcomes/components/OutcomeSheet";
@@ -307,7 +307,7 @@ export default function DeckScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-800">
+      <SafeAreaView className="flex-1 bg-slate-900">
         <EmptyDeck reason="generating" />
       </SafeAreaView>
     );
@@ -315,7 +315,7 @@ export default function DeckScreen() {
 
   if (!deck || deck.cards.length === 0) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-800">
+      <SafeAreaView className="flex-1 bg-slate-900">
         <View className="px-6 pt-4">
           <Text className="text-2xl font-bold text-white">Daily Deck</Text>
         </View>
@@ -328,12 +328,12 @@ export default function DeckScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-800">
+    <SafeAreaView className="flex-1 bg-slate-900">
       {/* Search Bar Header */}
       <View className="px-6 pt-4 pb-2">
         <View className="flex-row items-center gap-3 mb-3">
           {/* Search Bar */}
-          <View className="flex-1 flex-row items-center bg-gray-900 rounded-full px-4 py-3 border border-gray-800">
+          <View className="flex-1 flex-row items-center bg-slate-900 rounded-full px-4 py-3 border border-gray-800">
             <Search size={20} color="#6B7280" />
             <TextInput
               value={searchQuery}

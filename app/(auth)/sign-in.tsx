@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { useSignIn, useAuth } from "@clerk/clerk-expo";
+import { useAuth, useSignIn } from "@clerk/clerk-expo";
 import { Link, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function SignIn() {
@@ -33,7 +33,6 @@ export default function SignIn() {
         password,
       });
 
-
       if (signInAttempt.status === "complete") {
         console.log("Sign in successful, setting active session.");
         await setActive({ session: signInAttempt.createdSessionId });
@@ -59,7 +58,7 @@ export default function SignIn() {
   };
 
   return (
-    <View className="flex-1 bg-gray-800 px-6 justify-center">
+    <View className="flex-1 bg-slate-900 px-6 justify-center">
       <View className="mb-12">
         <Text className="text-4xl font-bold mb-2 text-white">Welcome back</Text>
         <Text className="text-gray-300 text-lg">Sign in to continue</Text>
@@ -83,7 +82,7 @@ export default function SignIn() {
               setEmailAddress(text);
               setError(null);
             }}
-            className="bg-gray-900 px-4 py-4 rounded-xl text-base text-white"
+            className="bg-slate-900 px-4 py-4 rounded-xl text-base text-white"
             keyboardType="email-address"
             editable={!loading}
           />
@@ -102,7 +101,7 @@ export default function SignIn() {
               setPassword(text);
               setError(null);
             }}
-            className="bg-gray-900 px-4 py-4 rounded-xl text-base text-white"
+            className="bg-slate-900 px-4 py-4 rounded-xl text-base text-white"
             editable={!loading}
           />
         </View>

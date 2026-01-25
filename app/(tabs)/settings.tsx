@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { HomeIcon, UsersIcon, ChevronRight } from "lucide-react-native";
+import { ChevronRight, HomeIcon, UsersIcon } from "lucide-react-native";
 import React from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -11,7 +11,7 @@ export default function Settings() {
   const router = useRouter();
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-800">
+    <SafeAreaView className="flex-1 bg-slate-900">
       <ScrollView>
         <View className="p-4">
           <Text className="text-2xl font-bold mb-6 text-white">Settings</Text>
@@ -21,7 +21,7 @@ export default function Settings() {
             <Text className="text-sm font-semibold text-gray-400 uppercase mb-3 px-1">
               Account
             </Text>
-            <View className="bg-gray-900 rounded-xl p-4 mb-2">
+            <View className="bg-slate-900 rounded-xl p-4 mb-2">
               <Text className="text-sm text-gray-400 mb-1">Email</Text>
               <Text className="text-base text-white">{profile?.email}</Text>
             </View>
@@ -32,7 +32,7 @@ export default function Settings() {
             <Text className="text-sm font-semibold text-gray-400 uppercase mb-3 px-1">
               Navigation
             </Text>
-            <View className="bg-gray-900 rounded-xl overflow-hidden">
+            <View className="bg-slate-900 rounded-xl overflow-hidden">
               <TouchableOpacity
                 onPress={() => router.push("/(tabs)")}
                 className="p-4 flex-row items-center justify-between border-b border-gray-700"
@@ -49,7 +49,9 @@ export default function Settings() {
               >
                 <View className="flex-row items-center gap-3">
                   <UsersIcon size={20} color="#10B981" />
-                  <Text className="text-base font-medium text-white">Contacts</Text>
+                  <Text className="text-base font-medium text-white">
+                    Contacts
+                  </Text>
                 </View>
                 <ChevronRight size={20} color="#9CA3AF" />
               </TouchableOpacity>

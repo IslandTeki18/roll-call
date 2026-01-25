@@ -1,5 +1,5 @@
-import { Text, View, TouchableOpacity } from "react-native";
-import { Phone, Mail, Building } from "lucide-react-native";
+import { Building, Mail, Phone } from "lucide-react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { ProfileContact } from "../api/contacts.service";
 
 interface ContactCardProps {
@@ -14,9 +14,11 @@ export default function ContactCard({ contact, onPress }: ContactCardProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="p-4 bg-gray-900 rounded-xl border border-gray-700 active:bg-gray-800"
+      className="p-4 bg-slate-900 rounded-xl border border-gray-700 active:bg-slate-900"
     >
-      <Text className="font-semibold text-lg mb-2 text-white">{contact.displayName}</Text>
+      <Text className="font-semibold text-lg mb-2 text-white">
+        {contact.displayName}
+      </Text>
 
       {contact.organization && (
         <View className="flex-row items-center gap-2 mb-1">

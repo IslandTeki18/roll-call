@@ -1,5 +1,9 @@
-import { Plus, Search, X } from "lucide-react-native";
-import React, { useState, useEffect } from "react";
+import { getContactById } from "@/features/contacts/api/contacts.service";
+import { calculateRHS } from "@/features/deck/api/rhs.service";
+import { useUser } from "@clerk/clerk-expo";
+import { useLocalSearchParams } from "expo-router";
+import { Search, X } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
@@ -10,14 +14,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams } from "expo-router";
 import NoteCard from "../components/NoteCard";
 import NoteEditor from "../components/NoteEditor";
 import { useNotes } from "../hooks/useNotes";
 import { Note } from "../types/notes.types";
-import { getContactById } from "@/features/contacts/api/contacts.service";
-import { calculateRHS } from "@/features/deck/api/rhs.service";
-import { useUser } from "@clerk/clerk-expo";
 
 export default function NotesListScreen() {
   const params = useLocalSearchParams();
@@ -76,7 +76,10 @@ export default function NotesListScreen() {
   const fetchNoteMetadata = async (notesToProcess: Note[]) => {
     if (!user) return;
 
-    const metadata = new Map<string, { contactName: string; rhsScore: number }>();
+    const metadata = new Map<
+      string,
+      { contactName: string; rhsScore: number }
+    >();
 
     for (const note of notesToProcess) {
       // Get first contact ID from the note
@@ -92,7 +95,10 @@ export default function NotesListScreen() {
         // Fetch contact data
         const contact = await getContactById(firstContactId);
         if (!contact) {
-          metadata.set(note.$id, { contactName: "Unknown Contact", rhsScore: 0 });
+          metadata.set(note.$id, {
+            contactName: "Unknown Contact",
+            rhsScore: 0,
+          });
           continue;
         }
 
@@ -100,7 +106,9 @@ export default function NotesListScreen() {
         const rhsFactors = await calculateRHS(user.id, contact);
 
         metadata.set(note.$id, {
-          contactName: contact.displayName || `${contact.firstName} ${contact.lastName}`.trim(),
+          contactName:
+            contact.displayName ||
+            `${contact.firstName} ${contact.lastName}`.trim(),
           rhsScore: rhsFactors.totalScore,
         });
       } catch (error) {
@@ -160,11 +168,11 @@ export default function NotesListScreen() {
   const unpinnedNotes = displayNotes.filter((n) => !n.isPinned);
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-800">
+    <SafeAreaView className="flex-1 bg-slate-900">
       {/* Header */}
       <View className="px-4 pt-2 pb-4">
         {/* Search */}
-        <View className="flex-row items-center bg-gray-900 px-4 py-3 border border-gray-700 rounded-full">
+        <View className="flex-row items-center bg-slate-900 px-4 py-3 border border-gray-700 rounded-full">
           <Search size={18} color="#9CA3AF" />
           <TextInput
             value={searchQuery}

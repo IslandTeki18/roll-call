@@ -5,11 +5,11 @@ import {
   Lock,
   Mail,
   MessageSquare,
-  Smartphone,
   Search,
+  Smartphone,
   X,
 } from "lucide-react-native";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -48,7 +48,7 @@ export default function ContactListScreen() {
           c.displayName.toLowerCase().includes(query) ||
           c.organization?.toLowerCase().includes(query) ||
           c.emails?.toLowerCase().includes(query) ||
-          c.phoneNumbers?.toLowerCase().includes(query)
+          c.phoneNumbers?.toLowerCase().includes(query),
       );
     }
 
@@ -93,7 +93,7 @@ export default function ContactListScreen() {
       console.error("Import failed:", error);
       Alert.alert(
         "Import Failed",
-        "Could not import contacts. Please try again."
+        "Could not import contacts. Please try again.",
       );
     } finally {
       setImporting(false);
@@ -113,12 +113,12 @@ export default function ContactListScreen() {
     contacts.length >= deviceContactCount && deviceContactCount > 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-800">
+    <SafeAreaView className="flex-1 bg-slate-900">
       <ScrollView className="h-screen">
         <View className="px-4 py-6">
           <Text className="text-2xl font-bold mb-4 text-white">Contacts</Text>
 
-          <View className="flex-row items-center bg-gray-900 rounded-xl px-4 py-3 border border-gray-700 mb-4">
+          <View className="flex-row items-center bg-slate-900 rounded-xl px-4 py-3 border border-gray-700 mb-4">
             <Search size={18} color="#9CA3AF" />
             <TextInput
               value={searchQuery}
@@ -159,14 +159,14 @@ export default function ContactListScreen() {
                   isPremium
                     ? Alert.alert(
                         "Coming Soon",
-                        "Google Contacts import coming soon"
+                        "Google Contacts import coming soon",
                       )
                     : handleExternalImport("google")
                 }
                 className={`flex-1 p-3 rounded-lg border flex-row items-center justify-center gap-2 ${
                   isPremium
-                    ? "border-gray-700 bg-gray-900"
-                    : "border-dashed border-gray-700 bg-gray-800"
+                    ? "border-gray-700 bg-slate-900"
+                    : "border-dashed border-gray-700 bg-slate-900"
                 }`}
               >
                 <Mail size={18} color={isPremium ? "#EA4335" : "#6B7280"} />
@@ -185,14 +185,14 @@ export default function ContactListScreen() {
                   isPremium
                     ? Alert.alert(
                         "Coming Soon",
-                        "Outlook Contacts import coming soon"
+                        "Outlook Contacts import coming soon",
                       )
                     : handleExternalImport("outlook")
                 }
                 className={`flex-1 p-3 rounded-lg border flex-row items-center justify-center gap-2 ${
                   isPremium
-                    ? "border-gray-700 bg-gray-900"
-                    : "border-dashed border-gray-700 bg-gray-800"
+                    ? "border-gray-700 bg-slate-900"
+                    : "border-dashed border-gray-700 bg-slate-900"
                 }`}
               >
                 <Mail size={18} color={isPremium ? "#0078D4" : "#6B7280"} />
@@ -211,14 +211,14 @@ export default function ContactListScreen() {
                   isPremium
                     ? Alert.alert(
                         "Coming Soon",
-                        "Slack Contacts import coming soon"
+                        "Slack Contacts import coming soon",
                       )
                     : handleExternalImport("slack")
                 }
                 className={`flex-1 p-3 rounded-lg border flex-row items-center justify-center gap-2 ${
                   isPremium
-                    ? "border-gray-700 bg-gray-900"
-                    : "border-dashed border-gray-700 bg-gray-800"
+                    ? "border-gray-700 bg-slate-900"
+                    : "border-dashed border-gray-700 bg-slate-900"
                 }`}
               >
                 <MessageSquare

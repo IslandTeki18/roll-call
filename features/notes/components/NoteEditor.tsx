@@ -4,7 +4,10 @@ import {
   loadContacts,
   ProfileContact,
 } from "@/features/contacts/api/contacts.service";
-import { emitEvent, emitEventBatch } from "@/features/shared/utils/eventEmitter";
+import {
+  emitEvent,
+  emitEventBatch,
+} from "@/features/shared/utils/eventEmitter";
 import {
   ChevronLeft,
   Link2,
@@ -93,14 +96,16 @@ export default function NoteEditor({
   // D4: note_tag - Track when new tags are added
   useEffect(() => {
     if (profile && noteId && contactIds.length > 0) {
-      const newTags = tags.filter((tag) => !previousTagsRef.current.includes(tag));
+      const newTags = tags.filter(
+        (tag) => !previousTagsRef.current.includes(tag),
+      );
 
       if (newTags.length > 0) {
         newTags.forEach((tag) => {
           emitEvent({
             userId: profile.$id,
             contactId: contactIds[0],
-            actionId: 'note_tag',
+            actionId: "note_tag",
             metadata: {
               noteId,
               tag,
@@ -126,7 +131,7 @@ export default function NoteEditor({
         emitEvent({
           userId: profile.$id,
           contactId: primaryContactId,
-          actionId: 'note_manual',
+          actionId: "note_manual",
           metadata: {
             noteLength: rawText.length,
             linkedContacts: contactIds,
@@ -140,13 +145,13 @@ export default function NoteEditor({
             contactIds.map((contactId) => ({
               userId: profile.$id,
               contactId,
-              actionId: 'note_group' as const,
+              actionId: "note_group" as const,
               isMultiContact: true,
               metadata: {
                 noteId: note?.$id,
                 contactCount: contactIds.length,
               },
-            }))
+            })),
           );
         }
       } else {
@@ -154,7 +159,7 @@ export default function NoteEditor({
         emitEvent({
           userId: profile.$id,
           contactId: primaryContactId,
-          actionId: 'note_edit',
+          actionId: "note_edit",
           metadata: {
             noteId: noteId,
             noteLength: rawText.length,
@@ -211,7 +216,7 @@ export default function NoteEditor({
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-800">
+      <SafeAreaView className="flex-1 bg-slate-900">
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#3B82F6" />
         </View>
@@ -229,13 +234,13 @@ export default function NoteEditor({
     !note?.processingStatus;
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-800" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-slate-900" edges={["top"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
         {/* Header */}
-        <View className="bg-gray-900 px-4 py-3 border-b border-gray-700 flex-row items-center justify-between">
+        <View className="bg-slate-900 px-4 py-3 border-b border-gray-700 flex-row items-center justify-between">
           <TouchableOpacity onPress={onBack} className="flex-row items-center">
             <ChevronLeft size={24} color="#FFF" />
             <Text className="text-base ml-1 text-white">Back</Text>
@@ -262,7 +267,7 @@ export default function NoteEditor({
                   emitEvent({
                     userId: profile.$id,
                     contactId: contactIds[0],
-                    actionId: newPinnedState ? 'note_pin' : 'note_pin', // Same event for both pin/unpin
+                    actionId: newPinnedState ? "note_pin" : "note_pin", // Same event for both pin/unpin
                     metadata: {
                       noteId,
                       isPinned: newPinnedState,
@@ -306,7 +311,7 @@ export default function NoteEditor({
           )}
 
           {/* Main text input */}
-          <View className="bg-gray-900 m-4 rounded-xl border border-gray-700">
+          <View className="bg-slate-900 m-4 rounded-xl border border-gray-700">
             <TextInput
               value={rawText}
               onChangeText={updateRawText}

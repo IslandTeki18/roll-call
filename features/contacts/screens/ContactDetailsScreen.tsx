@@ -1,8 +1,11 @@
 import { usePremiumGate } from "@/features/auth/hooks/usePremiumGate";
 import { useUserProfile } from "@/features/auth/hooks/useUserProfile";
-import { generateDraft } from "@/features/messaging/api/drafts.service";
 import { emitPreferenceUpdateEvent } from "@/features/deck/api/profileEvents.service";
 import { calculateRHS } from "@/features/deck/api/rhs.service";
+import { generateDraft } from "@/features/messaging/api/drafts.service";
+import { getNotesByContact } from "@/features/notes/api/notes.service";
+import NoteCard from "@/features/notes/components/NoteCard";
+import { Note } from "@/features/notes/types/notes.types";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Calendar,
@@ -37,9 +40,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { tablesDB } from "../../shared/lib/appwrite";
 import { updateContactCadence } from "../api/contacts.service";
 import CadenceSelector from "../components/CadenceSelector";
-import { getNotesByContact } from "@/features/notes/api/notes.service";
-import { Note } from "@/features/notes/types/notes.types";
-import NoteCard from "@/features/notes/components/NoteCard";
 
 const DATABASE_ID = process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID!;
 const PROFILE_CONTACTS_COLLECTION_ID =
@@ -271,13 +271,13 @@ export default function ContactDetailsScreen() {
             }
           },
         },
-      ]
+      ],
     );
   };
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-800">
+      <SafeAreaView className="flex-1 bg-slate-900">
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color="#3B82F6" />
         </View>
@@ -287,7 +287,7 @@ export default function ContactDetailsScreen() {
 
   if (!contact) {
     return (
-      <SafeAreaView className="flex-1 bg-gray-800">
+      <SafeAreaView className="flex-1 bg-slate-900">
         <View className="flex-1 justify-center items-center">
           <Text className="text-gray-400">Contact not found</Text>
           <TouchableOpacity onPress={() => router.back()} className="mt-4">
@@ -302,8 +302,8 @@ export default function ContactDetailsScreen() {
   const emails = contact.emails.split(",").filter(Boolean);
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-800">
-      <View className="bg-gray-900 px-4 py-3 border-b border-gray-700">
+    <SafeAreaView className="flex-1 bg-slate-900">
+      <View className="bg-slate-900 px-4 py-3 border-b border-gray-700">
         <View className="flex-row items-center justify-between">
           <TouchableOpacity onPress={() => router.back()} className="p-2 -ml-2">
             <ChevronLeft size={24} color="#FFF" />
@@ -320,14 +320,16 @@ export default function ContactDetailsScreen() {
       </View>
 
       <ScrollView className="flex-1">
-        <View className="bg-gray-900 pt-8 pb-6 px-6 items-center border-b border-gray-700">
+        <View className="bg-slate-900 pt-8 pb-6 px-6 items-center border-b border-gray-700">
           <View className="w-24 h-24 rounded-full bg-blue-900 items-center justify-center mb-4">
             <Text className="text-blue-300 text-3xl font-bold">
               {contact.firstName.charAt(0).toUpperCase()}
               {contact.lastName.charAt(0).toUpperCase()}
             </Text>
           </View>
-          <Text className="text-3xl font-bold mb-1 text-white">{contact.displayName}</Text>
+          <Text className="text-3xl font-bold mb-1 text-white">
+            {contact.displayName}
+          </Text>
           {contact.jobTitle && (
             <Text className="text-gray-300 text-base mb-1">
               {contact.jobTitle}
@@ -340,7 +342,7 @@ export default function ContactDetailsScreen() {
           )}
         </View>
 
-        <View className="bg-gray-900 mt-2 px-6 py-4">
+        <View className="bg-slate-900 mt-2 px-6 py-4">
           <Text className="text-xs font-semibold text-gray-400 uppercase mb-3">
             Quick Actions
           </Text>
@@ -417,7 +419,7 @@ export default function ContactDetailsScreen() {
 
         {/* AI Draft Editor - shown after generation */}
         {showDraftEditor && (
-          <View className="bg-gray-900 mt-2 px-6 py-4">
+          <View className="bg-slate-900 mt-2 px-6 py-4">
             <View className="flex-row items-center justify-between mb-3">
               <View className="flex-row items-center gap-2">
                 <Sparkles size={18} color="#A78BFA" />
@@ -435,7 +437,7 @@ export default function ContactDetailsScreen() {
               onChangeText={setDraft}
               multiline
               placeholderTextColor="#6B7280"
-              className="bg-gray-800 p-4 rounded-xl text-base text-white min-h-[120px] mb-4 border border-gray-700"
+              className="bg-slate-900 p-4 rounded-xl text-base text-white min-h-[120px] mb-4 border border-gray-700"
               style={{ textAlignVertical: "top" }}
               placeholder="Edit your message..."
             />
@@ -443,7 +445,7 @@ export default function ContactDetailsScreen() {
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={handleCancelDraft}
-                className="flex-1 py-3 rounded-xl border border-gray-700 active:bg-gray-800"
+                className="flex-1 py-3 rounded-xl border border-gray-700 active:bg-slate-900"
               >
                 <Text className="text-center font-semibold text-gray-300">
                   Cancel
@@ -469,7 +471,7 @@ export default function ContactDetailsScreen() {
 
         {/* Loading state for draft generation */}
         {generatingDraft && (
-          <View className="bg-gray-900 mt-2 px-6 py-4">
+          <View className="bg-slate-900 mt-2 px-6 py-4">
             <View className="flex-row items-center justify-center gap-3 py-4">
               <ActivityIndicator size="small" color="#A78BFA" />
               <Text className="text-gray-300">Generating AI draft...</Text>
@@ -478,7 +480,7 @@ export default function ContactDetailsScreen() {
         )}
 
         {/* Notes Section */}
-        <View className="bg-gray-900 mt-2 px-6 py-4">
+        <View className="bg-slate-900 mt-2 px-6 py-4">
           <View className="flex-row items-center justify-between mb-3">
             <View className="flex-row items-center gap-2">
               <FileText size={18} color="#9CA3AF" />
@@ -502,7 +504,7 @@ export default function ContactDetailsScreen() {
               </Text>
             </View>
           ) : contactNotes.length === 0 ? (
-            <View className="py-4 bg-gray-800 rounded-lg items-center">
+            <View className="py-4 bg-slate-900 rounded-lg items-center">
               <Text className="text-gray-400 text-sm mb-2">
                 No notes for this contact yet
               </Text>
@@ -543,7 +545,7 @@ export default function ContactDetailsScreen() {
         </View>
 
         {phoneNumbers.length > 0 && (
-          <View className="bg-gray-900 mt-2 px-6 py-4">
+          <View className="bg-slate-900 mt-2 px-6 py-4">
             <Text className="text-xs font-semibold text-gray-400 uppercase mb-3">
               Phone Numbers
             </Text>
@@ -554,7 +556,9 @@ export default function ContactDetailsScreen() {
                 className="flex-row items-center py-3 border-b border-gray-700 last:border-b-0"
               >
                 <Phone size={20} color="#9CA3AF" />
-                <Text className="ml-3 text-base flex-1 text-white">{phone}</Text>
+                <Text className="ml-3 text-base flex-1 text-white">
+                  {phone}
+                </Text>
                 <Text className="text-sm text-gray-400">
                   {idx === 0 ? "Primary" : "Other"}
                 </Text>
@@ -564,7 +568,7 @@ export default function ContactDetailsScreen() {
         )}
 
         {emails.length > 0 && (
-          <View className="bg-gray-900 mt-2 px-6 py-4">
+          <View className="bg-slate-900 mt-2 px-6 py-4">
             <Text className="text-xs font-semibold text-gray-400 uppercase mb-3">
               Email Addresses
             </Text>
@@ -575,7 +579,9 @@ export default function ContactDetailsScreen() {
                 className="flex-row items-center py-3 border-b border-gray-700 last:border-b-0"
               >
                 <Mail size={20} color="#9CA3AF" />
-                <Text className="ml-3 text-base flex-1 text-white">{email}</Text>
+                <Text className="ml-3 text-base flex-1 text-white">
+                  {email}
+                </Text>
                 <Text className="text-sm text-gray-400">
                   {idx === 0 ? "Primary" : "Other"}
                 </Text>
@@ -585,7 +591,7 @@ export default function ContactDetailsScreen() {
         )}
 
         {contact.notes && (
-          <View className="bg-gray-900 mt-2 px-6 py-4">
+          <View className="bg-slate-900 mt-2 px-6 py-4">
             <Text className="text-xs font-semibold text-gray-400 uppercase mb-3">
               Notes
             </Text>
@@ -595,7 +601,7 @@ export default function ContactDetailsScreen() {
           </View>
         )}
 
-        <View className="bg-gray-900 mt-2 px-6 py-4">
+        <View className="bg-slate-900 mt-2 px-6 py-4">
           <Text className="text-xs font-semibold text-gray-400 uppercase mb-3">
             Details
           </Text>
@@ -604,7 +610,9 @@ export default function ContactDetailsScreen() {
             <Tag size={20} color="#9CA3AF" />
             <View className="ml-3 flex-1">
               <Text className="text-sm text-gray-400 mb-1">Source</Text>
-              <Text className="text-base capitalize text-white">{contact.sourceType}</Text>
+              <Text className="text-base capitalize text-white">
+                {contact.sourceType}
+              </Text>
             </View>
           </View>
 
@@ -629,7 +637,7 @@ export default function ContactDetailsScreen() {
           </View>
         </View>
 
-        <View className="bg-gray-900 mt-2 px-6 py-4">
+        <View className="bg-slate-900 mt-2 px-6 py-4">
           <CadenceSelector
             value={cadenceDays}
             onChange={handleCadenceChange}

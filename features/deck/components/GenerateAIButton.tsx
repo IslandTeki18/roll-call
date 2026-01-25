@@ -18,9 +18,7 @@ export default function GenerateAIButton({
       onPress={onPress}
       disabled={loading}
       className={`flex-row items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 ${
-        loading
-          ? "border-gray-700 bg-gray-800"
-          : "border-blue-500 bg-blue-900"
+        loading ? "border-gray-700 bg-slate-900" : "border-blue-500 bg-blue-900"
       }`}
     >
       {loading ? (

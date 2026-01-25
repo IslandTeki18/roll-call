@@ -1,9 +1,9 @@
-import { Redirect, Stack } from "expo-router";
-import { useUserProfile } from "../../features/auth/hooks/useUserProfile";
-import { View, Text } from "react-native";
-import { useAuth } from "@clerk/clerk-expo";
 import { useDeckCleanup } from "@/features/deck/hooks/useDeckCleanup";
 import { CustomTabBar } from "@/features/shared/components/CustomTabBar";
+import { useAuth } from "@clerk/clerk-expo";
+import { Redirect, Stack } from "expo-router";
+import { Text, View } from "react-native";
+import { useUserProfile } from "../../features/auth/hooks/useUserProfile";
 
 export default function TabsLayout() {
   const { isSignedIn } = useAuth();
@@ -32,7 +32,7 @@ export default function TabsLayout() {
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false, animation: 'none' }}>
+      <Stack screenOptions={{ headerShown: false, animation: "none" }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="notes" />
         <Stack.Screen name="settings" />

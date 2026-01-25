@@ -1,8 +1,8 @@
-import { View, Text, TouchableOpacity, Image } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useUser } from '@clerk/clerk-expo';
-import { Home, FileText } from 'lucide-react-native';
-import { useRouter, useSegments } from 'expo-router';
+import { useUser } from "@clerk/clerk-expo";
+import { useRouter, useSegments } from "expo-router";
+import { FileText, Home } from "lucide-react-native";
+import { Image, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function CustomTabBar() {
   const insets = useSafeAreaInsets();
@@ -11,33 +11,33 @@ export function CustomTabBar() {
   const segments = useSegments();
 
   // Determine active route from segments
-  const currentRoute = segments[1] || 'index';
-  const isHomeActive = currentRoute === 'index';
-  const isNotesActive = currentRoute === 'notes';
-  const isSettingsActive = currentRoute === 'settings';
+  const currentRoute = segments[1] || "index";
+  const isHomeActive = currentRoute === "index";
+  const isNotesActive = currentRoute === "notes";
+  const isSettingsActive = currentRoute === "settings";
 
   // Navigation handlers
   const navigateToHome = () => {
     if (!isHomeActive) {
-      router.replace('/(tabs)');
+      router.replace("/(tabs)");
     }
   };
 
   const navigateToNotes = () => {
     if (!isNotesActive) {
-      router.replace('/(tabs)/notes');
+      router.replace("/(tabs)/notes");
     }
   };
 
   const navigateToSettings = () => {
     if (!isSettingsActive) {
-      router.replace('/(tabs)/settings');
+      router.replace("/(tabs)/settings");
     }
   };
 
   // Avatar rendering logic
   const avatarUrl = user?.imageUrl;
-  const initials = `${user?.firstName?.[0] || ''}${user?.lastName?.[0] || ''}`;
+  const initials = `${user?.firstName?.[0] || ""}${user?.lastName?.[0] || ""}`;
 
   return (
     <View
@@ -46,7 +46,7 @@ export function CustomTabBar() {
     >
       <View className="flex-row items-center gap-4">
         {/* Home/Notes toggle pill */}
-        <View className="flex-1 bg-gray-900 rounded-full flex-row items-center px-3 py-2 shadow-lg">
+        <View className="flex-1 bg-slate-900 rounded-full flex-row items-center px-3 py-2 shadow-lg">
           {/* Home button */}
           <TouchableOpacity
             onPress={navigateToHome}
@@ -54,12 +54,12 @@ export function CustomTabBar() {
             accessibilityLabel="Navigate to Home"
             accessibilityRole="button"
             className={`flex-1 py-3 rounded-full items-center ${
-              isHomeActive ? 'bg-blue-600' : 'bg-transparent'
+              isHomeActive ? "bg-blue-600" : "bg-transparent"
             }`}
           >
             <Home
               size={28}
-              color={isHomeActive ? '#ffffff' : '#9ca3af'}
+              color={isHomeActive ? "#ffffff" : "#9ca3af"}
               strokeWidth={2}
             />
           </TouchableOpacity>
@@ -71,12 +71,12 @@ export function CustomTabBar() {
             accessibilityLabel="Navigate to Notes"
             accessibilityRole="button"
             className={`flex-1 py-3 rounded-full items-center ${
-              isNotesActive ? 'bg-blue-600' : 'bg-transparent'
+              isNotesActive ? "bg-blue-600" : "bg-transparent"
             }`}
           >
             <FileText
               size={28}
-              color={isNotesActive ? '#ffffff' : '#9ca3af'}
+              color={isNotesActive ? "#ffffff" : "#9ca3af"}
               strokeWidth={2}
             />
           </TouchableOpacity>
@@ -89,7 +89,7 @@ export function CustomTabBar() {
           accessibilityLabel="Open Profile Settings"
           accessibilityRole="button"
           className={`rounded-full border-2 shadow-lg ${
-            isSettingsActive ? 'border-blue-600' : 'border-gray-700'
+            isSettingsActive ? "border-blue-600" : "border-gray-700"
           }`}
         >
           {avatarUrl ? (
@@ -100,7 +100,7 @@ export function CustomTabBar() {
           ) : (
             <View className="w-14 h-14 rounded-full bg-blue-600 items-center justify-center">
               <Text className="text-white font-semibold text-lg">
-                {initials || 'U'}
+                {initials || "U"}
               </Text>
             </View>
           )}

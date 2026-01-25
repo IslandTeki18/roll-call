@@ -1,8 +1,8 @@
 import { calculateEditDistance } from "@/features/deck/api/editDistance.service";
-import { emitEvent } from "@/features/shared/utils/eventEmitter";
 import type { ActionId } from "@/features/deck/types/contactScore.types";
 import { generateDraft } from "@/features/messaging/api/drafts.service";
 import { getContactRecommendations } from "@/features/messaging/api/recommendations.service";
+import { emitEvent } from "@/features/shared/utils/eventEmitter";
 import { Send, X } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -93,7 +93,7 @@ export default function DraftPicker({
       const recommendations = await getContactRecommendations(
         profile.$id,
         card.contact.$id,
-        card.contact
+        card.contact,
       );
 
       const contextString = recommendations.conversationContext
@@ -103,7 +103,7 @@ export default function DraftPicker({
       const draft = await generateDraft(
         profile.$id,
         card.contact.$id,
-        `${contextString}Write a friendly, contextual message`
+        `${contextString}Write a friendly, contextual message`,
       );
 
       setSuggestedDraft(draft);
@@ -167,7 +167,10 @@ export default function DraftPicker({
 
     if (selectedDraft) {
       // User selected an AI draft, calculate edit distance
-      const editResult = calculateEditDistance(selectedDraft.text, finalMessage);
+      const editResult = calculateEditDistance(
+        selectedDraft.text,
+        finalMessage,
+      );
       customizationLevel = editResult.customizationLevel;
 
       // Map customization level to action ID
@@ -227,7 +230,8 @@ export default function DraftPicker({
   if (!card) return null;
 
   const photoUri = photoCache.get(card.contact?.$id || "") || null;
-  const contextText = contextTextMap.get(card.$id || "") || "Reach out to reconnect";
+  const contextText =
+    contextTextMap.get(card.$id || "") || "Reach out to reconnect";
 
   return (
     <Modal
@@ -249,13 +253,11 @@ export default function DraftPicker({
           />
 
           {/* Content Container */}
-          <View className="bg-gray-900 rounded-t-3xl shadow-2xl mt-8 flex-1">
+          <View className="bg-slate-900 rounded-t-3xl shadow-2xl mt-8 flex-1">
             <ScrollView keyboardShouldPersistTaps="handled">
               {/* Header */}
               <View className="flex-row items-center justify-between px-6 pt-6 pb-4 border-b border-gray-700">
-                <Text className="text-lg font-bold text-white">
-                  Reach Out
-                </Text>
+                <Text className="text-lg font-bold text-white">Reach Out</Text>
                 <TouchableOpacity onPress={onClose} className="p-2 -mr-2">
                   <X size={24} color="#9CA3AF" />
                 </TouchableOpacity>
@@ -313,7 +315,7 @@ export default function DraftPicker({
                       placeholder="Write your message..."
                       placeholderTextColor="#6B7280"
                       multiline
-                      className="bg-gray-800 px-4 py-4 pr-16 rounded-xl text-base min-h-[120px] text-white border border-gray-700"
+                      className="bg-slate-900 px-4 py-4 pr-16 rounded-xl text-base min-h-[120px] text-white border border-gray-700"
                       style={{ textAlignVertical: "top" }}
                     />
                     {/* Send Button - Absolute positioned bottom-right */}

@@ -20,7 +20,7 @@ export default function SuggestedDraft({
       </Text>
       <TouchableOpacity
         onPress={onCopy}
-        className="bg-gray-800 p-4 rounded-xl border border-gray-700 relative"
+        className="bg-slate-900 p-4 rounded-xl border border-gray-700 relative"
         activeOpacity={0.7}
       >
         <Text className="text-gray-300 text-sm leading-5">{draftText}</Text>

@@ -1,7 +1,7 @@
+import { useAuth, useSignUp } from "@clerk/clerk-expo";
+import { Link, useRouter } from "expo-router";
 import * as React from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
-import { useSignUp, useAuth } from "@clerk/clerk-expo";
-import { Link, useRouter } from "expo-router";
 
 export default function SignUp() {
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -56,9 +56,11 @@ export default function SignUp() {
 
   if (pendingVerification) {
     return (
-      <View className="flex-1 bg-gray-800 px-6 justify-center">
+      <View className="flex-1 bg-slate-900 px-6 justify-center">
         <View className="mb-12">
-          <Text className="text-4xl font-bold mb-2 text-white">Check your email</Text>
+          <Text className="text-4xl font-bold mb-2 text-white">
+            Check your email
+          </Text>
           <Text className="text-gray-300 text-lg">
             We sent a verification code to {emailAddress}
           </Text>
@@ -73,7 +75,7 @@ export default function SignUp() {
             placeholder="123456"
             placeholderTextColor="#6B7280"
             onChangeText={setCode}
-            className="bg-gray-900 px-4 py-4 rounded-xl text-base text-center tracking-widest text-white"
+            className="bg-slate-900 px-4 py-4 rounded-xl text-base text-center tracking-widest text-white"
             keyboardType="number-pad"
             maxLength={6}
           />
@@ -92,9 +94,11 @@ export default function SignUp() {
   }
 
   return (
-    <View className="flex-1 bg-gray-800 px-6 justify-center">
+    <View className="flex-1 bg-slate-900 px-6 justify-center">
       <View className="mb-12">
-        <Text className="text-4xl font-bold mb-2 text-white">Create account</Text>
+        <Text className="text-4xl font-bold mb-2 text-white">
+          Create account
+        </Text>
         <Text className="text-gray-300 text-lg">Get started with RollCall</Text>
       </View>
 
@@ -107,7 +111,7 @@ export default function SignUp() {
             placeholder="you@example.com"
             placeholderTextColor="#6B7280"
             onChangeText={setEmailAddress}
-            className="bg-gray-900 px-4 py-4 rounded-xl text-base text-white"
+            className="bg-slate-900 px-4 py-4 rounded-xl text-base text-white"
             keyboardType="email-address"
           />
         </View>
@@ -122,7 +126,7 @@ export default function SignUp() {
             placeholderTextColor="#6B7280"
             secureTextEntry={true}
             onChangeText={setPassword}
-            className="bg-gray-900 px-4 py-4 rounded-xl text-base text-white"
+            className="bg-slate-900 px-4 py-4 rounded-xl text-base text-white"
           />
         </View>
       </View>
