@@ -1,15 +1,14 @@
 import { getContactById } from "@/features/contacts/api/contacts.service";
 import { calculateRHS } from "@/features/deck/api/rhs.service";
+import { SearchBar } from "@/features/shared/components/SearchBar";
 import { useUser } from "@clerk/clerk-expo";
 import { useLocalSearchParams } from "expo-router";
-import { Search, X } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   RefreshControl,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -168,25 +167,16 @@ export default function NotesListScreen() {
   const unpinnedNotes = displayNotes.filter((n) => !n.isPinned);
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-900">
+    <SafeAreaView className="flex-1 bg-darkBG">
       {/* Header */}
       <View className="px-4 pt-2 pb-4">
         {/* Search */}
-        <View className="flex-row items-center bg-slate-900 px-4 py-3 border border-gray-700 rounded-full">
-          <Search size={18} color="#9CA3AF" />
-          <TextInput
-            value={searchQuery}
-            onChangeText={handleSearch}
-            placeholder="Search notes..."
-            placeholderTextColor="#9CA3AF"
-            className="flex-1 ml-2 text-base text-white "
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => handleSearch("")}>
-              <X size={18} color="#9CA3AF" />
-            </TouchableOpacity>
-          )}
-        </View>
+        <SearchBar
+          value={searchQuery}
+          onChangeText={handleSearch}
+          placeholder="Search notes..."
+          iconSize={18}
+        />
       </View>
 
       {/* Content */}

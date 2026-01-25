@@ -1,7 +1,8 @@
 import { useUser } from "@clerk/clerk-expo";
+import { BlurView } from "expo-blur";
 import { useRouter, useSegments } from "expo-router";
 import { FileText, Home } from "lucide-react-native";
-import { Image, Text, TouchableOpacity, View } from "react-native";
+import { Image, Platform, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export function CustomTabBar() {
@@ -46,41 +47,85 @@ export function CustomTabBar() {
     >
       <View className="flex-row items-center gap-4">
         {/* Home/Notes toggle pill */}
-        <View className="flex-1 bg-slate-900 rounded-full flex-row items-center px-3 py-2 shadow-lg">
-          {/* Home button */}
-          <TouchableOpacity
-            onPress={navigateToHome}
-            activeOpacity={0.7}
-            accessibilityLabel="Navigate to Home"
-            accessibilityRole="button"
-            className={`flex-1 py-3 rounded-full items-center ${
-              isHomeActive ? "bg-blue-600" : "bg-transparent"
-            }`}
+        {Platform.OS === "ios" ? (
+          <BlurView
+            intensity={80}
+            tint="dark"
+            className="flex-1 rounded-full overflow-hidden shadow-lg"
           >
-            <Home
-              size={28}
-              color={isHomeActive ? "#ffffff" : "#9ca3af"}
-              strokeWidth={2}
-            />
-          </TouchableOpacity>
+            <View className="flex-row items-center px-1 py-1 bg-[#767680]/10">
+              {/* Home button */}
+              <TouchableOpacity
+                onPress={navigateToHome}
+                activeOpacity={0.7}
+                accessibilityLabel="Navigate to Home"
+                accessibilityRole="button"
+                className={`flex-1 py-2 rounded-full items-center ${
+                  isHomeActive ? "bg-white/10" : "bg-transparent"
+                }`}
+              >
+                <Home
+                  size={28}
+                  color={isHomeActive ? "#50A2FF" : "#ffffff"}
+                  strokeWidth={2}
+                />
+              </TouchableOpacity>
 
-          {/* Notes button */}
-          <TouchableOpacity
-            onPress={navigateToNotes}
-            activeOpacity={0.7}
-            accessibilityLabel="Navigate to Notes"
-            accessibilityRole="button"
-            className={`flex-1 py-3 rounded-full items-center ${
-              isNotesActive ? "bg-blue-600" : "bg-transparent"
-            }`}
-          >
-            <FileText
-              size={28}
-              color={isNotesActive ? "#ffffff" : "#9ca3af"}
-              strokeWidth={2}
-            />
-          </TouchableOpacity>
-        </View>
+              {/* Notes button */}
+              <TouchableOpacity
+                onPress={navigateToNotes}
+                activeOpacity={0.7}
+                accessibilityLabel="Navigate to Notes"
+                accessibilityRole="button"
+                className={`flex-1 py-2 rounded-full items-center ${
+                  isNotesActive ? "bg-white/10" : "bg-transparent"
+                }`}
+              >
+                <FileText
+                  size={28}
+                  color={isNotesActive ? "#50A2FF" : "#ffffff"}
+                  strokeWidth={2}
+                />
+              </TouchableOpacity>
+            </View>
+          </BlurView>
+        ) : (
+          <View className="flex-1 bg-slate-700 rounded-full flex-row items-center px-1 py-1 shadow-lg">
+            {/* Home button */}
+            <TouchableOpacity
+              onPress={navigateToHome}
+              activeOpacity={0.7}
+              accessibilityLabel="Navigate to Home"
+              accessibilityRole="button"
+              className={`flex-1 py-2 rounded-full items-center ${
+                isHomeActive ? "bg-blue-600" : "bg-transparent"
+              }`}
+            >
+              <Home
+                size={28}
+                color={isHomeActive ? "#ffffff" : "#9ca3af"}
+                strokeWidth={2}
+              />
+            </TouchableOpacity>
+
+            {/* Notes button */}
+            <TouchableOpacity
+              onPress={navigateToNotes}
+              activeOpacity={0.7}
+              accessibilityLabel="Navigate to Notes"
+              accessibilityRole="button"
+              className={`flex-1 py-2 rounded-full items-center ${
+                isNotesActive ? "bg-blue-600" : "bg-transparent"
+              }`}
+            >
+              <FileText
+                size={28}
+                color={isNotesActive ? "#ffffff" : "#9ca3af"}
+                strokeWidth={2}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Avatar button - separate from toggle */}
         <TouchableOpacity
