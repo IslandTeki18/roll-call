@@ -49,11 +49,17 @@ export function CustomTabBar() {
         {/* Home/Notes toggle pill */}
         {Platform.OS === "ios" ? (
           <BlurView
-            intensity={80}
+            intensity={95}
             tint="dark"
-            className="flex-1 rounded-full overflow-hidden shadow-lg"
+            className="flex-1 rounded-full overflow-hidden border border-white/10"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.4,
+              shadowRadius: 16,
+            }}
           >
-            <View className="flex-row items-center px-1 py-1 bg-[#767680]/10">
+            <View className="flex-row items-center px-1 py-1 bg-white/5">
               {/* Home button */}
               <TouchableOpacity
                 onPress={navigateToHome}
@@ -61,8 +67,18 @@ export function CustomTabBar() {
                 accessibilityLabel="Navigate to Home"
                 accessibilityRole="button"
                 className={`flex-1 py-2 rounded-full items-center ${
-                  isHomeActive ? "bg-white/10" : "bg-transparent"
+                  isHomeActive ? "bg-white/15 border border-white/20" : "bg-transparent"
                 }`}
+                style={
+                  isHomeActive
+                    ? {
+                        shadowColor: "#50A2FF",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 6,
+                      }
+                    : undefined
+                }
               >
                 <Home
                   size={28}
@@ -78,8 +94,18 @@ export function CustomTabBar() {
                 accessibilityLabel="Navigate to Notes"
                 accessibilityRole="button"
                 className={`flex-1 py-2 rounded-full items-center ${
-                  isNotesActive ? "bg-white/10" : "bg-transparent"
+                  isNotesActive ? "bg-white/15 border border-white/20" : "bg-transparent"
                 }`}
+                style={
+                  isNotesActive
+                    ? {
+                        shadowColor: "#50A2FF",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 6,
+                      }
+                    : undefined
+                }
               >
                 <FileText
                   size={28}
@@ -90,7 +116,16 @@ export function CustomTabBar() {
             </View>
           </BlurView>
         ) : (
-          <View className="flex-1 bg-slate-700 rounded-full flex-row items-center px-1 py-1 shadow-lg">
+          <View
+            className="flex-1 bg-slate-800/80 rounded-full flex-row items-center px-1 py-1 border border-slate-600/30"
+            style={{
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.4,
+              shadowRadius: 16,
+              elevation: 8,
+            }}
+          >
             {/* Home button */}
             <TouchableOpacity
               onPress={navigateToHome}
@@ -98,8 +133,19 @@ export function CustomTabBar() {
               accessibilityLabel="Navigate to Home"
               accessibilityRole="button"
               className={`flex-1 py-2 rounded-full items-center ${
-                isHomeActive ? "bg-blue-600" : "bg-transparent"
+                isHomeActive ? "bg-blue-600 border border-blue-400/30" : "bg-transparent"
               }`}
+              style={
+                isHomeActive
+                  ? {
+                      shadowColor: "#2563eb",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.4,
+                      shadowRadius: 6,
+                      elevation: 4,
+                    }
+                  : undefined
+              }
             >
               <Home
                 size={28}
@@ -115,8 +161,19 @@ export function CustomTabBar() {
               accessibilityLabel="Navigate to Notes"
               accessibilityRole="button"
               className={`flex-1 py-2 rounded-full items-center ${
-                isNotesActive ? "bg-blue-600" : "bg-transparent"
+                isNotesActive ? "bg-blue-600 border border-blue-400/30" : "bg-transparent"
               }`}
+              style={
+                isNotesActive
+                  ? {
+                      shadowColor: "#2563eb",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.4,
+                      shadowRadius: 6,
+                      elevation: 4,
+                    }
+                  : undefined
+              }
             >
               <FileText
                 size={28}
@@ -133,9 +190,16 @@ export function CustomTabBar() {
           activeOpacity={0.7}
           accessibilityLabel="Open Profile Settings"
           accessibilityRole="button"
-          className={`rounded-full border-2 shadow-lg ${
+          className={`rounded-full border-2 ${
             isSettingsActive ? "border-blue-600" : "border-gray-700"
           }`}
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 6,
+          }}
         >
           {avatarUrl ? (
             <Image
