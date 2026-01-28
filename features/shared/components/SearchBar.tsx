@@ -33,9 +33,8 @@ export function SearchBar({
 
   return (
     <View
-      className={`flex-row items-center bg-slate-900 rounded-full px-4 py-3 border border-gray-800 ${className}`}
+      className={`flex-row items-center bg-[#7676801F] rounded-full px-4 py-3 ${className}`}
     >
-      <Search size={iconSize} color={iconColor} />
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -45,7 +44,10 @@ export function SearchBar({
         accessibilityLabel={placeholder}
       />
       {value && (
-        <TouchableOpacity onPress={handleClear} accessibilityLabel="Clear search">
+        <TouchableOpacity
+          onPress={handleClear}
+          accessibilityLabel="Clear search"
+        >
           <X size={iconSize} color={iconColor} />
         </TouchableOpacity>
       )}

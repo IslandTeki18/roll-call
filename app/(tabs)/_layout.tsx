@@ -35,7 +35,7 @@ export default function TabsLayout() {
       <Stack screenOptions={{ headerShown: false, animation: "none" }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="notes" />
-        <Stack.Screen name="settings" />
+        <Stack.Screen name="profile" />
         <Stack.Screen name="contacts" />
       </Stack>
       <CustomTabBar />

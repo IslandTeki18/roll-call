@@ -342,7 +342,7 @@ export default function DeckScreen() {
 
           {/* Premium Button */}
           <TouchableOpacity
-            onPress={() => router.push("/(tabs)/settings")}
+            onPress={() => router.push("/(tabs)/profile")}
             className="bg-transparent p-3 rounded-full"
           >
             <Crown size={24} color="#fff" />

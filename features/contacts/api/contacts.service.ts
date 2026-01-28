@@ -19,6 +19,7 @@ export interface ProfileContact {
   organization: string;
   jobTitle: string;
   notes: string;
+  bio?: string;
   dedupeSignature: string;
   firstImportedAt: string;
   lastImportedAt: string;
@@ -218,3 +219,20 @@ export const isContactNew = (contact: ProfileContact): boolean => {
 
   return daysSinceFirstSeen < 14;
 };
+
+export async function updateContactBio(
+  contactId: string,
+  bio: string
+): Promise<void> {
+  try {
+    await tablesDB.updateRow({
+      databaseId: DATABASE_ID,
+      tableId: PROFILE_CONTACTS_COLLECTION_ID,
+      rowId: contactId,
+      data: { bio },
+    });
+  } catch (error) {
+    console.error("Failed to update contact bio:", error);
+    throw error;
+  }
+}

@@ -15,7 +15,7 @@ export function CustomTabBar() {
   const currentRoute = segments[1] || "index";
   const isHomeActive = currentRoute === "index";
   const isNotesActive = currentRoute === "notes";
-  const isSettingsActive = currentRoute === "settings";
+  const isSettingsActive = currentRoute === "profile";
 
   // Navigation handlers
   const navigateToHome = () => {
@@ -30,9 +30,9 @@ export function CustomTabBar() {
     }
   };
 
-  const navigateToSettings = () => {
+  const navigateToProfile = () => {
     if (!isSettingsActive) {
-      router.replace("/(tabs)/settings");
+      router.replace("/(tabs)/profile");
     }
   };
 
@@ -186,7 +186,7 @@ export function CustomTabBar() {
 
         {/* Avatar button - separate from toggle */}
         <TouchableOpacity
-          onPress={navigateToSettings}
+          onPress={navigateToProfile}
           activeOpacity={0.7}
           accessibilityLabel="Open Profile Settings"
           accessibilityRole="button"

@@ -13,6 +13,7 @@ export interface UserProfile {
   firstName?: string;
   lastName?: string;
   displayName: string;
+  bio?: string;
   isPremiumUser: boolean;
   $createdAt: string;
   $updatedAt: string;
@@ -51,6 +52,7 @@ export async function getOrCreateUserProfile(
         firstName: firstName || "",
         lastName: lastName || "",
         displayName,
+        bio: "",
         isPremiumUser: false,
       },
     });
@@ -58,6 +60,23 @@ export async function getOrCreateUserProfile(
     return newProfile as unknown as UserProfile;
   } catch (error) {
     console.error("Failed to get/create user profile:", error);
+    throw error;
+  }
+}
+
+export async function updateUserProfileBio(
+  userId: string,
+  bio: string
+): Promise<void> {
+  try {
+    await tablesDB.updateRow({
+      databaseId: DATABASE_ID,
+      tableId: USER_PROFILES_TABLE_ID,
+      rowId: userId,
+      data: { bio },
+    });
+  } catch (error) {
+    console.error("Failed to update user profile bio:", error);
     throw error;
   }
 }
